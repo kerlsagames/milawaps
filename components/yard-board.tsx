@@ -344,7 +344,7 @@ export function YardBoard() {
           <AnimatePresence mode="wait">
             <motion.div
               key={view}
-              className="h-full min-h-0"
+              className="min-h-0 lg:h-full"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
@@ -467,10 +467,10 @@ function TvFit({ children }: { children: ReactNode }) {
   }, [children]);
 
   return (
-    <div ref={frame} className="h-full min-h-0 overflow-hidden">
+    <div ref={frame} className="min-h-0 lg:h-full lg:overflow-hidden">
       <div
         ref={inner}
-        className="h-full"
+        className="lg:h-full"
         style={{ transform: `scale(${scale})`, transformOrigin: "top center" }}
       >
         {children}

@@ -48,12 +48,12 @@ export function Countdown() {
 
   return (
     <section
-      className="flex items-center justify-center gap-4 rounded-[28px] border-4 border-[#2a1c04] bg-[#2a1c04] px-4 py-3 text-[#ffe08a] shadow-[0_6px_0_#6b5844] sm:gap-6 sm:py-4"
+      className="flex items-center justify-center gap-3 rounded-2xl border-4 border-[#2a1c04] bg-[#2a1c04] px-3 py-2 text-[#ffe08a] shadow-[0_4px_0_#6b5844] lg:gap-6 lg:rounded-[28px] lg:px-4 lg:py-4 lg:shadow-[0_6px_0_#6b5844]"
       aria-label={done ? "Time's up" : `${big} ${label}`}
     >
-      <p className="font-display text-6xl leading-none tabular-nums sm:text-7xl">{big}</p>
+      <p className="font-display text-4xl leading-none tabular-nums lg:text-7xl">{big}</p>
       <div className="min-w-0">
-        <p className="font-display text-3xl leading-none sm:text-4xl">{label}</p>
+        <p className="font-display text-xl leading-none lg:text-4xl">{label}</p>
         <p className="mt-1 truncate text-sm font-bold text-[#f5b942]">{extra ?? when}</p>
       </div>
     </section>

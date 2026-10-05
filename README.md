@@ -17,7 +17,7 @@ While `STAFF_PIN` is unset, the desk accepts **737373**. A custom pin must be si
 
 ## On the TV
 
-- **Leaderboard** shows the school tidy total out of 120 squares, a days-to-go clock when a finish time is set, and three unit cards on one screen. Each card has the grade, a circled tally, a 75-square track, a trophy on each prize square, crosses that do not erase ticks, and the +1, +3, and −1 buttons.
+- **Leaderboard** shows the school tidy total out of 120 squares, a days-to-go clock when a finish time is set, and three unit cards on one screen. On the TV each card has the grade, a circled tally, a 75-square track, a trophy on each prize square, and crosses that do not erase ticks. On a phone the square sheet stays off so all three classes fit, with large +1, +3, and −1 buttons.
 - **Prizes** gives each class its own path. A takedown stays a lock until that class reaches it, then the stop shows a silhouette.
 - **Yard & Rules** puts the aerial on the left and the four scoring rules on the right.
 - **Settings** (the cog) starts kiosk mode. Each page has a tick and a seconds slider. Untick a page to leave it out of the TV cycle. The cog also sets the finish date for the days-to-go clock. Kiosk hides the header. Move the mouse or touch the screen and tap the X, or press Esc, to leave.

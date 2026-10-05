@@ -40,31 +40,30 @@ export function UnitCard({
       }}
     >
       <div
-        className="flex items-center justify-between gap-3 px-4 py-4"
+        className="flex items-center justify-between gap-3 px-3 py-2.5 lg:px-4 lg:py-4"
         style={{ background: unit.color, color: unit.ink }}
       >
         <div className="min-w-0">
           <p
-            className="font-display leading-[0.78] whitespace-nowrap"
+            className="font-display text-[2.65rem] leading-none whitespace-nowrap lg:text-[length:min(8.5rem,calc((100cqi-8rem)/3))] lg:leading-[0.78]"
             style={{
-              fontSize: "min(8.5rem, calc((100cqi - 8rem) / 3))",
               letterSpacing: "-0.04em",
-              textShadow: `0 5px 0 ${unit.deep}`,
+              textShadow: `0 4px 0 ${unit.deep}`,
             }}
           >
             {unit.code}
           </p>
         </div>
         <div
-          className="grid size-[4.6rem] shrink-0 place-items-center rounded-full bg-[#fffdf8] shadow-[0_4px_0_rgba(42,28,4,0.28)] sm:size-24"
+          className="grid size-14 shrink-0 place-items-center rounded-full bg-[#fffdf8] shadow-[0_3px_0_rgba(42,28,4,0.28)] lg:size-24 lg:shadow-[0_4px_0_rgba(42,28,4,0.28)]"
           aria-label={`${unit.code} tally ${score}`}
         >
-          <p className="font-display text-4xl leading-none tabular-nums sm:text-5xl">{score}</p>
+          <p className="font-display text-3xl leading-none tabular-nums lg:text-5xl">{score}</p>
         </div>
       </div>
 
-      <div className="flex flex-col p-3 pt-2">
-      <div className="h-2 overflow-hidden rounded-full bg-black/10">
+      <div className="flex flex-col p-2 pt-2 lg:p-3 lg:pt-2">
+      <div className="h-1.5 overflow-hidden rounded-full bg-black/10 lg:h-2">
         <motion.div
           className="h-full rounded-full"
           style={{ backgroundColor: unit.color }}
@@ -74,11 +73,11 @@ export function UnitCard({
         />
       </div>
 
-      <div className="mt-2">
+      <div className="mt-2 hidden lg:block">
         <BlockMatrix score={score} crosses={crosses} color={unit.color} label={unit.code} />
       </div>
 
-      <p className="mt-2 truncate text-xs text-muted-foreground">
+      <p className="mt-1.5 truncate text-xs text-muted-foreground lg:mt-2">
         {crosses > 0 ? `${crosses} cross${crosses === 1 ? "" : "es"} · ` : ""}
         {next
           ? `${next.points - score} to ${next.title}`
@@ -90,7 +89,7 @@ export function UnitCard({
       <div className="mt-2 grid grid-cols-3 gap-1.5">
         <Button
           type="button"
-          className="h-12 rounded-xl text-base"
+          className="h-14 rounded-xl text-lg lg:h-12 lg:text-base"
           style={{ background: unit.color, color: unit.ink }}
           disabled={score >= UNIT_MAX}
           onClick={() => onScore("spot", unit.id)}
@@ -99,7 +98,7 @@ export function UnitCard({
         </Button>
         <Button
           type="button"
-          className="h-12 rounded-xl text-base"
+          className="h-14 rounded-xl text-lg lg:h-12 lg:text-base"
           style={{ background: unit.deep, color: "#fff7ea" }}
           disabled={score >= UNIT_MAX}
           onClick={() => onScore("surge", unit.id)}
@@ -109,7 +108,7 @@ export function UnitCard({
         <Button
           type="button"
           variant="outline"
-          className="h-12 rounded-xl border-[#c23b3b]/40 bg-[#c23b3b]/10 text-base text-[#8d1f1f]"
+          className="h-14 rounded-xl border-[#c23b3b]/40 bg-[#c23b3b]/10 text-lg text-[#8d1f1f] lg:h-12 lg:text-base"
           disabled={score <= 0}
           onClick={() => onScore("strike", unit.id)}
         >

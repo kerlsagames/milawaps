@@ -16,21 +16,21 @@ export function VaultMeter({
   const full = total >= SCHOOL_GOAL;
 
   return (
-    <section className="flex items-center gap-3 rounded-[28px] border-4 border-[#f5b942] bg-card px-3 py-3 shadow-[0_8px_0_#c48a16] sm:gap-4 sm:px-4">
+    <section className="flex items-center gap-2 rounded-2xl border-4 border-[#f5b942] bg-card px-2 py-2 shadow-[0_5px_0_#c48a16] lg:gap-4 lg:rounded-[28px] lg:px-4 lg:py-3 lg:shadow-[0_8px_0_#c48a16]">
       <div
-        className="grid size-24 shrink-0 place-items-center rounded-full bg-[#f5b942] text-[#2a1c04] shadow-[0_5px_0_#a86a12] sm:size-32"
+        className="grid size-16 shrink-0 place-items-center rounded-full bg-[#f5b942] text-[#2a1c04] shadow-[0_3px_0_#a86a12] lg:size-32 lg:shadow-[0_5px_0_#a86a12]"
         aria-label={`School tidy total ${total} out of ${SCHOOL_GOAL}`}
       >
         <div className="text-center">
-          <p className="font-display text-5xl leading-none tabular-nums sm:text-6xl">{total}</p>
-          <p className="text-xs font-extrabold tracking-wide">/ {SCHOOL_GOAL}</p>
+          <p className="font-display text-3xl leading-none tabular-nums lg:text-6xl">{total}</p>
+          <p className="text-[10px] font-extrabold tracking-wide lg:text-xs">/ {SCHOOL_GOAL}</p>
         </div>
       </div>
       <div className="min-w-0 flex-1">
-        <h2 className="font-display text-3xl leading-none sm:text-5xl">
+        <h2 className="font-display text-xl leading-none lg:text-5xl">
           {full ? "The whole yard is glowing" : "School tidy total"}
         </h2>
-        <div className="relative mt-3 h-5 overflow-hidden rounded-full bg-black/10 sm:h-7">
+        <div className="relative mt-2 h-3 overflow-hidden rounded-full bg-black/10 lg:mt-3 lg:h-7">
           <motion.div
             className="absolute inset-y-0 left-0 rounded-full"
             style={{
@@ -42,7 +42,7 @@ export function VaultMeter({
           />
         </div>
       </div>
-      <Button type="button" className="h-14 shrink-0 rounded-2xl px-4 text-lg sm:h-16 sm:px-5" onClick={onTeamwork}>
+      <Button type="button" className="h-12 shrink-0 rounded-xl px-3 text-base lg:h-16 lg:rounded-2xl lg:px-5 lg:text-lg" onClick={onTeamwork}>
         +2 all
       </Button>
     </section>
