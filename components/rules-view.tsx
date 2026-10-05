@@ -15,7 +15,7 @@ const rules = [
     action: "surge" as const,
     icon: Zap,
     tone: "#2ec9a0",
-    title: "Deep cleans",
+    title: "Amazing work",
   },
   {
     action: "strike" as const,

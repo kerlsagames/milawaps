@@ -31,7 +31,7 @@ The padlock in the header opens the name list, then a 6-digit code pad. After th
 | Action | Effect |
 | --- | --- |
 | +1 Spot Check Tick | Clean patch on one unit |
-| +2 Epic Surge | Deep clean or surprise audit |
+| +2 Epic Surge | Outstanding cleaning |
 | −1 Stray Strike | Ball, jumper, or rubbish cluster |
 | +3 Teamwork | Adds 3 to all three units |
 

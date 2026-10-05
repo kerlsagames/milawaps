@@ -58,9 +58,12 @@ function ClassPath({ unit, score }: { unit: UnitTheme; score: number }) {
         >
           {score}
         </p>
+        <p className="max-w-[6.5rem] text-center text-[11px] leading-tight font-extrabold sm:max-w-[8rem] sm:text-xs">
+          {status}
+        </p>
       </div>
 
-      <div className="relative min-w-0 flex-1 [--stop:4.5rem] sm:[--stop:5.75rem]">
+      <div className="relative min-w-0 flex-1 [--stop:3.6rem] sm:[--stop:5rem]">
         <div
           className="absolute h-4 -translate-y-1/2 rounded-full bg-[#f3e2c0]"
           style={{ top: `calc(${NODE} / 2)`, left: "calc(var(--stop) / 2)", right: "calc(var(--stop) / 2)" }}
@@ -82,13 +85,24 @@ function ClassPath({ unit, score }: { unit: UnitTheme; score: number }) {
           aria-hidden="true"
         />
         <ol className="relative flex items-start justify-between">
+          <li className="flex w-[var(--stop)] flex-col items-center text-center">
+            <div
+              className="grid place-items-center rounded-full border-4 bg-[#fffdf8]"
+              style={{
+                width: NODE,
+                height: NODE,
+                borderColor: "rgba(42,34,24,0.12)",
+              }}
+            >
+              <span className="size-3 rounded-full" style={{ background: unit.deep }} />
+            </div>
+            <p className="mt-1.5 text-sm leading-none font-extrabold tabular-nums">0</p>
+            <p className="text-xs leading-tight font-bold text-muted-foreground sm:text-sm">Start</p>
+          </li>
           {CLASS_MILESTONES.map((milestone) => (
             <Stop key={milestone.points} milestone={milestone} score={score} unit={unit} />
           ))}
         </ol>
-        <p className="mt-2 text-center text-sm font-extrabold sm:text-base" style={{ color: unit.deep }}>
-          {status}
-        </p>
       </div>
     </section>
   );
@@ -138,19 +152,15 @@ function Stop({
 }
 
 function pathFraction(score: number) {
-  const points = CLASS_MILESTONES.map((milestone) => milestone.points);
-  const slots = points.length;
+  const points = [0, ...CLASS_MILESTONES.map((milestone) => milestone.points)];
   if (score <= 0) return 0;
   if (score >= HIGHEST) return 1;
-  if (score < points[0]) return (score / points[0]) * (0.5 / slots);
   for (let index = 0; index < points.length - 1; index += 1) {
     const start = points[index];
     const end = points[index + 1];
     if (score <= end) {
       const local = (score - start) / (end - start);
-      const from = (index + 0.5) / slots;
-      const to = (index + 1.5) / slots;
-      return from + local * (to - from);
+      return (index + local) / (points.length - 1);
     }
   }
   return 1;

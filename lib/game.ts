@@ -202,13 +202,13 @@ export const ACTION_COPY: Record<
   spot: {
     label: "Spot Check Tick",
     short: "+1 Tick",
-    detail: "A clean patch on your unit's ground.",
+    detail: "A teacher checks your area and it's tidy. This can happen at any time.",
     delta: 1,
   },
   surge: {
     label: "Epic Surge",
     short: "+2 Surge",
-    detail: "A deep clean or a surprise audit that passes.",
+    detail: "Points for outstanding cleaning or something amazing.",
     delta: 2,
   },
   strike: {

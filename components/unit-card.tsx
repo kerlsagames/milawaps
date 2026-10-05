@@ -1,13 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-  UNIT_MAX,
-  nextClassMilestone,
-  type ScoreAction,
-  type UnitId,
-  type UnitTheme,
-} from "@/lib/game";
+import { UNIT_MAX, type ScoreAction, type UnitId, type UnitTheme } from "@/lib/game";
 import { BlockMatrix } from "@/components/block-matrix";
 import { Button } from "@/components/ui/button";
 
@@ -25,8 +19,6 @@ export function UnitCard({
   onScore: (action: ScoreAction, unitId: UnitId) => void;
 }) {
   const percent = Math.max(0, Math.min(100, (score / UNIT_MAX) * 100));
-  const next = nextClassMilestone(score);
-  const complete = score >= UNIT_MAX;
 
   return (
     <motion.article
@@ -77,14 +69,11 @@ export function UnitCard({
         <BlockMatrix score={score} crosses={crosses} color={unit.color} label={unit.code} />
       </div>
 
-      <p className="mt-1.5 truncate text-xs text-muted-foreground lg:mt-2">
-        {crosses > 0 ? `${crosses} cross${crosses === 1 ? "" : "es"} · ` : ""}
-        {next
-          ? `${next.points - score} to ${next.title}`
-          : complete
-            ? "Sheet full"
-            : `${UNIT_MAX - score} squares left`}
-      </p>
+      {crosses > 0 ? (
+        <p className="mt-1.5 truncate text-xs text-muted-foreground lg:mt-2">
+          {crosses} cross{crosses === 1 ? "" : "es"}
+        </p>
+      ) : null}
 
       <div className="mt-2 grid grid-cols-3 gap-1.5">
         <Button
