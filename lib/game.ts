@@ -207,9 +207,9 @@ export const ACTION_COPY: Record<
   },
   surge: {
     label: "Epic Surge",
-    short: "+3 Surge",
+    short: "+2 Surge",
     detail: "A deep clean or a surprise audit that passes.",
-    delta: 3,
+    delta: 2,
   },
   strike: {
     label: "Stray Strike",
@@ -219,9 +219,9 @@ export const ACTION_COPY: Record<
   },
   teamwork: {
     label: "Teamwork Bonus",
-    short: "+2 All",
-    detail: "Every unit banks two when the whole yard lifts together.",
-    delta: 2,
+    short: "+3 All",
+    detail: "Every unit banks three when the whole yard lifts together.",
+    delta: 3,
   },
 };
 

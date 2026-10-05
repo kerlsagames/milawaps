@@ -43,7 +43,7 @@ export function VaultMeter({
         </div>
       </div>
       <Button type="button" className="h-12 shrink-0 rounded-xl px-3 text-base lg:h-16 lg:rounded-2xl lg:px-5 lg:text-lg" onClick={onTeamwork}>
-        +2 all
+        +3 all
       </Button>
     </section>
   );

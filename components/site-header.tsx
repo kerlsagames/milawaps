@@ -63,7 +63,7 @@ export function SiteHeader({
           <p className="text-[10px] font-extrabold tracking-[0.22em] text-ink-gold uppercase">
             Milawa Primary
           </p>
-          <h1 className="font-display text-[15px] leading-tight sm:truncate sm:text-xl">
+          <h1 className="truncate font-display text-[15px] leading-tight sm:text-xl">
             Term 4 Tidy Challenge
           </h1>
         </div>
@@ -89,12 +89,10 @@ export function SiteHeader({
         >
           {muted ? <VolumeX /> : <Volume2 />}
         </Button>
-        <KioskSettings
-          onStart={onStartKiosk}
-          authed={authed}
-          onUnlock={onLockClick}
-          onPreview={onView}
-        />
+        <KioskSettings onPreview={onView} />
+        <Button type="button" className="h-10 rounded-xl px-2.5 text-sm sm:px-3" onClick={onStartKiosk}>
+          Start Kiosk
+        </Button>
         <Button
           variant={authed ? "default" : "outline"}
           aria-label={dutyName ? `Open yard duty desk for ${dutyName}` : "Unlock yard duty desk"}

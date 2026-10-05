@@ -103,7 +103,7 @@ export function UnitCard({
           disabled={score >= UNIT_MAX}
           onClick={() => onScore("surge", unit.id)}
         >
-          +3
+          +2
         </Button>
         <Button
           type="button"

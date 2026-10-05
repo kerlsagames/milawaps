@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Settings, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,19 +24,67 @@ import {
 } from "@/lib/desk-prefs";
 import { REVEALS, type ScreenId } from "@/lib/reveals";
 
-export function KioskSettings({
-  onStart,
-  authed,
-  onUnlock,
-  onPreview,
-}: {
-  onStart: () => void;
-  authed: boolean;
-  onUnlock: () => void;
-  onPreview: (screen: ScreenId) => void;
-}) {
+const ADMIN_KEY = "ott-admin";
+
+export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => void }) {
   const prefs = useDeskPrefs();
   const [open, setOpen] = useState(false);
+  const [admin, setAdmin] = useState(false);
+  const [asking, setAsking] = useState(false);
+  const [code, setCode] = useState("");
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const token = window.sessionStorage.getItem(ADMIN_KEY);
+    if (!token) {
+      setAdmin(false);
+      return;
+    }
+    void fetch("/api/admin", { headers: { Authorization: `Bearer ${token}` } })
+      .then((response) => response.json())
+      .then((body: { admin?: boolean }) => {
+        if (body.admin) setAdmin(true);
+        else {
+          window.sessionStorage.removeItem(ADMIN_KEY);
+          setAdmin(false);
+        }
+      })
+      .catch(() => setAdmin(false));
+  }, [open]);
+
+  function lockAdmin() {
+    window.sessionStorage.removeItem(ADMIN_KEY);
+    setAdmin(false);
+    setAsking(false);
+    setCode("");
+    setMessage("");
+  }
+
+  async function submitCode(next: string) {
+    setBusy(true);
+    setMessage("");
+    try {
+      const response = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: next }),
+      });
+      const body = (await response.json().catch(() => ({}))) as { token?: string; error?: string };
+      if (!response.ok || !body.token) {
+        setCode("");
+        setMessage(body.error ?? "That code is not the admin code.");
+        return;
+      }
+      window.sessionStorage.setItem(ADMIN_KEY, body.token);
+      setAdmin(true);
+      setAsking(false);
+      setCode("");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <>
@@ -53,12 +101,61 @@ export function KioskSettings({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[85dvh] overflow-y-auto sm:!max-w-xl">
           <DialogHeader>
-            <DialogTitle className="font-display text-2xl">Kiosk</DialogTitle>
+            <div className="flex items-center justify-between gap-3 pr-8">
+              <DialogTitle className="font-display text-2xl">Settings</DialogTitle>
+              {admin ? (
+                <Button type="button" variant="outline" className="h-9 rounded-xl" onClick={lockAdmin}>
+                  Lock admin
+                </Button>
+              ) : (
+                <Button type="button" className="h-9 rounded-xl" onClick={() => setAsking(true)}>
+                  Admin
+                </Button>
+              )}
+            </div>
             <DialogDescription>
-              Tick a page to put it on the TV. Untick it to leave it out. Set how long each page
-              stays up, and the finish time for the days-to-go clock.
+              {admin
+                ? "Tick a page to put it on the TV. Set how long it stays, and when each prize is revealed."
+                : "Only the admin can change the TV and the prize reveals."}
             </DialogDescription>
           </DialogHeader>
+          {!admin ? (
+            asking ? (
+              <form
+                className="grid gap-2"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (code.length === 4) void submitCode(code);
+                }}
+              >
+                <label className="grid gap-1">
+                  <span className="text-sm font-bold">Admin code</span>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    maxLength={4}
+                    value={code}
+                    aria-label="Admin code"
+                    disabled={busy}
+                    onChange={(event) => {
+                      const next = event.target.value.replace(/\D/g, "").slice(0, 4);
+                      setCode(next);
+                      setMessage("");
+                      if (next.length === 4) void submitCode(next);
+                    }}
+                    className="h-12 rounded-xl border border-input bg-transparent px-3 text-center font-display text-2xl tracking-[0.4em]"
+                  />
+                </label>
+                {message ? (
+                  <p className="text-sm font-semibold text-[#8d1f1f]" role="status">
+                    {message}
+                  </p>
+                ) : null}
+              </form>
+            ) : null
+          ) : (
+          <>
           <div className="grid gap-3">
             {VIEWS.map((view) => (
               <ScreenRow
@@ -78,8 +175,7 @@ export function KioskSettings({
                 silhouette. On the day, the card flips and shows the prize.
               </p>
             </div>
-            {authed ? (
-              REVEALS.map((reveal) => {
+            {REVEALS.map((reveal) => {
                 const saved = prefs.reveals[reveal.id];
                 return (
                   <div key={reveal.id} className="grid gap-2 rounded-xl bg-white/80 p-3">
@@ -126,12 +222,7 @@ export function KioskSettings({
                     </Button>
                   </div>
                 );
-              })
-            ) : (
-              <Button type="button" variant="outline" className="h-11 rounded-xl" onClick={onUnlock}>
-                Unlock the desk to set prize reveals
-              </Button>
-            )}
+              })}
           </section>
           <label className="grid gap-1.5">
             <span className="text-sm font-bold">Finish date and time</span>
@@ -162,16 +253,8 @@ export function KioskSettings({
               {prefs.muted ? "Muted" : "On"}
             </Button>
           </div>
-          <Button
-            type="button"
-            className="h-11 rounded-xl text-base"
-            onClick={() => {
-              setOpen(false);
-              onStart();
-            }}
-          >
-            Start kiosk
-          </Button>
+          </>
+          )}
         </DialogContent>
       </Dialog>
     </>

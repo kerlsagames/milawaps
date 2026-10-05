@@ -90,10 +90,10 @@ function FlipCard({
         }}
       >
         <div
-          className="absolute inset-0 overflow-hidden rounded-[32px] border-4 border-[#2a1c04] bg-[#2a1c04] shadow-[0_10px_0_#6b5844]"
+          className="absolute inset-0 overflow-hidden rounded-[32px] border-4 border-[#2a1c04] bg-[#cfc6b8] shadow-[0_10px_0_#6b5844]"
           style={{ backfaceVisibility: "hidden" }}
         >
-          <img src={reveal.face} alt="" className="size-full object-cover" />
+          <SilhouettePair />
         </div>
         <div
           className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden rounded-[32px] border-4 border-[#f5b942] bg-[#fff8ec] p-5 text-center shadow-[0_10px_0_#c48a16]"
@@ -104,6 +104,25 @@ function FlipCard({
           <PrizeArt src={reveal.image} />
         </div>
       </div>
+    </div>
+  );
+}
+
+function SilhouettePair() {
+  return (
+    <div className="relative size-full">
+      <img
+        src="/mystery-teacher-a.jpg"
+        alt=""
+        className="absolute top-[7%] left-[2%] w-[64%] rounded-[22px] object-cover shadow-[0_14px_28px_rgba(20,12,4,0.35)]"
+        style={{ aspectRatio: "3 / 4", transform: "rotate(-8deg)" }}
+      />
+      <img
+        src="/mystery-teacher-b.jpg"
+        alt=""
+        className="absolute right-[2%] bottom-[7%] w-[64%] rounded-[22px] object-cover shadow-[0_16px_30px_rgba(20,12,4,0.4)]"
+        style={{ aspectRatio: "3 / 4", transform: "rotate(8deg)" }}
+      />
     </div>
   );
 }

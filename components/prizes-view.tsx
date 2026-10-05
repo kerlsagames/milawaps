@@ -25,7 +25,7 @@ export function PrizesView({ board }: { board: PublicBoard }) {
     <div className="flex flex-col gap-3 lg:h-full">
       <header className="shrink-0">
         <p className="text-[11px] font-bold tracking-[0.22em] text-ink-gold uppercase">Follow the path</p>
-        <h2 className="font-display text-4xl leading-none sm:text-5xl">The highest honour</h2>
+        <h2 className="font-display text-4xl leading-none sm:text-5xl">Prizes</h2>
       </header>
 
       <div className="flex flex-col gap-3 lg:min-h-0 lg:flex-1">
@@ -39,7 +39,7 @@ export function PrizesView({ board }: { board: PublicBoard }) {
 
 function ClassPath({ unit, score }: { unit: UnitTheme; score: number }) {
   const next = nextClassMilestone(score);
-  const status = !next ? "At the honour" : `${next.points - score} to ${next.title}`;
+  const status = !next ? "Every prize reached" : `${next.points - score} to ${next.title}`;
   const fraction = pathFraction(score);
 
   return (

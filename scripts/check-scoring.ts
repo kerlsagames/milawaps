@@ -35,7 +35,7 @@ assert.equal(secret.events[0]?.secret, true);
 assert.equal(secret.events.some((event) => event.scope === "vault"), false);
 
 const surge = applyAction(secret.state, "surge", "234", "ricky", 5_000);
-assert.equal(surge.state.units["234"], 28);
+assert.equal(surge.state.units["234"], 27);
 
 const capped = applyAction(
   { ...start, units: { f1: 74, "234": 75, "56": 75 } },

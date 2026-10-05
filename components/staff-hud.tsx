@@ -99,7 +99,7 @@ export function StaffHud({
                     style={{ background: unit.color, color: unit.ink }}
                   />
                   <ScoreButton
-                    label="+3"
+                    label="+2"
                     hint="Surge"
                     disabled={score >= UNIT_MAX}
                     onClick={() => onScore("surge", unit.id)}
