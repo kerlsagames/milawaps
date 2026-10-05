@@ -119,7 +119,7 @@ export function MapView({ board }: { board: PublicBoard }) {
             <rect x="500" y="280" width="150" height="110" rx="10" fill="#f3efe6" stroke="#8d8174" strokeWidth="4" />
             <rect x="524" y="318" width="28" height="48" rx="3" fill="#7eb0d8" />
             <rect x="598" y="318" width="28" height="48" rx="3" fill="#f0a3c2" />
-            <text x="575" y="304" textAnchor="middle" fill="#4d453c" fontSize="18" fontFamily="Nunito, sans-serif" fontWeight="800">
+            <text x="575" y="412" textAnchor="middle" fill="#4d453c" fontSize="18" fontFamily="Nunito, sans-serif" fontWeight="800">
               Toilets
             </text>
             <rect x="670" y="268" width="110" height="78" rx="8" fill="#d9c3a4" stroke="#8d6b45" strokeWidth="3" />
@@ -175,21 +175,9 @@ export function MapView({ board }: { board: PublicBoard }) {
           </g>
         </svg>
 
-        <MapChip
-          unitId="f1"
-          score={board.units.f1}
-          className="left-[3%] top-[32%] w-[30%]"
-        />
-        <MapChip
-          unitId="234"
-          score={board.units["234"]}
-          className="left-[39%] top-[30%] w-[28%]"
-        />
-        <MapChip
-          unitId="56"
-          score={board.units["56"]}
-          className="left-[70%] top-[31%] w-[27%]"
-        />
+        <MapChip unitId="f1" score={board.units.f1} className="left-[4%] top-[33%]" />
+        <MapChip unitId="234" score={board.units["234"]} className="left-[40%] top-[31%]" />
+        <MapChip unitId="56" score={board.units["56"]} className="left-[71%] top-[32%]" />
       </div>
     </div>
   );
@@ -208,20 +196,14 @@ function MapChip({
   if (!unit) return null;
   return (
     <div
-      className={`absolute rounded-2xl border border-white/10 bg-[#070b18]/82 p-2 shadow-lg backdrop-blur-sm sm:p-3 ${className}`}
+      className={`absolute rounded-2xl border border-white/15 bg-[#070b18]/88 px-2.5 py-1.5 shadow-lg backdrop-blur-sm ${className}`}
     >
-      <p
-        className="font-display text-[clamp(1rem,2.6vw,2rem)] leading-none"
-        style={{ color: unit.color }}
-      >
+      <p className="font-display text-[clamp(0.95rem,2vw,1.6rem)] leading-none" style={{ color: unit.color }}>
         {unit.code}
       </p>
-      <p className="mt-1 text-[clamp(0.65rem,1.3vw,0.95rem)] leading-snug font-bold text-[#f6f1e6]">
-        {unit.zoneLine}
-      </p>
-      <p className="font-display text-[clamp(1.1rem,2.4vw,2rem)] leading-none tabular-nums text-white">
+      <p className="font-display text-[clamp(0.85rem,1.6vw,1.35rem)] leading-none tabular-nums text-white">
         {score}
-        <span className="text-[0.55em] text-white/60">/{UNIT_MAX}</span>
+        <span className="text-[0.7em] text-white/60">/{UNIT_MAX}</span>
       </p>
     </div>
   );
