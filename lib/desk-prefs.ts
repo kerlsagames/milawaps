@@ -22,9 +22,8 @@ export const MAX_DWELL_SECONDS = 60;
 
 export const DEFAULT_DWELLS: DwellMap = {
   board: 14,
-  prizes: 10,
-  map: 10,
-  rules: 8,
+  prizes: 12,
+  yard: 12,
 };
 
 const serverPrefs: DeskPrefs = {
@@ -58,17 +57,19 @@ function clampDwell(value: number, fallback: number) {
 function readDwells(): DwellMap {
   const legacyRaw = window.localStorage.getItem("ott-kiosk-seconds");
   const legacy = legacyRaw == null ? null : Number(legacyRaw);
-  let stored: Partial<DwellMap> = {};
+  let stored: Record<string, unknown> = {};
   try {
     const raw = window.localStorage.getItem("ott-kiosk-dwells");
-    if (raw) stored = JSON.parse(raw) as Partial<DwellMap>;
+    if (raw) stored = JSON.parse(raw) as Record<string, unknown>;
   } catch {
     stored = {};
   }
   const dwells = { ...DEFAULT_DWELLS };
   for (const view of VIEWS) {
     const saved = stored[view.id];
-    if (typeof saved === "number") dwells[view.id] = clampDwell(saved, DEFAULT_DWELLS[view.id]);
+    const previous =
+      view.id === "yard" && typeof saved !== "number" ? stored.map ?? stored.rules : saved;
+    if (typeof previous === "number") dwells[view.id] = clampDwell(previous, DEFAULT_DWELLS[view.id]);
     else if (legacy != null && Number.isFinite(legacy)) {
       dwells[view.id] = clampDwell(legacy, DEFAULT_DWELLS[view.id]);
     }

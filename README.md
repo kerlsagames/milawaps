@@ -18,10 +18,9 @@ While `STAFF_PIN` is unset, the desk accepts **737373**. A custom pin must be si
 ## On the TV
 
 - **Leaderboard** shows the school total and three unit cards on one screen. Each card has the grade, a circled tally, a 75-square track, crosses that do not erase ticks, and the +1, +3, and −1 buttons.
-- **Prizes** is a landscape path to the highest honour.
-- **Yard Map** is the aerial of Milawa Primary.
-- **Rules** covers spot checks, strikes, and cross-class teamwork.
-- **Settings** (the cog) starts kiosk mode and sets how many seconds the board, prizes, map, and rules each stay up. Kiosk hides the header. Move the mouse or touch the screen and tap the X, or press Esc, to leave.
+- **Prizes** gives each class its own path to the highest honour.
+- **Yard & Rules** puts the aerial on the left and the four scoring rules on the right.
+- **Settings** (the cog) starts kiosk mode and sets how many seconds the board, prizes, and yard page each stay up. Kiosk hides the header. Move the mouse or touch the screen and tap the X, or press Esc, to leave.
 
 ## Yard duty desk
 

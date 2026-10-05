@@ -8,9 +8,8 @@ export const PIN_LENGTH = 6;
 
 export const VIEWS = [
   { id: "board", label: "Leaderboard", short: "Board", ms: 14_000 },
-  { id: "prizes", label: "Prizes", short: "Prizes", ms: 10_000 },
-  { id: "map", label: "Yard Map", short: "Map", ms: 10_000 },
-  { id: "rules", label: "Rules", short: "Rules", ms: 8_000 },
+  { id: "prizes", label: "Prizes", short: "Prizes", ms: 12_000 },
+  { id: "yard", label: "Yard & Rules", short: "Yard", ms: 12_000 },
 ] as const;
 
 export type ViewId = (typeof VIEWS)[number]["id"];

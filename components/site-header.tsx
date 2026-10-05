@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Gift, Lock, LockOpen, Map, PartyPopper, ScrollText, Trophy, Volume2, VolumeX } from "lucide-react";
+import { Gift, Lock, LockOpen, Map, PartyPopper, Trophy, Volume2, VolumeX } from "lucide-react";
 import { KioskSettings } from "@/components/kiosk-settings";
 import { VIEWS, type ViewId } from "@/lib/game";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,7 @@ import { cn } from "@/lib/utils";
 const icons = {
   board: Trophy,
   prizes: Gift,
-  map: Map,
-  rules: ScrollText,
+  yard: Map,
 } as const;
 
 export function SiteHeader({

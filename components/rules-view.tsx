@@ -35,9 +35,9 @@ const rules = [
   },
 ];
 
-export function RulesView() {
+export function RulesView({ paired = false }: { paired?: boolean }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div className={paired ? "grid h-full grid-cols-2 gap-3" : "grid gap-3 sm:grid-cols-2 lg:grid-cols-4"}>
       {rules.map((rule, index) => {
         const Icon = rule.icon;
         const copy = ACTION_COPY[rule.action];
@@ -47,7 +47,7 @@ export function RulesView() {
             initial={{ opacity: 1, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.04 }}
-            className="rounded-[28px] border-[3px] bg-white p-4"
+            className="flex h-full flex-col justify-center rounded-[28px] border-[3px] bg-white p-4"
             style={{ borderColor: rule.tone, boxShadow: `0 7px 0 ${rule.tone}` }}
           >
             <div className="flex items-center justify-between gap-3">

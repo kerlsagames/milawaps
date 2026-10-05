@@ -22,7 +22,7 @@ export function LeaderboardView({
   }, []);
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       <VaultMeter vault={board.vault} onTeamwork={() => onScore("teamwork")} />
       {board.lastAction && (
         <p className="truncate text-center text-xs font-bold text-ink-gold">
@@ -34,7 +34,7 @@ export function LeaderboardView({
           {error}
         </p>
       )}
-      <div className="grid gap-2 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-3">
         {UNITS.map((unit, index) => (
           <UnitCard
             key={unit.id}

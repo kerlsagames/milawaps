@@ -5,10 +5,9 @@ import { X } from "lucide-react";
 import useSWR from "swr";
 import { AnimatePresence, motion } from "framer-motion";
 import { LeaderboardView } from "@/components/leaderboard-view";
-import { MapView } from "@/components/map-view";
+import { YardRulesView } from "@/components/yard-rules-view";
 import { PinDialog } from "@/components/pin-dialog";
 import { PrizesView } from "@/components/prizes-view";
-import { RulesView } from "@/components/rules-view";
 import { SiteHeader } from "@/components/site-header";
 import { StaffHud } from "@/components/staff-hud";
 import { Button } from "@/components/ui/button";
@@ -341,8 +340,7 @@ export function YardBoard() {
                   <LeaderboardView board={data} error={deskError} onScore={scoreOrUnlock} />
                 )}
                 {view === "prizes" && <PrizesView board={data} />}
-                {view === "map" && <MapView />}
-                {view === "rules" && <RulesView />}
+                {view === "yard" && <YardRulesView />}
               </TvFit>
             </motion.div>
           </AnimatePresence>
