@@ -22,7 +22,7 @@ export async function POST(request: Request) {
   try {
     payload = await request.json();
   } catch {
-    return json({ error: "Send a four-digit PIN." }, 400);
+    return json({ error: "Send the six-digit PIN." }, 400);
   }
 
   const pin =
@@ -30,14 +30,14 @@ export async function POST(request: Request) {
       ? (payload as { pin?: unknown }).pin
       : undefined;
 
-  if (typeof pin !== "string" || !/^\d{4}$/.test(pin)) {
-    return json({ error: "The PIN is four digits." }, 400);
+  if (typeof pin !== "string" || !/^\d{6}$/.test(pin)) {
+    return json({ error: "The PIN is six digits." }, 400);
   }
 
   const expected = getExpectedPin();
   if (!expected) {
     return json(
-      { error: "STAFF_PIN is not configured. Set a four-digit code on the server." },
+      { error: "STAFF_PIN must be six digits." },
       500,
     );
   }

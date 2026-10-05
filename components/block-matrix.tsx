@@ -15,8 +15,8 @@ export function BlockMatrix({
   return (
     <div
       role="img"
-      aria-label={`${label}: ${score} of ${UNIT_MAX} spaces filled`}
-      className="grid grid-cols-11 gap-1"
+      aria-label={`${label}: ${score} of ${UNIT_MAX} ticks filled`}
+      className="grid grid-cols-10 gap-1"
     >
       {Array.from({ length: UNIT_MAX }, (_, index) => {
         const filled = index < score;
@@ -25,15 +25,15 @@ export function BlockMatrix({
           <span
             key={index}
             className={cn(
-              "aspect-square rounded-[3px] border transition-all duration-300",
-              filled ? "scale-100 border-transparent" : "scale-90 border-white/10 bg-white/5",
+              "aspect-square rounded-[4px] border transition-all duration-300",
+              filled ? "scale-100 border-transparent" : "scale-95 border-black/10 bg-black/5",
               marker && !filled && "border-dashed",
             )}
             style={{
               backgroundColor: filled ? color : undefined,
               borderColor: marker && !filled ? color : undefined,
-              boxShadow: filled ? `0 0 10px ${color}88` : undefined,
-              transitionDelay: filled ? `${(index % 11) * 10}ms` : "0ms",
+              boxShadow: filled ? `0 0 8px ${color}66` : undefined,
+              transitionDelay: filled ? `${(index % 10) * 12}ms` : "0ms",
             }}
           />
         );

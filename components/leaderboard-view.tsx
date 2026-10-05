@@ -22,7 +22,7 @@ export function LeaderboardView({ board }: { board: PublicBoard }) {
         </p>
       )}
       {board.lastAction && (
-        <p className="text-center text-sm font-bold text-gold">
+        <p className="text-center text-sm font-bold text-ink-gold">
           {actionLabel(board.lastAction)} · {formatAgo(board.lastAction.at, now)}
         </p>
       )}

@@ -17,18 +17,24 @@ const serverPrefs: DeskPrefs = { kiosk: false, muted: false, token: null };
 let current: DeskPrefs = serverPrefs;
 const listeners = new Set<() => void>();
 
-function readPrefs(): DeskPrefs {
-  const saved = window.sessionStorage.getItem(TOKEN_KEY);
-  const expires = Number(window.sessionStorage.getItem(TOKEN_EXP_KEY) || 0);
-  const token = saved && expires > Date.now() ? saved : null;
-  if (saved && !token) {
-    window.sessionStorage.removeItem(TOKEN_KEY);
-    window.sessionStorage.removeItem(TOKEN_EXP_KEY);
+function readToken(): string | null {
+  window.sessionStorage.removeItem(TOKEN_KEY);
+  window.sessionStorage.removeItem(TOKEN_EXP_KEY);
+  const saved = window.localStorage.getItem(TOKEN_KEY);
+  const expires = Number(window.localStorage.getItem(TOKEN_EXP_KEY) || 0);
+  if (saved && expires > Date.now()) return saved;
+  if (saved) {
+    window.localStorage.removeItem(TOKEN_KEY);
+    window.localStorage.removeItem(TOKEN_EXP_KEY);
   }
+  return null;
+}
+
+function readPrefs(): DeskPrefs {
   return {
     kiosk: window.localStorage.getItem("ott-kiosk") === "1",
     muted: window.localStorage.getItem("ott-muted") === "1",
-    token,
+    token: readToken(),
   };
 }
 
@@ -64,12 +70,14 @@ export function setMutedPref(muted: boolean) {
 }
 
 export function saveToken(token: string, expiresAt: number) {
-  window.sessionStorage.setItem(TOKEN_KEY, token);
-  window.sessionStorage.setItem(TOKEN_EXP_KEY, String(expiresAt));
+  window.localStorage.setItem(TOKEN_KEY, token);
+  window.localStorage.setItem(TOKEN_EXP_KEY, String(expiresAt));
   publish({ ...readPrefs(), token });
 }
 
 export function clearToken() {
+  window.localStorage.removeItem(TOKEN_KEY);
+  window.localStorage.removeItem(TOKEN_EXP_KEY);
   window.sessionStorage.removeItem(TOKEN_KEY);
   window.sessionStorage.removeItem(TOKEN_EXP_KEY);
   publish({ ...readPrefs(), token: null });

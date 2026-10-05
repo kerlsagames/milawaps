@@ -17,17 +17,17 @@ const fredoka = Fredoka({
 export const metadata: Metadata = {
   title: "Operation: Teacher Takeover",
   description:
-    "Live yard tidy tracker for the school window TV. Three units, one vault, and a principal haircut on the line.",
-  applicationName: "Operation: Teacher Takeover",
+    "Sunny yard tidy tracker for Milawa Primary. Three units, fifty ticks each, and secret teacher takedowns.",
+  applicationName: "Teacher Takeover",
   appleWebApp: {
     capable: true,
     title: "Teacher Takeover",
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#070b18",
+  themeColor: "#fff6e4",
   width: "device-width",
   initialScale: 1,
 };
@@ -36,7 +36,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${nunito.variable} ${fredoka.variable} dark h-full antialiased`}
+      className={`${nunito.variable} ${fredoka.variable} h-full antialiased`}
     >
       <body className="min-h-dvh">{children}</body>
     </html>

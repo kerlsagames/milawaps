@@ -127,7 +127,7 @@ export function YardBoard() {
         return [...additions, ...current].slice(0, 3);
       });
       void celebrate(events);
-      playFanfare(events.some((event) => event.scope === "vault" && event.points === 130));
+      playFanfare(events.some((event) => event.secret || event.points === 50));
     } else if (actionChanged && actionAt !== selfStamp.current) {
       playChime();
     }
@@ -231,24 +231,19 @@ export function YardBoard() {
         live={isLoading && !data ? "loading" : live}
       />
 
-      {data && data.vault >= 130 && (
-        <div className="barber-stripe px-4 py-2 text-center text-sm font-extrabold tracking-wide text-[#1a1020]">
-          Jackpot open · The Principal Haircut & Wild Style
-        </div>
-      )}
-
       <div className="pointer-events-none fixed top-28 right-3 left-3 z-40 flex flex-col items-center gap-2 sm:top-24">
         {toasts.map((toast) => {
-          const tone = toast.unitId ? unitById(toast.unitId).color : "#ffe08a";
+          const unit = toast.unitId ? unitById(toast.unitId) : null;
+          const tone = unit?.color ?? "#e2a01a";
           return (
             <div
               key={toast.id}
-              className="pointer-events-auto w-full max-w-md rounded-2xl border bg-[#171e34]/95 px-4 py-3 shadow-2xl"
+              className="pointer-events-auto w-full max-w-md rounded-2xl border-2 bg-white/95 px-4 py-3 shadow-[0_12px_30px_rgba(90,60,20,0.18)]"
               style={{ borderColor: tone }}
               role="status"
             >
               <p className="text-[11px] font-extrabold tracking-[0.16em] uppercase" style={{ color: tone }}>
-                {toast.scope === "vault" ? "Master Vault" : unitById(toast.unitId as UnitId).code} unlocked
+                {unit ? unit.code : "School"} unlocked
               </p>
               <p className="font-display text-xl leading-tight">{toast.title}</p>
               <p className="text-sm text-muted-foreground">{toast.detail}</p>
@@ -259,7 +254,7 @@ export function YardBoard() {
 
       <main className="relative mx-auto flex w-full max-w-7xl flex-col gap-4 px-3 py-4 sm:px-5 sm:py-6">
         {error && !data && (
-          <section className="rounded-[28px] border border-[#ff8b8b]/40 bg-card px-5 py-8 text-center">
+          <section className="rounded-[28px] border border-[#c23b3b]/30 bg-card px-5 py-8 text-center">
             <h2 className="font-display text-3xl">The board is out of reach</h2>
             <p className="mt-2 text-muted-foreground">
               The TV will keep trying every few seconds. You can nudge it now.
@@ -326,7 +321,7 @@ async function celebrate(events: MilestoneEvent[]) {
     const colors = unit
       ? [unit.color, "#ffe08a", "#fff7e8"]
       : ["#ffe08a", "#ff5d8f", "#8b7cf7", "#ffffff"];
-    const jackpot = event.scope === "vault" && event.points === 130;
+    const jackpot = event.secret || event.points === 50;
     void confetti({
       particleCount: jackpot ? 140 : 70,
       spread: jackpot ? 100 : 65,

@@ -3,6 +3,7 @@
 import { useState, type CSSProperties } from "react";
 import {
   ACTION_COPY,
+  STAFF_MYSTERY_IDEAS,
   UNIT_MAX,
   UNITS,
   type ActionId,
@@ -55,9 +56,9 @@ export function StaffHud({
     >
       <SheetContent
         side="bottom"
-        className="max-h-[88vh] gap-0 overflow-hidden rounded-t-[28px] border-white/10 p-0 sm:inset-x-auto sm:right-4 sm:bottom-4 sm:left-auto sm:w-[440px] sm:rounded-[28px]"
+        className="max-h-[88vh] gap-0 overflow-hidden rounded-t-[28px] border-black/10 p-0 sm:inset-x-auto sm:right-4 sm:bottom-4 sm:left-auto sm:w-[440px] sm:rounded-[28px]"
       >
-        <SheetHeader className="border-b border-white/10 pr-12">
+        <SheetHeader className="border-b border-black/10 pr-12">
           <SheetTitle className="font-display text-2xl">Yard duty desk</SheetTitle>
           <SheetDescription>
             Tap a score. The window TV picks it up on the next refresh.
@@ -104,7 +105,7 @@ export function StaffHud({
                     hint="Strike"
                     disabled={score <= 0}
                     onClick={() => onScore("strike", unit.id)}
-                    className="border border-[#ff8b8b]/40 bg-[#ff8b8b]/15 text-[#ffd0d0]"
+                    className="border border-[#c23b3b]/30 bg-[#c23b3b]/10 text-[#8d1f1f]"
                   />
                 </div>
               </section>
@@ -121,10 +122,24 @@ export function StaffHud({
           </Button>
 
           {error && (
-            <p className="rounded-xl bg-[#ff8b8b]/15 px-3 py-2 text-sm font-semibold text-[#ffb4b4]" role="status">
+            <p className="rounded-xl bg-[#c23b3b]/10 px-3 py-2 text-sm font-semibold text-[#8d1f1f]" role="status">
               {error}
             </p>
           )}
+
+          <details className="rounded-2xl border border-dashed border-[#c48a16]/50 bg-[#fff8df] px-3 py-2">
+            <summary className="cursor-pointer text-sm font-extrabold text-[#8a5a00]">
+              Mystery ideas · staff only
+            </summary>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-[#5c4630]">
+              {STAFF_MYSTERY_IDEAS.map((idea) => (
+                <li key={idea}>{idea}</li>
+              ))}
+            </ul>
+            <p className="mt-2 text-xs font-semibold text-[#8a5a00]">
+              Keep these off the TV. Kids only see a sealed takedown.
+            </p>
+          </details>
 
           <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
             <span>{board ? storageCopy[board.storage] : "Waiting for the board"}</span>

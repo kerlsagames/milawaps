@@ -2,8 +2,9 @@ export const UNIT_IDS = ["f1", "234", "56"] as const;
 
 export type UnitId = (typeof UNIT_IDS)[number];
 
-export const UNIT_MAX = 55;
-export const VAULT_TARGET = 130;
+export const UNIT_MAX = 50;
+export const VAULT_TARGET = 150;
+export const PIN_LENGTH = 6;
 
 export const VIEWS = [
   { id: "board", label: "Leaderboard", short: "Board", ms: 14_000 },
@@ -49,6 +50,7 @@ export type Milestone = {
   title: string;
   short: string;
   detail: string;
+  secret: boolean;
 };
 
 export type MilestoneEvent = Milestone & {
@@ -58,44 +60,63 @@ export type MilestoneEvent = Milestone & {
 
 export const CLASS_MILESTONES: Milestone[] = [
   {
-    points: 30,
-    title: "15m Extra Play",
-    short: "Extra Play",
-    detail: "The bell rings and the yard stays open for fifteen more minutes.",
+    points: 20,
+    title: "Laser Tag",
+    short: "Laser Tag",
+    detail: "Suits on. Lights down. The unit that hit 20 gets to play.",
+    secret: false,
   },
   {
-    points: 42,
-    title: "Icy Pole Party",
-    short: "Icy Poles",
-    detail: "The freezer opens. One icy pole for every tidy hand.",
+    points: 25,
+    title: "Teacher Takedown",
+    short: "Takedown",
+    detail: "One secret teacher takedown. The class finds out on the day.",
+    secret: true,
+  },
+  {
+    points: 30,
+    title: "2× Teacher Takedown",
+    short: "2× Takedown",
+    detail: "Two secret teacher takedowns. Still no spoilers.",
+    secret: true,
+  },
+  {
+    points: 35,
+    title: "Ice Cream",
+    short: "Ice Cream",
+    detail: "Scoops for the unit. Tidy hands, cold treats.",
+    secret: false,
+  },
+  {
+    points: 40,
+    title: "3× Teacher Takedown",
+    short: "3× Takedown",
+    detail: "Three secret teacher takedowns. The teachers look nervous.",
+    secret: true,
+  },
+  {
+    points: 45,
+    title: "4× Teacher Takedown",
+    short: "4× Takedown",
+    detail: "Four secret teacher takedowns. Nobody gets a hint.",
+    secret: true,
   },
   {
     points: 50,
-    title: "Staff Pie Target Unlocked",
-    short: "Pie Target",
-    detail: "The staffroom pie is officially in play.",
+    title: "5× Teacher Takedown",
+    short: "5× Takedown",
+    detail: "Five secret teacher takedowns. The full takeover.",
+    secret: true,
   },
 ];
 
-export const VAULT_MILESTONES: Milestone[] = [
-  {
-    points: 90,
-    title: "Dress Up Staff",
-    short: "Dress Up",
-    detail: "Yard duty arrives in full costume. No plain polo shirts.",
-  },
-  {
-    points: 110,
-    title: "Sponge Soak",
-    short: "Sponge Soak",
-    detail: "Sponges loaded. Staff versus the school, and the school is ready.",
-  },
-  {
-    points: 130,
-    title: "The Principal Haircut & Wild Style",
-    short: "Haircut",
-    detail: "Clippers out. The principal picks a wild style, live.",
-  },
+export const VAULT_MILESTONES: Milestone[] = [];
+
+/** Staff desk only. These stay off the TV. */
+export const STAFF_MYSTERY_IDEAS = [
+  "Whipped cream pie in a teacher's face",
+  "Ice bucket a teacher",
+  "Dress up a teacher",
 ];
 
 export type UnitTheme = {
@@ -115,8 +136,8 @@ export const UNITS: UnitTheme[] = [
     id: "f1",
     code: "F/1",
     name: "Foundation & Year 1",
-    zoneLine: "Oval & Construction Yard",
-    places: ["Oval", "Construction Yard"],
+    zoneLine: "Oval & Construction",
+    places: ["Oval", "Construction"],
     color: "#f5b942",
     deep: "#a86a12",
     ink: "#2a1c04",
@@ -126,8 +147,8 @@ export const UNITS: UnitTheme[] = [
     id: "234",
     code: "2/3/4",
     name: "Years 2, 3 & 4",
-    zoneLine: "Toilet Block, BER Deck & Playground",
-    places: ["Toilet Block", "BER Deck", "Playground"],
+    zoneLine: "BER Deck, Toilets & Playground",
+    places: ["BER Deck", "Toilets", "Playground"],
     color: "#2ec9a0",
     deep: "#0d7a64",
     ink: "#04241c",
@@ -137,8 +158,8 @@ export const UNITS: UnitTheme[] = [
     id: "56",
     code: "5/6",
     name: "Years 5 & 6",
-    zoneLine: "Bin Area, Eating Area, Basketball Court & Grass",
-    places: ["Bin Area", "Eating Area", "Basketball Court", "Grass"],
+    zoneLine: "Courts, Bin Area & Grass Playground",
+    places: ["Courts", "Bin Area", "Grass Playground"],
     color: "#8b7cf7",
     deep: "#5146b8",
     ink: "#160f33",

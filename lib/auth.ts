@@ -1,16 +1,13 @@
 import { createHmac, timingSafeEqual } from "crypto";
 
-const TOKEN_TTL_MS = 8 * 60 * 60 * 1000;
-const LOCAL_PIN = "2468";
+const TOKEN_TTL_MS = 365 * 24 * 60 * 60 * 1000;
+const SCHOOL_PIN = "737373";
 
 export function getExpectedPin(): string | null {
   const configured = process.env.STAFF_PIN?.trim();
-  if (configured) {
-    if (!/^\d{4}$/.test(configured)) return null;
-    return configured;
-  }
-  if (process.env.NODE_ENV === "production") return null;
-  return LOCAL_PIN;
+  if (!configured) return SCHOOL_PIN;
+  if (!/^\d{6}$/.test(configured)) return null;
+  return configured;
 }
 
 function signingKey(): string {

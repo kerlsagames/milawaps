@@ -12,6 +12,7 @@
   --font-display: var(--font-display);
   --font-heading: var(--font-display);
   --color-gold: #ffe08a;
+  --color-ink-gold: #8a5a00;
   --color-amber-unit: #f5b942;
   --color-teal-unit: #2ec9a0;
   --color-indigo-unit: #8b7cf7;
@@ -54,72 +55,72 @@
 }
 
 :root {
-  --background: #070b18;
-  --foreground: #f6f1e6;
-  --card: #141a2e;
-  --card-foreground: #f6f1e6;
-  --popover: #171e34;
-  --popover-foreground: #f6f1e6;
-  --primary: #ffe08a;
-  --primary-foreground: #241a08;
-  --secondary: #222a46;
-  --secondary-foreground: #f6f1e6;
-  --muted: #1c243c;
-  --muted-foreground: #b7c0d6;
-  --accent: #2a3354;
-  --accent-foreground: #f6f1e6;
-  --destructive: #ff8b8b;
-  --border: rgba(255, 224, 138, 0.16);
-  --input: rgba(255, 255, 255, 0.1);
-  --ring: #ffe08a;
+  --background: #fff6e4;
+  --foreground: #2a2218;
+  --card: #fffdf8;
+  --card-foreground: #2a2218;
+  --popover: #fffdf8;
+  --popover-foreground: #2a2218;
+  --primary: #f5b942;
+  --primary-foreground: #2a1c04;
+  --secondary: #fff1cc;
+  --secondary-foreground: #2a2218;
+  --muted: #fff3dc;
+  --muted-foreground: #6b5844;
+  --accent: #ffe7b0;
+  --accent-foreground: #2a2218;
+  --destructive: #c23b3b;
+  --border: rgba(42, 34, 24, 0.12);
+  --input: rgba(42, 34, 24, 0.08);
+  --ring: #e2a01a;
   --chart-1: #f5b942;
   --chart-2: #2ec9a0;
   --chart-3: #8b7cf7;
   --chart-4: #ff5d8f;
   --chart-5: #ffe08a;
   --radius: 0.9rem;
-  --sidebar: #12182b;
-  --sidebar-foreground: #f6f1e6;
-  --sidebar-primary: #ffe08a;
-  --sidebar-primary-foreground: #241a08;
-  --sidebar-accent: #222a46;
-  --sidebar-accent-foreground: #f6f1e6;
-  --sidebar-border: rgba(255, 224, 138, 0.16);
-  --sidebar-ring: #ffe08a;
+  --sidebar: #fffdf8;
+  --sidebar-foreground: #2a2218;
+  --sidebar-primary: #f5b942;
+  --sidebar-primary-foreground: #2a1c04;
+  --sidebar-accent: #fff1cc;
+  --sidebar-accent-foreground: #2a2218;
+  --sidebar-border: rgba(42, 34, 24, 0.12);
+  --sidebar-ring: #e2a01a;
 }
 
 .dark {
-  --background: #070b18;
-  --foreground: #f6f1e6;
-  --card: #141a2e;
-  --card-foreground: #f6f1e6;
-  --popover: #171e34;
-  --popover-foreground: #f6f1e6;
-  --primary: #ffe08a;
-  --primary-foreground: #241a08;
-  --secondary: #222a46;
-  --secondary-foreground: #f6f1e6;
-  --muted: #1c243c;
-  --muted-foreground: #b7c0d6;
-  --accent: #2a3354;
-  --accent-foreground: #f6f1e6;
-  --destructive: #ff8b8b;
-  --border: rgba(255, 224, 138, 0.16);
-  --input: rgba(255, 255, 255, 0.1);
-  --ring: #ffe08a;
+  --background: #fff6e4;
+  --foreground: #2a2218;
+  --card: #fffdf8;
+  --card-foreground: #2a2218;
+  --popover: #fffdf8;
+  --popover-foreground: #2a2218;
+  --primary: #f5b942;
+  --primary-foreground: #2a1c04;
+  --secondary: #fff1cc;
+  --secondary-foreground: #2a2218;
+  --muted: #fff3dc;
+  --muted-foreground: #6b5844;
+  --accent: #ffe7b0;
+  --accent-foreground: #2a2218;
+  --destructive: #c23b3b;
+  --border: rgba(42, 34, 24, 0.12);
+  --input: rgba(42, 34, 24, 0.08);
+  --ring: #e2a01a;
   --chart-1: #f5b942;
   --chart-2: #2ec9a0;
   --chart-3: #8b7cf7;
   --chart-4: #ff5d8f;
   --chart-5: #ffe08a;
-  --sidebar: #12182b;
-  --sidebar-foreground: #f6f1e6;
-  --sidebar-primary: #ffe08a;
-  --sidebar-primary-foreground: #241a08;
-  --sidebar-accent: #222a46;
-  --sidebar-accent-foreground: #f6f1e6;
-  --sidebar-border: rgba(255, 224, 138, 0.16);
-  --sidebar-ring: #ffe08a;
+  --sidebar: #fffdf8;
+  --sidebar-foreground: #2a2218;
+  --sidebar-primary: #f5b942;
+  --sidebar-primary-foreground: #2a1c04;
+  --sidebar-accent: #fff1cc;
+  --sidebar-accent-foreground: #2a2218;
+  --sidebar-border: rgba(42, 34, 24, 0.12);
+  --sidebar-ring: #e2a01a;
 }
 
 @layer base {
@@ -133,16 +134,16 @@
   body {
     @apply bg-background text-foreground;
     background-image:
-      radial-gradient(900px 420px at -10% -10%, rgba(245, 185, 66, 0.16), transparent 60%),
-      radial-gradient(700px 380px at 110% 8%, rgba(139, 124, 247, 0.18), transparent 55%),
-      radial-gradient(800px 480px at 50% 120%, rgba(46, 201, 160, 0.12), transparent 50%);
+      radial-gradient(920px 480px at -8% -12%, rgba(255, 196, 64, 0.55), transparent 62%),
+      radial-gradient(720px 420px at 112% 0%, rgba(139, 124, 247, 0.22), transparent 56%),
+      radial-gradient(820px 520px at 46% 118%, rgba(46, 201, 160, 0.22), transparent 52%);
   }
 }
 
 .yard-grid {
-  background-image: radial-gradient(rgba(246, 241, 230, 0.09) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(226, 160, 26, 0.28) 1.3px, transparent 1.3px);
   background-size: 22px 22px;
-  mask-image: radial-gradient(ellipse at center, black 30%, transparent 78%);
+  mask-image: radial-gradient(ellipse at center, black 40%, transparent 82%);
 }
 
 .barber-stripe {

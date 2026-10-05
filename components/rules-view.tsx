@@ -39,10 +39,10 @@ export function RulesView() {
   return (
     <div className="flex flex-col gap-5">
       <header>
-        <p className="text-[11px] font-bold tracking-[0.22em] text-gold uppercase">How a tick lands</p>
-        <h2 className="font-display text-4xl leading-none sm:text-5xl">Yard rules, arcade style</h2>
+        <p className="text-[11px] font-bold tracking-[0.22em] text-ink-gold uppercase">How a tick lands</p>
+        <h2 className="font-display text-4xl leading-none sm:text-5xl">Yard rules, loud and clear</h2>
         <p className="mt-2 max-w-2xl text-base text-muted-foreground">
-          Staff on duty tap the desk. The window TV keeps the whole school honest.
+          Staff on duty tap the desk. The window TV shows the whole school how the yard is going.
         </p>
       </header>
       <div className="grid gap-3 md:grid-cols-2">
@@ -55,7 +55,7 @@ export function RulesView() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.06 }}
-              className="rounded-[28px] border bg-card/90 p-5"
+              className="rounded-[28px] border bg-card p-5"
               style={{ borderColor: `${rule.tone}55`, boxShadow: `0 6px 0 ${rule.tone}33` }}
             >
               <div className="flex items-center justify-between gap-3">
@@ -78,9 +78,10 @@ export function RulesView() {
           );
         })}
       </div>
-      <p className="rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-sm leading-relaxed text-muted-foreground">
-        Scores sit between 0 and 55 for each unit. The Master Vault adds all three, and 130 opens
-        the principal haircut. A full track stays full. A strike cannot push a unit below zero.
+      <p className="rounded-2xl border border-black/10 bg-white/70 px-4 py-3 text-sm leading-relaxed text-muted-foreground">
+        Each unit has 50 ticks. Laser tag waits at 20 and ice cream at 35. Teacher takedowns at
+        25, 30, 40, 45, and 50 stay a secret until the day. A full track stays full. A strike
+        cannot push a unit below zero.
       </p>
     </div>
   );

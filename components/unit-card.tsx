@@ -27,10 +27,10 @@ export function UnitCard({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.08, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-      className="relative flex flex-col rounded-[28px] border bg-card/95 p-4 shadow-[0_16px_40px_rgba(0,0,0,0.25)] sm:p-5"
+      className="relative flex flex-col rounded-[28px] border bg-card p-4 sm:p-5"
       style={{
         borderColor: `${unit.color}66`,
-        boxShadow: `0 8px 0 ${unit.deep}, 0 18px 40px rgba(0,0,0,0.25)`,
+        boxShadow: `0 8px 0 ${unit.deep}`,
       }}
     >
       <div className="flex items-start justify-between gap-3">
@@ -63,7 +63,7 @@ export function UnitCard({
         <p className="pb-1 font-display text-2xl text-muted-foreground tabular-nums">/ {UNIT_MAX}</p>
       </div>
 
-      <div className="mt-3 h-3 overflow-hidden rounded-full bg-white/8">
+      <div className="mt-3 h-3 overflow-hidden rounded-full bg-black/10">
         <motion.div
           className="h-full rounded-full"
           style={{ backgroundColor: unit.color }}
@@ -77,27 +77,32 @@ export function UnitCard({
         <BlockMatrix score={score} color={unit.color} label={unit.code} />
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-1.5">
+      <div className="mt-4 flex flex-wrap gap-1.5">
         {CLASS_MILESTONES.map((milestone) => {
           const reached = score >= milestone.points;
+          const label = milestone.secret && !reached ? "?" : milestone.short;
           return (
             <div
               key={milestone.points}
-              className="rounded-xl px-2 py-1.5 text-center"
+              className="min-w-[4.5rem] flex-1 rounded-xl px-2 py-1.5 text-center"
               style={{
-                background: reached ? unit.color : "rgba(255,255,255,0.04)",
-                color: reached ? unit.ink : "#b7c0d6",
+                background: reached ? unit.color : "rgba(42,34,24,0.05)",
+                color: reached ? unit.ink : "#6b5844",
               }}
             >
               <p className="text-[10px] font-extrabold tracking-wide uppercase">{milestone.points}</p>
-              <p className="font-display text-[11px] leading-tight sm:text-xs">{milestone.short}</p>
+              <p className="font-display text-[11px] leading-tight sm:text-xs">{label}</p>
             </div>
           );
         })}
       </div>
 
       <p className="mt-3 text-sm text-muted-foreground">
-        {next ? `${next.points - score} to ${next.short}.` : "Every space on this track is lit."}
+        {next
+          ? next.secret
+            ? `${next.points - score} ticks to a secret teacher takedown.`
+            : `${next.points - score} ticks to ${next.title}.`
+          : "Every tick on this track is lit."}
       </p>
     </motion.article>
   );

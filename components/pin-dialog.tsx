@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { PIN_LENGTH } from "@/lib/game";
 import { cn } from "@/lib/utils";
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"] as const;
@@ -43,13 +44,13 @@ export function PinDialog({
   function pushDigit(digit: string) {
     if (busy || lockedFor > 0) return;
     setMessage("");
-    const next = (pin + digit).slice(0, 4);
+    const next = (pin + digit).slice(0, PIN_LENGTH);
     setPin(next);
-    if (next.length === 4) void submit(next);
+    if (next.length === PIN_LENGTH) void submit(next);
   }
 
   async function submit(next: string) {
-    if (sending.current || next.length !== 4 || lockedFor > 0) return;
+    if (sending.current || next.length !== PIN_LENGTH || lockedFor > 0) return;
     sending.current = true;
     setBusy(true);
     try {
@@ -101,24 +102,26 @@ export function PinDialog({
       <DialogContent className="sm:max-w-[380px]">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">Yard duty desk</DialogTitle>
-          <DialogDescription>Four digits. Staff only. The board stays up for the school.</DialogDescription>
+          <DialogDescription>
+            Six digits. This device stays signed in until you lock the desk.
+          </DialogDescription>
         </DialogHeader>
         <div className={cn("flex flex-col gap-4", shake && "pin-shake")}>
           <Input
             value={pin}
             onValueChange={(value) => {
-              const next = value.replace(/\D/g, "").slice(0, 4);
+              const next = value.replace(/\D/g, "").slice(0, PIN_LENGTH);
               setPin(next);
               setMessage("");
-              if (next.length === 4) void submit(next);
+              if (next.length === PIN_LENGTH) void submit(next);
             }}
             inputMode="numeric"
             autoComplete="one-time-code"
-            maxLength={4}
+            maxLength={PIN_LENGTH}
             type="password"
-            aria-label="Four digit staff PIN"
+            aria-label="Six digit staff PIN"
             disabled={busy || lockedFor > 0}
-            className="h-14 text-center font-display text-2xl tracking-[0.55em]"
+            className="h-14 text-center font-display text-2xl tracking-[0.35em]"
           />
           <div className="grid grid-cols-3 gap-2">
             {KEYS.slice(0, 9).map((digit) => (
@@ -154,7 +157,7 @@ export function PinDialog({
               <Delete />
             </Button>
           </div>
-          <p className="min-h-5 text-center text-sm font-semibold text-[#ff8b8b]" role="status">
+          <p className="min-h-5 text-center text-sm font-semibold text-[#c23b3b]" role="status">
             {lockedFor > 0 ? `Pad resting · ${lockedFor}s` : message}
           </p>
         </div>
