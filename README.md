@@ -21,7 +21,7 @@ While `STAFF_PIN` is unset, the desk accepts **737373**. A custom pin must be si
 - **Prizes** is a landscape path to the highest honour.
 - **Yard Map** is the aerial of Milawa Primary.
 - **Rules** covers spot checks, strikes, and cross-class teamwork.
-- **Settings** (the cog) starts kiosk mode and sets how long each page stays up. Kiosk hides the header. Move the mouse or touch the screen and tap the X, or press Esc, to leave.
+- **Settings** (the cog) starts kiosk mode and sets how many seconds the board, prizes, map, and rules each stay up. Kiosk hides the header. Move the mouse or touch the screen and tap the X, or press Esc, to leave.
 
 ## Yard duty desk
 

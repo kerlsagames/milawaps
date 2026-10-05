@@ -10,11 +10,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { VIEWS } from "@/lib/game";
 import {
   MAX_DWELL_SECONDS,
   MIN_DWELL_SECONDS,
-  setDwellSeconds,
   setMutedPref,
+  setViewDwell,
   useDeskPrefs,
 } from "@/lib/desk-prefs";
 
@@ -39,26 +40,30 @@ export function KioskSettings({ onStart }: { onStart: () => void }) {
           <DialogHeader>
             <DialogTitle className="font-display text-2xl">Kiosk</DialogTitle>
             <DialogDescription>
-              The TV walks through the board, prizes, yard map, and rules. Move the mouse or touch
-              the screen, then tap the X at the top. Esc leaves too.
+              Set how long each page stays on the TV. Move the mouse or touch the screen, then tap
+              the X. Esc leaves too.
             </DialogDescription>
           </DialogHeader>
-          <label className="grid gap-2">
-            <span className="flex items-baseline justify-between gap-3 font-bold">
-              Each page stays on
-              <span className="font-display text-2xl tabular-nums">{prefs.dwellSeconds}s</span>
-            </span>
-            <input
-              type="range"
-              min={MIN_DWELL_SECONDS}
-              max={MAX_DWELL_SECONDS}
-              step={1}
-              value={prefs.dwellSeconds}
-              aria-label="Seconds each page stays on"
-              onChange={(event) => setDwellSeconds(Number(event.target.value))}
-              className="accent-[#e2a01a]"
-            />
-          </label>
+          <div className="grid gap-3">
+            {VIEWS.map((view) => (
+              <label key={view.id} className="grid grid-cols-[8.2rem_1fr_2.4rem] items-center gap-2">
+                <span className="truncate text-sm font-bold">{view.label}</span>
+                <input
+                  type="range"
+                  min={MIN_DWELL_SECONDS}
+                  max={MAX_DWELL_SECONDS}
+                  step={1}
+                  value={prefs.dwells[view.id]}
+                  aria-label={`${view.label} seconds`}
+                  onChange={(event) => setViewDwell(view.id, Number(event.target.value))}
+                  className="accent-[#e2a01a]"
+                />
+                <span className="text-right font-display text-lg tabular-nums">
+                  {prefs.dwells[view.id]}s
+                </span>
+              </label>
+            ))}
+          </div>
           <div className="flex items-center justify-between gap-3">
             <p className="font-bold">Sounds</p>
             <Button

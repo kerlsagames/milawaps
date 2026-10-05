@@ -43,7 +43,9 @@ export function YardBoard() {
     refreshInterval: 3000,
   });
   const prefs = useDeskPrefs();
-  const { kiosk, muted, token, dwellSeconds } = prefs;
+  const { kiosk, muted, token, dwells } = prefs;
+  const dwellsRef = useRef(dwells);
+  dwellsRef.current = dwells;
   const [view, setView] = useState<ViewId>("board");
   const [now, setNow] = useState(0);
   const [startedAt, setStartedAt] = useState(0);
@@ -91,7 +93,6 @@ export function YardBoard() {
 
   useEffect(() => {
     if (!kiosk) return;
-    const dwellMs = dwellSeconds * 1000;
     const id = window.setInterval(() => {
       const time = Date.now();
       setNow(time);
@@ -100,6 +101,7 @@ export function YardBoard() {
         setStartedAt(time);
         return;
       }
+      const dwellMs = dwellsRef.current[viewRef.current] * 1000;
       if (time - startedRef.current >= dwellMs) {
         const index = VIEWS.findIndex((item) => item.id === viewRef.current);
         const next = VIEWS[(index + 1) % VIEWS.length];
@@ -109,7 +111,7 @@ export function YardBoard() {
       }
     }, 200);
     return () => window.clearInterval(id);
-  }, [kiosk, dwellSeconds]);
+  }, [kiosk]);
 
   useEffect(() => {
     if (!kiosk) {
@@ -227,7 +229,7 @@ export function YardBoard() {
   const progress =
     !kiosk || startedAt === 0
       ? 0
-      : Math.max(0, Math.min(1, (now - startedAt) / (dwellSeconds * 1000)));
+      : Math.max(0, Math.min(1, (now - startedAt) / (dwells[view] * 1000)));
   const live = error && !data ? "offline" : data ? "live" : "loading";
 
   const scoreOrUnlock = useCallback(

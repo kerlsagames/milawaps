@@ -2,27 +2,36 @@
 
 import { useSyncExternalStore } from "react";
 import { setAudioMuted } from "@/lib/audio";
+import { VIEWS, type ViewId } from "@/lib/game";
 import { staffFromToken } from "@/lib/who";
 
 const TOKEN_KEY = "ott-token";
 const TOKEN_EXP_KEY = "ott-token-exp";
 
+export type DwellMap = Record<ViewId, number>;
+
 export type DeskPrefs = {
   kiosk: boolean;
   muted: boolean;
   token: string | null;
-  dwellSeconds: number;
+  dwells: DwellMap;
 };
 
 export const MIN_DWELL_SECONDS = 5;
 export const MAX_DWELL_SECONDS = 60;
-export const DEFAULT_DWELL_SECONDS = 12;
+
+export const DEFAULT_DWELLS: DwellMap = {
+  board: 14,
+  prizes: 10,
+  map: 10,
+  rules: 8,
+};
 
 const serverPrefs: DeskPrefs = {
   kiosk: false,
   muted: false,
   token: null,
-  dwellSeconds: DEFAULT_DWELL_SECONDS,
+  dwells: DEFAULT_DWELLS,
 };
 
 let current: DeskPrefs = serverPrefs;
@@ -41,10 +50,30 @@ function readToken(): string | null {
   return null;
 }
 
-function readDwell(): number {
-  const value = Number(window.localStorage.getItem("ott-kiosk-seconds"));
-  if (!Number.isFinite(value)) return DEFAULT_DWELL_SECONDS;
+function clampDwell(value: number, fallback: number) {
+  if (!Number.isFinite(value)) return fallback;
   return Math.max(MIN_DWELL_SECONDS, Math.min(MAX_DWELL_SECONDS, Math.round(value)));
+}
+
+function readDwells(): DwellMap {
+  const legacyRaw = window.localStorage.getItem("ott-kiosk-seconds");
+  const legacy = legacyRaw == null ? null : Number(legacyRaw);
+  let stored: Partial<DwellMap> = {};
+  try {
+    const raw = window.localStorage.getItem("ott-kiosk-dwells");
+    if (raw) stored = JSON.parse(raw) as Partial<DwellMap>;
+  } catch {
+    stored = {};
+  }
+  const dwells = { ...DEFAULT_DWELLS };
+  for (const view of VIEWS) {
+    const saved = stored[view.id];
+    if (typeof saved === "number") dwells[view.id] = clampDwell(saved, DEFAULT_DWELLS[view.id]);
+    else if (legacy != null && Number.isFinite(legacy)) {
+      dwells[view.id] = clampDwell(legacy, DEFAULT_DWELLS[view.id]);
+    }
+  }
+  return dwells;
 }
 
 function readPrefs(): DeskPrefs {
@@ -52,7 +81,7 @@ function readPrefs(): DeskPrefs {
     kiosk: window.localStorage.getItem("ott-kiosk") === "1",
     muted: window.localStorage.getItem("ott-muted") === "1",
     token: readToken(),
-    dwellSeconds: readDwell(),
+    dwells: readDwells(),
   };
 }
 
@@ -87,13 +116,13 @@ export function setMutedPref(muted: boolean) {
   publish({ ...readPrefs(), muted });
 }
 
-export function setDwellSeconds(seconds: number) {
-  const dwellSeconds = Math.max(
-    MIN_DWELL_SECONDS,
-    Math.min(MAX_DWELL_SECONDS, Math.round(seconds)),
-  );
-  window.localStorage.setItem("ott-kiosk-seconds", String(dwellSeconds));
-  publish({ ...readPrefs(), dwellSeconds });
+export function setViewDwell(view: ViewId, seconds: number) {
+  const dwells = {
+    ...readDwells(),
+    [view]: clampDwell(seconds, DEFAULT_DWELLS[view]),
+  };
+  window.localStorage.setItem("ott-kiosk-dwells", JSON.stringify(dwells));
+  publish({ ...readPrefs(), dwells });
 }
 
 export function saveToken(token: string, expiresAt: number) {
