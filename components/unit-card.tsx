@@ -34,26 +34,37 @@ export function UnitCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      className="relative flex flex-col rounded-3xl border bg-card p-3"
+      className="@container relative flex flex-col overflow-hidden rounded-3xl border bg-card"
       style={{
         borderColor: `${unit.color}66`,
         boxShadow: `0 5px 0 ${unit.deep}`,
       }}
     >
-      <div className="flex items-start justify-between gap-2">
+      <div
+        className="flex items-center justify-between gap-3 px-4 py-4"
+        style={{ background: unit.color, color: unit.ink }}
+      >
         <div className="min-w-0">
-          <p className="font-display text-2xl leading-none" style={{ color: unit.color }}>
+          <p
+            className="font-display leading-[0.78] whitespace-nowrap"
+            style={{
+              fontSize: "min(9.5rem, calc((100cqi - 6.5rem) / 3))",
+              letterSpacing: "-0.04em",
+              textShadow: `0 5px 0 ${unit.deep}`,
+            }}
+          >
             {unit.code}
           </p>
-          <p className="mt-0.5 truncate text-xs font-bold text-muted-foreground">{unit.zoneLine}</p>
+          <p className="mt-1 truncate text-sm font-extrabold opacity-80">{unit.zoneLine}</p>
         </div>
-        <div className="flex items-end gap-1">
-          <p className="font-display text-5xl leading-none tabular-nums">{score}</p>
-          <p className="pb-1 font-display text-lg text-muted-foreground tabular-nums">/{UNIT_MAX}</p>
+        <div className="shrink-0 text-right">
+          <p className="font-display text-4xl leading-none tabular-nums sm:text-5xl">{score}</p>
+          <p className="font-display text-lg leading-none opacity-70 tabular-nums">/{UNIT_MAX}</p>
         </div>
       </div>
 
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-black/10">
+      <div className="flex flex-col p-3 pt-2">
+      <div className="h-2 overflow-hidden rounded-full bg-black/10">
         <motion.div
           className="h-full rounded-full"
           style={{ backgroundColor: unit.color }}
@@ -126,6 +137,7 @@ export function UnitCard({
         >
           −1
         </Button>
+      </div>
       </div>
     </motion.article>
   );
