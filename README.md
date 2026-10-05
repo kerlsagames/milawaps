@@ -17,10 +17,11 @@ While `STAFF_PIN` is unset, the desk accepts **737373**. A custom pin must be si
 
 ## On the TV
 
-- **Leaderboard** shows the school total and three unit cards on one screen. Each card has the grade, a circled tally, a 75-square track, crosses that do not erase ticks, and the +1, +3, and −1 buttons.
-- **Prizes** gives each class its own path to the highest honour.
+- **Leaderboard** shows the school tidy total out of 120 squares, a days-to-go clock when a finish time is set, and three unit cards on one screen. Each card has the grade, a circled tally, a 75-square track, a trophy on each prize square, crosses that do not erase ticks, and the +1, +3, and −1 buttons.
+- **Prizes** gives each class its own path. A takedown stays a lock until that class reaches it, then the stop shows a silhouette.
 - **Yard & Rules** puts the aerial on the left and the four scoring rules on the right.
-- **Settings** (the cog) starts kiosk mode and sets how many seconds the board, prizes, and yard page each stay up. Kiosk hides the header. Move the mouse or touch the screen and tap the X, or press Esc, to leave.
+- **Settings** (the cog) starts kiosk mode. Each page has a tick and a seconds slider. Untick a page to leave it out of the TV cycle. The cog also sets the finish date for the days-to-go clock. Kiosk hides the header. Move the mouse or touch the screen and tap the X, or press Esc, to leave.
+- **Prize reveals** are five extra pages, Teacher Takedown #1 to #5. Unlock the yard duty desk, then set each reveal date, the prize line, and the show tick. Before that moment the page counts down on the silhouette. When the time arrives the card flips and shows the prize. A cartoon can sit at `public/reveals/takedown-1.jpg` through `takedown-5.jpg`.
 
 ## Yard duty desk
 
@@ -35,7 +36,7 @@ The padlock in the header opens the name list, then a 6-digit code pad. After th
 
 Scores clamp between 0 and 75. A strike lowers the tally by one and adds a cross. It does not wipe a tick off the sheet. Taps play a short Web Audio synth tone in the browser. No audio files are shipped.
 
-Class prizes, per unit: 20 laser tag, 25 teacher takedown, 30 two takedowns, 35 ice cream, then 40, 45, and 50 for three, four, and five takedowns. The takedown envelopes do not say what happens. Staff can open **Mystery ideas** on the desk for pie, ice bucket, and dress-up prompts. Those lines never appear on the TV.
+Class prizes, per unit: 20 laser tag, 25 Teacher Takedown #1, 30 Teacher Takedown #2, 35 ice cream, 40 Teacher Takedown #3, 45 Teacher Takedown #4, and 50 Teacher Takedown #5. The takedown stops do not say what happens. Staff can open **Mystery ideas** on the desk for pie, ice bucket, and dress-up prompts. Those lines never appear on the TV.
 
 ## Deploy on Vercel
 

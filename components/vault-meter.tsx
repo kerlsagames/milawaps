@@ -1,10 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { VAULT_TARGET } from "@/lib/game";
+import { SCHOOL_GOAL } from "@/lib/game";
 import { Button } from "@/components/ui/button";
-
-const DISPLAY_MAX = 100;
 
 export function VaultMeter({
   vault,
@@ -13,18 +11,19 @@ export function VaultMeter({
   vault: number;
   onTeamwork: () => void;
 }) {
-  const percent = Math.max(0, Math.min(DISPLAY_MAX, Math.round((vault / VAULT_TARGET) * DISPLAY_MAX)));
-  const full = percent >= DISPLAY_MAX;
+  const total = Math.max(0, vault);
+  const fill = Math.max(0, Math.min(100, (total / SCHOOL_GOAL) * 100));
+  const full = total >= SCHOOL_GOAL;
 
   return (
     <section className="flex items-center gap-3 rounded-[28px] border-4 border-[#f5b942] bg-card px-3 py-3 shadow-[0_8px_0_#c48a16] sm:gap-4 sm:px-4">
       <div
         className="grid size-24 shrink-0 place-items-center rounded-full bg-[#f5b942] text-[#2a1c04] shadow-[0_5px_0_#a86a12] sm:size-32"
-        aria-label={`School tidy total ${percent} out of ${DISPLAY_MAX}`}
+        aria-label={`School tidy total ${total} out of ${SCHOOL_GOAL}`}
       >
         <div className="text-center">
-          <p className="font-display text-5xl leading-none tabular-nums sm:text-6xl">{percent}</p>
-          <p className="text-xs font-extrabold tracking-wide">/ {DISPLAY_MAX}</p>
+          <p className="font-display text-5xl leading-none tabular-nums sm:text-6xl">{total}</p>
+          <p className="text-xs font-extrabold tracking-wide">/ {SCHOOL_GOAL}</p>
         </div>
       </div>
       <div className="min-w-0 flex-1">
@@ -38,7 +37,7 @@ export function VaultMeter({
               background: "linear-gradient(90deg, #f5b942, #2ec9a0, #8b7cf7)",
             }}
             initial={false}
-            animate={{ width: `${percent}%` }}
+            animate={{ width: `${fill}%` }}
             transition={{ type: "spring", stiffness: 90, damping: 18 }}
           />
         </div>

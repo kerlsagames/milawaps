@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import {
-  CLASS_MILESTONES,
   UNIT_MAX,
   nextClassMilestone,
   type ScoreAction,
@@ -79,32 +78,10 @@ export function UnitCard({
         <BlockMatrix score={score} crosses={crosses} color={unit.color} label={unit.code} />
       </div>
 
-      <div className="mt-2 grid grid-cols-7 gap-1">
-        {CLASS_MILESTONES.map((milestone) => {
-          const reached = score >= milestone.points;
-          const label = milestone.secret && !reached ? "?" : milestone.short;
-          return (
-            <div
-              key={milestone.points}
-              className="rounded-lg px-1 py-1 text-center"
-              style={{
-                background: reached ? unit.color : "rgba(42,34,24,0.05)",
-                color: reached ? unit.ink : "#6b5844",
-              }}
-            >
-              <p className="text-[9px] font-extrabold leading-none">{milestone.points}</p>
-              <p className="font-display text-[10px] leading-tight">{label}</p>
-            </div>
-          );
-        })}
-      </div>
-
-      <p className="mt-1.5 truncate text-xs text-muted-foreground">
+      <p className="mt-2 truncate text-xs text-muted-foreground">
         {crosses > 0 ? `${crosses} cross${crosses === 1 ? "" : "es"} · ` : ""}
         {next
-          ? next.secret
-            ? `${next.points - score} to a secret takedown`
-            : `${next.points - score} to ${next.title}`
+          ? `${next.points - score} to ${next.title}`
           : complete
             ? "Sheet full"
             : `${UNIT_MAX - score} squares left`}

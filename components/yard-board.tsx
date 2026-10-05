@@ -8,11 +8,13 @@ import { LeaderboardView } from "@/components/leaderboard-view";
 import { YardRulesView } from "@/components/yard-rules-view";
 import { PinDialog } from "@/components/pin-dialog";
 import { PrizesView } from "@/components/prizes-view";
+import { RevealView } from "@/components/reveal-view";
 import { SiteHeader } from "@/components/site-header";
 import { StaffHud } from "@/components/staff-hud";
 import { Button } from "@/components/ui/button";
 import { playAction, playChime, playError, playFanfare } from "@/lib/audio";
 import { clearToken, saveToken, setKioskPref, setMutedPref, useDeskPrefs } from "@/lib/desk-prefs";
+import { kioskScreens, revealById, REVEALS, type ScreenId } from "@/lib/reveals";
 import { cn } from "@/lib/utils";
 import {
   UNIT_IDS,
@@ -24,7 +26,6 @@ import {
   type MilestoneEvent,
   type PublicBoard,
   type UnitId,
-  type ViewId,
 } from "@/lib/game";
 import { milestonesBetween } from "@/lib/scoring";
 import { staffFromToken } from "@/lib/who";
@@ -42,10 +43,13 @@ export function YardBoard() {
     refreshInterval: 3000,
   });
   const prefs = useDeskPrefs();
-  const { kiosk, muted, token, dwells } = prefs;
+  const { kiosk, muted, token, dwells, shown } = prefs;
   const dwellsRef = useRef(dwells);
   dwellsRef.current = dwells;
-  const [view, setView] = useState<ViewId>("board");
+  const playlist = kioskScreens(shown);
+  const playlistRef = useRef(playlist);
+  playlistRef.current = playlist;
+  const [view, setView] = useState<ScreenId>("board");
   const [now, setNow] = useState(0);
   const [startedAt, setStartedAt] = useState(0);
   const [exitVisible, setExitVisible] = useState(false);
@@ -55,7 +59,7 @@ export function YardBoard() {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const startedRef = useRef(0);
-  const viewRef = useRef<ViewId>("board");
+  const viewRef = useRef<ScreenId>("board");
   const exitTimer = useRef<number | null>(null);
   const sawFullscreen = useRef(false);
   const seenUnits = useRef<Record<UnitId, number> | null>(null);
@@ -100,13 +104,14 @@ export function YardBoard() {
         setStartedAt(time);
         return;
       }
-      const dwellMs = dwellsRef.current[viewRef.current] * 1000;
+      const dwellMs = (dwellsRef.current[viewRef.current] ?? 12) * 1000;
       if (time - startedRef.current >= dwellMs) {
-        const index = VIEWS.findIndex((item) => item.id === viewRef.current);
-        const next = VIEWS[(index + 1) % VIEWS.length];
+        const screens = playlistRef.current;
+        const index = screens.indexOf(viewRef.current);
+        const next = screens[(index + 1) % screens.length];
         startedRef.current = time;
         setStartedAt(time);
-        setView(next.id);
+        setView(next);
       }
     }, 200);
     return () => window.clearInterval(id);
@@ -176,7 +181,7 @@ export function YardBoard() {
     return () => window.clearTimeout(id);
   }, [toasts]);
 
-  const chooseView = useCallback((next: ViewId) => {
+  const chooseView = useCallback((next: ScreenId) => {
     const time = Date.now();
     startedRef.current = time;
     setStartedAt(time);
@@ -228,8 +233,9 @@ export function YardBoard() {
   const progress =
     !kiosk || startedAt === 0
       ? 0
-      : Math.max(0, Math.min(1, (now - startedAt) / (dwells[view] * 1000)));
+      : Math.max(0, Math.min(1, (now - startedAt) / ((dwells[view] ?? 12) * 1000)));
   const live = error && !data ? "offline" : data ? "live" : "loading";
+  const activeReveal = revealById(view);
 
   const scoreOrUnlock = useCallback(
     (action: ActionId, unitId?: UnitId) => {
@@ -248,6 +254,14 @@ export function YardBoard() {
       {!kiosk && (
         <SiteHeader
           view={view}
+          tabs={[
+            ...VIEWS.map((item) => ({ id: item.id, label: item.label, short: item.short })),
+            ...REVEALS.filter((item) => shown[item.id] || view === item.id).map((item) => ({
+              id: item.id,
+              label: item.title,
+              short: `#${item.n}`,
+            })),
+          ]}
           onView={chooseView}
           authed={Boolean(token)}
           dutyName={dutyName}
@@ -308,6 +322,7 @@ export function YardBoard() {
       <main
         className={cn(
           "relative mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col overflow-y-auto px-3 py-2 lg:overflow-hidden lg:px-4",
+          view === "prizes" && "max-w-none",
           kiosk && "pt-16",
         )}
       >
@@ -341,6 +356,13 @@ export function YardBoard() {
                 )}
                 {view === "prizes" && <PrizesView board={data} />}
                 {view === "yard" && <YardRulesView />}
+                {activeReveal && (
+                  <RevealView
+                    reveal={activeReveal}
+                    revealAt={prefs.reveals[activeReveal.id].at}
+                    prize={prefs.reveals[activeReveal.id].prize}
+                  />
+                )}
               </TvFit>
             </motion.div>
           </AnimatePresence>

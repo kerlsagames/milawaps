@@ -159,7 +159,7 @@ export function StaffHud({
               ))}
             </ul>
             <p className="mt-2 text-xs font-semibold text-[#8a5a00]">
-              Keep these off the TV. Kids only see a sealed takedown.
+              Keep these off the TV until that takedown’s reveal date. Kids see a silhouette before then.
             </p>
           </details>
 

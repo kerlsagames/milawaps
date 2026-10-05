@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Crosshair, Crown, IceCreamCone, LockKeyhole } from "lucide-react";
+import { Crosshair, IceCreamCone, LockKeyhole } from "lucide-react";
 import {
   CLASS_MILESTONES,
   UNITS,
@@ -13,6 +13,12 @@ import {
 
 const HIGHEST = CLASS_MILESTONES[CLASS_MILESTONES.length - 1]?.points ?? 50;
 const NODE = "clamp(3.4rem, 10vh, 6.25rem)";
+const FACES = ["/mystery-teacher-a.jpg", "/mystery-teacher-b.jpg"];
+
+function secretFace(points: number) {
+  const index = CLASS_MILESTONES.filter((item) => item.secret).findIndex((item) => item.points === points);
+  return FACES[(index < 0 ? 0 : index) % FACES.length];
+}
 
 export function PrizesView({ board }: { board: PublicBoard }) {
   return (
@@ -33,58 +39,51 @@ export function PrizesView({ board }: { board: PublicBoard }) {
 
 function ClassPath({ unit, score }: { unit: UnitTheme; score: number }) {
   const next = nextClassMilestone(score);
-  const status = !next
-    ? "At the honour"
-    : next.secret
-      ? `${next.points - score} to the next stop`
-      : `${next.points - score} to ${next.title}`;
+  const status = !next ? "At the honour" : `${next.points - score} to ${next.title}`;
   const fraction = pathFraction(score);
 
   return (
     <section
-      className="flex flex-1 items-center gap-3 rounded-[28px] border-4 bg-card px-3 py-3 sm:gap-4 sm:px-4"
+      className="flex flex-1 items-center gap-2 rounded-[28px] border-4 bg-card px-2 py-3 sm:gap-3 sm:px-3"
       style={{ borderColor: unit.color }}
     >
       <div
-        className="grid w-[5.5rem] shrink-0 place-items-center self-stretch rounded-3xl px-1 py-3 text-center sm:w-36"
+        className="flex shrink-0 flex-col items-center justify-center gap-2 self-stretch rounded-3xl px-2 py-2"
         style={{ background: unit.color, color: unit.ink }}
       >
-        <div>
-          <p className="font-display text-3xl leading-none sm:text-5xl">{unit.code}</p>
-          <p className="mt-2 font-display text-4xl leading-none tabular-nums sm:text-6xl">{score}</p>
-        </div>
+        <p className="font-display text-2xl leading-none whitespace-nowrap sm:text-3xl">{unit.code}</p>
+        <p
+          className="grid size-14 place-items-center rounded-full bg-[#fffdf8] font-display text-3xl leading-none tabular-nums shadow-[0_3px_0_rgba(42,28,4,0.28)] sm:size-[4.25rem] sm:text-4xl"
+          aria-label={`${unit.code} tally ${score}`}
+        >
+          {score}
+        </p>
       </div>
 
-      <div className="relative min-w-0 flex-1">
+      <div className="relative min-w-0 flex-1 [--stop:4.5rem] sm:[--stop:5.75rem]">
         <div
-          className="absolute right-5 left-5 h-4 -translate-y-1/2 rounded-full bg-[#f3e2c0]"
-          style={{ top: `calc(${NODE} / 2)` }}
+          className="absolute h-4 -translate-y-1/2 rounded-full bg-[#f3e2c0]"
+          style={{ top: `calc(${NODE} / 2)`, left: "calc(var(--stop) / 2)", right: "calc(var(--stop) / 2)" }}
         />
         <motion.div
-          className="absolute left-5 h-4 -translate-y-1/2 rounded-full"
-          style={{ top: `calc(${NODE} / 2)`, background: unit.color }}
+          className="absolute h-4 -translate-y-1/2 rounded-full"
+          style={{ top: `calc(${NODE} / 2)`, left: "calc(var(--stop) / 2)", background: unit.color }}
           initial={false}
-          animate={{ width: `calc((100% - 2.5rem) * ${fraction})` }}
+          animate={{ width: `calc((100% - var(--stop)) * ${fraction})` }}
           transition={{ type: "spring", stiffness: 90, damping: 18 }}
         />
         <span
           className="absolute size-7 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-white shadow"
           style={{
             top: `calc(${NODE} / 2)`,
-            left: `calc(1.25rem + (100% - 2.5rem) * ${fraction})`,
+            left: `calc(var(--stop) / 2 + (100% - var(--stop)) * ${fraction})`,
             background: unit.color,
           }}
           aria-hidden="true"
         />
-        <ol className="relative grid grid-cols-7 gap-1">
-          {CLASS_MILESTONES.map((milestone, index) => (
-            <Stop
-              key={milestone.points}
-              milestone={milestone}
-              score={score}
-              unit={unit}
-              last={index === CLASS_MILESTONES.length - 1}
-            />
+        <ol className="relative flex items-start justify-between">
+          {CLASS_MILESTONES.map((milestone) => (
+            <Stop key={milestone.points} milestone={milestone} score={score} unit={unit} />
           ))}
         </ol>
         <p className="mt-2 text-center text-sm font-extrabold sm:text-base" style={{ color: unit.deep }}>
@@ -99,42 +98,38 @@ function Stop({
   milestone,
   score,
   unit,
-  last,
 }: {
   milestone: Milestone;
   score: number;
   unit: UnitTheme;
-  last: boolean;
 }) {
   const reached = score >= milestone.points;
-  const secret = milestone.secret && !reached && !last;
-  const title = last
-    ? "Honour"
-    : secret
-      ? "Secret"
-      : milestone.points === 20
-        ? "Laser"
-        : milestone.points === 35
-          ? "Ice cream"
-          : milestone.short;
-  const Icon = last ? Crown : milestone.points === 35 ? IceCreamCone : milestone.points === 20 ? Crosshair : LockKeyhole;
+  const locked = milestone.secret && !reached;
+  const revealed = milestone.secret && reached;
+  const title =
+    milestone.points === 20 ? "Laser" : milestone.points === 35 ? "Ice cream" : milestone.short;
+  const Icon = milestone.points === 35 ? IceCreamCone : milestone.points === 20 ? Crosshair : LockKeyhole;
   const next = nextClassMilestone(score);
   const aiming = next?.points === milestone.points;
 
   return (
-    <li className="flex flex-col items-center text-center">
+    <li className="flex w-[var(--stop)] flex-col items-center text-center">
       <div
-        className="grid place-items-center rounded-full border-4"
+        className="grid place-items-center overflow-hidden rounded-full border-4"
         style={{
           width: NODE,
           height: NODE,
-          background: reached ? (last ? "#2a1c04" : unit.color) : secret ? "#2a1c04" : "#fffdf8",
-          color: reached ? (last ? "#ffe08a" : unit.ink) : secret ? "#ffe08a" : "#6b5844",
+          background: revealed ? "#efe6d6" : reached ? unit.color : locked ? "#2a1c04" : "#fffdf8",
+          color: reached ? unit.ink : locked ? "#ffe08a" : "#6b5844",
           borderColor: aiming ? unit.deep : reached ? unit.deep : "rgba(42,34,24,0.12)",
           boxShadow: aiming ? `0 0 0 4px ${unit.color}` : undefined,
         }}
       >
-        <Icon className="size-7 sm:size-9" />
+        {revealed ? (
+          <img src={secretFace(milestone.points)} alt="" className="size-full object-cover" />
+        ) : (
+          <Icon className="size-7 sm:size-9" />
+        )}
       </div>
       <p className="mt-1.5 text-sm leading-none font-extrabold tabular-nums">{milestone.points}</p>
       <p className="text-xs leading-tight font-bold text-muted-foreground sm:text-sm">{title}</p>

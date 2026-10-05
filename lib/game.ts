@@ -4,6 +4,8 @@ export type UnitId = (typeof UNIT_IDS)[number];
 
 export const UNIT_MAX = 75;
 export const VAULT_TARGET = 225;
+/** School meter fills when the three classes add up to this many squares. */
+export const SCHOOL_GOAL = 120;
 export const PIN_LENGTH = 6;
 
 export const VIEWS = [
@@ -94,16 +96,16 @@ export const CLASS_MILESTONES: Milestone[] = [
   },
   {
     points: 25,
-    title: "Teacher Takedown",
-    short: "Takedown",
-    detail: "One secret teacher takedown. The class finds out on the day.",
+    title: "Teacher Takedown #1",
+    short: "Takedown #1",
+    detail: "Teacher Takedown #1. The class finds out on the day.",
     secret: true,
   },
   {
     points: 30,
-    title: "2× Teacher Takedown",
-    short: "2× Takedown",
-    detail: "Two secret teacher takedowns. Still no spoilers.",
+    title: "Teacher Takedown #2",
+    short: "Takedown #2",
+    detail: "Teacher Takedown #2. Still no spoilers.",
     secret: true,
   },
   {
@@ -115,23 +117,23 @@ export const CLASS_MILESTONES: Milestone[] = [
   },
   {
     points: 40,
-    title: "3× Teacher Takedown",
-    short: "3× Takedown",
-    detail: "Three secret teacher takedowns. The teachers look nervous.",
+    title: "Teacher Takedown #3",
+    short: "Takedown #3",
+    detail: "Teacher Takedown #3. The teachers look nervous.",
     secret: true,
   },
   {
     points: 45,
-    title: "4× Teacher Takedown",
-    short: "4× Takedown",
-    detail: "Four secret teacher takedowns. Nobody gets a hint.",
+    title: "Teacher Takedown #4",
+    short: "Takedown #4",
+    detail: "Teacher Takedown #4. Nobody gets a hint.",
     secret: true,
   },
   {
     points: 50,
-    title: "5× Teacher Takedown",
-    short: "5× Takedown",
-    detail: "Five secret teacher takedowns. The full takeover.",
+    title: "Teacher Takedown #5",
+    short: "Takedown #5",
+    detail: "Teacher Takedown #5. The full takeover.",
     secret: true,
   },
 ];

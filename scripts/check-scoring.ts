@@ -30,7 +30,7 @@ const secret = applyAction(
   4_100,
 );
 assert.equal(secret.state.units["234"], 25);
-assert.equal(secret.events[0]?.title, "Teacher Takedown");
+assert.equal(secret.events[0]?.title, "Teacher Takedown #1");
 assert.equal(secret.events[0]?.secret, true);
 assert.equal(secret.events.some((event) => event.scope === "vault"), false);
 
@@ -72,7 +72,7 @@ const fullSchool = applyAction(
 );
 assert.equal(vaultTotal(fullSchool.state.units), 150);
 assert.equal(fullSchool.events.filter((event) => event.scope === "vault").length, 0);
-assert.equal(fullSchool.events[0]?.title, "5× Teacher Takedown");
+assert.equal(fullSchool.events[0]?.title, "Teacher Takedown #5");
 
 const reset = applyAction(fullSchool.state, "reset", undefined, "hunter", 9_000);
 assert.equal(vaultTotal(reset.state.units), 0);

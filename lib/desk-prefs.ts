@@ -2,19 +2,37 @@
 
 import { useSyncExternalStore } from "react";
 import { setAudioMuted } from "@/lib/audio";
-import { VIEWS, type ViewId } from "@/lib/game";
+import { VIEWS } from "@/lib/game";
+import {
+  DEFAULT_SHOWN,
+  REVEALS,
+  SCREEN_IDS,
+  type RevealId,
+  type ScreenId,
+  type ShownMap,
+} from "@/lib/reveals";
 import { staffFromToken } from "@/lib/who";
 
 const TOKEN_KEY = "ott-token";
 const TOKEN_EXP_KEY = "ott-token-exp";
 
-export type DwellMap = Record<ViewId, number>;
+export type DwellMap = Record<ScreenId, number>;
+
+export type RevealPrefs = {
+  at: number | null;
+  prize: string;
+};
+
+export type RevealMap = Record<RevealId, RevealPrefs>;
 
 export type DeskPrefs = {
   kiosk: boolean;
   muted: boolean;
   token: string | null;
   dwells: DwellMap;
+  finishAt: number | null;
+  shown: ShownMap;
+  reveals: RevealMap;
 };
 
 export const MIN_DWELL_SECONDS = 5;
@@ -24,13 +42,27 @@ export const DEFAULT_DWELLS: DwellMap = {
   board: 14,
   prizes: 12,
   yard: 12,
+  "reveal-1": 12,
+  "reveal-2": 12,
+  "reveal-3": 12,
+  "reveal-4": 12,
+  "reveal-5": 12,
 };
+
+function defaultReveals(): RevealMap {
+  return Object.fromEntries(
+    REVEALS.map((reveal) => [reveal.id, { at: null, prize: reveal.prize }]),
+  ) as RevealMap;
+}
 
 const serverPrefs: DeskPrefs = {
   kiosk: false,
   muted: false,
   token: null,
   dwells: DEFAULT_DWELLS,
+  finishAt: null,
+  shown: DEFAULT_SHOWN,
+  reveals: defaultReveals(),
 };
 
 let current: DeskPrefs = serverPrefs;
@@ -65,16 +97,53 @@ function readDwells(): DwellMap {
     stored = {};
   }
   const dwells = { ...DEFAULT_DWELLS };
-  for (const view of VIEWS) {
-    const saved = stored[view.id];
-    const previous =
-      view.id === "yard" && typeof saved !== "number" ? stored.map ?? stored.rules : saved;
-    if (typeof previous === "number") dwells[view.id] = clampDwell(previous, DEFAULT_DWELLS[view.id]);
-    else if (legacy != null && Number.isFinite(legacy)) {
-      dwells[view.id] = clampDwell(legacy, DEFAULT_DWELLS[view.id]);
+  for (const id of SCREEN_IDS) {
+    const saved = stored[id];
+    const previous = id === "yard" && typeof saved !== "number" ? stored.map ?? stored.rules : saved;
+    if (typeof previous === "number") dwells[id] = clampDwell(previous, DEFAULT_DWELLS[id]);
+    else if (legacy != null && Number.isFinite(legacy) && VIEWS.some((view) => view.id === id)) {
+      dwells[id] = clampDwell(legacy, DEFAULT_DWELLS[id]);
     }
   }
   return dwells;
+}
+
+function readShown(): ShownMap {
+  let stored: Record<string, unknown> = {};
+  try {
+    const raw = window.localStorage.getItem("ott-kiosk-shown");
+    if (raw) stored = JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    stored = {};
+  }
+  const shown = { ...DEFAULT_SHOWN };
+  for (const id of SCREEN_IDS) {
+    if (typeof stored[id] === "boolean") shown[id] = stored[id];
+  }
+  return shown;
+}
+
+function readReveals(): RevealMap {
+  let stored: Record<string, { at?: unknown; prize?: unknown }> = {};
+  try {
+    const raw = window.localStorage.getItem("ott-reveals");
+    if (raw) stored = JSON.parse(raw) as Record<string, { at?: unknown; prize?: unknown }>;
+  } catch {
+    stored = {};
+  }
+  const reveals = defaultReveals();
+  for (const reveal of REVEALS) {
+    const saved = stored[reveal.id];
+    const at = typeof saved?.at === "number" && Number.isFinite(saved.at) && saved.at > 0 ? saved.at : null;
+    const prize = typeof saved?.prize === "string" ? saved.prize : reveal.prize;
+    reveals[reveal.id] = { at, prize };
+  }
+  return reveals;
+}
+
+function readFinish(): number | null {
+  const value = Number(window.localStorage.getItem("ott-finish-at"));
+  return Number.isFinite(value) && value > 0 ? value : null;
 }
 
 function readPrefs(): DeskPrefs {
@@ -83,6 +152,9 @@ function readPrefs(): DeskPrefs {
     muted: window.localStorage.getItem("ott-muted") === "1",
     token: readToken(),
     dwells: readDwells(),
+    finishAt: readFinish(),
+    shown: readShown(),
+    reveals: readReveals(),
   };
 }
 
@@ -117,13 +189,46 @@ export function setMutedPref(muted: boolean) {
   publish({ ...readPrefs(), muted });
 }
 
-export function setViewDwell(view: ViewId, seconds: number) {
+export function setFinishAt(finishAt: number | null) {
+  if (finishAt == null || !Number.isFinite(finishAt)) {
+    window.localStorage.removeItem("ott-finish-at");
+    publish({ ...readPrefs(), finishAt: null });
+    return;
+  }
+  window.localStorage.setItem("ott-finish-at", String(finishAt));
+  publish({ ...readPrefs(), finishAt });
+}
+
+export function setViewDwell(view: ScreenId, seconds: number) {
   const dwells = {
     ...readDwells(),
     [view]: clampDwell(seconds, DEFAULT_DWELLS[view]),
   };
   window.localStorage.setItem("ott-kiosk-dwells", JSON.stringify(dwells));
   publish({ ...readPrefs(), dwells });
+}
+
+export function setScreenShown(screen: ScreenId, shown: boolean) {
+  const next = { ...readShown(), [screen]: shown };
+  window.localStorage.setItem("ott-kiosk-shown", JSON.stringify(next));
+  publish({ ...readPrefs(), shown: next });
+}
+
+export function setRevealAt(id: RevealId, at: number | null) {
+  const reveals = readReveals();
+  reveals[id] = {
+    ...reveals[id],
+    at: at != null && Number.isFinite(at) ? at : null,
+  };
+  window.localStorage.setItem("ott-reveals", JSON.stringify(reveals));
+  publish({ ...readPrefs(), reveals });
+}
+
+export function setRevealPrize(id: RevealId, prize: string) {
+  const reveals = readReveals();
+  reveals[id] = { ...reveals[id], prize };
+  window.localStorage.setItem("ott-reveals", JSON.stringify(reveals));
+  publish({ ...readPrefs(), reveals });
 }
 
 export function saveToken(token: string, expiresAt: number) {

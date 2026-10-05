@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Gift, Lock, LockOpen, Map, PartyPopper, Trophy, Volume2, VolumeX } from "lucide-react";
+import { Gift, Lock, LockOpen, Map, PartyPopper, Sparkles, Trophy, Volume2, VolumeX } from "lucide-react";
 import { KioskSettings } from "@/components/kiosk-settings";
-import { VIEWS, type ViewId } from "@/lib/game";
+import type { ScreenId } from "@/lib/reveals";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +15,7 @@ const icons = {
 
 export function SiteHeader({
   view,
+  tabs,
   onView,
   authed,
   dutyName,
@@ -24,8 +25,9 @@ export function SiteHeader({
   live,
   onStartKiosk,
 }: {
-  view: ViewId;
-  onView: (view: ViewId) => void;
+  view: ScreenId;
+  tabs: { id: ScreenId; label: string; short: string }[];
+  onView: (view: ScreenId) => void;
   authed: boolean;
   dutyName: string | null;
   onLockClick: () => void;
@@ -87,7 +89,12 @@ export function SiteHeader({
         >
           {muted ? <VolumeX /> : <Volume2 />}
         </Button>
-        <KioskSettings onStart={onStartKiosk} />
+        <KioskSettings
+          onStart={onStartKiosk}
+          authed={authed}
+          onUnlock={onLockClick}
+          onPreview={onView}
+        />
         <Button
           variant={authed ? "default" : "outline"}
           aria-label={dutyName ? `Open yard duty desk for ${dutyName}` : "Unlock yard duty desk"}
@@ -100,8 +107,8 @@ export function SiteHeader({
       </div>
 
       <div className="flex gap-1 overflow-x-auto px-3 pb-2 sm:px-5" role="tablist" aria-label="Board views">
-        {VIEWS.map((item) => {
-          const Icon = icons[item.id];
+        {tabs.map((item) => {
+          const Icon = item.id in icons ? icons[item.id as keyof typeof icons] : Sparkles;
           const selected = item.id === view;
           return (
             <Button
