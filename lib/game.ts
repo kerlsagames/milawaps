@@ -2,8 +2,8 @@ export const UNIT_IDS = ["f1", "234", "56"] as const;
 
 export type UnitId = (typeof UNIT_IDS)[number];
 
-export const UNIT_MAX = 75;
-export const VAULT_TARGET = 225;
+export const UNIT_MAX = 80;
+export const VAULT_TARGET = 240;
 /** School meter fills when the three classes add up to this many squares. */
 export const SCHOOL_GOAL = 120;
 export const PIN_LENGTH = 6;

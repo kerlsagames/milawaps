@@ -38,7 +38,7 @@ const surge = applyAction(secret.state, "surge", "234", "ricky", 5_000);
 assert.equal(surge.state.units["234"], 27);
 
 const capped = applyAction(
-  { ...start, units: { f1: 74, "234": 75, "56": 75 } },
+  { ...start, units: { f1: 79, "234": 80, "56": 80 } },
   "teamwork",
   undefined,
   "tiff",
@@ -46,7 +46,7 @@ const capped = applyAction(
 );
 assert.equal(capped.state.units.f1, UNIT_MAX);
 assert.equal(capped.state.units["234"], UNIT_MAX);
-assert.equal(vaultTotal(capped.state.units), 225);
+assert.equal(vaultTotal(capped.state.units), 240);
 assert.equal(capped.events.some((event) => event.scope === "vault"), false);
 
 const struck = applyAction(

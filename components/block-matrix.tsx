@@ -13,10 +13,15 @@ export function BlockMatrix({
   color: string;
   label: string;
 }) {
-  const markers = new Set(CLASS_MILESTONES.map((milestone) => milestone.points));
   const crossCount = Math.max(0, Math.min(UNIT_MAX, crosses));
   const earned = Math.max(0, Math.min(UNIT_MAX, score + crossCount));
   const crossFrom = UNIT_MAX - crossCount;
+  const trophies = new Map<number, (typeof CLASS_MILESTONES)[number]>();
+  for (const milestone of CLASS_MILESTONES) {
+    const shifted = Math.min(UNIT_MAX, milestone.points + crossCount);
+    const square = shifted > crossFrom ? crossFrom : shifted;
+    if (square >= 1 && !trophies.has(square)) trophies.set(square, milestone);
+  }
 
   return (
     <div
@@ -29,9 +34,9 @@ export function BlockMatrix({
         const square = index + 1;
         const crossed = crossCount > 0 && index >= crossFrom;
         const filled = index < earned;
-        const milestone = CLASS_MILESTONES.find((item) => item.points === square);
+        const milestone = trophies.get(square);
         const won = Boolean(milestone && score >= milestone.points);
-        const marker = markers.has(square);
+        const marker = trophies.has(square);
         return (
           <span
             key={index}
