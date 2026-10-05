@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { PIN_LENGTH } from "@/lib/game";
+import { PIN_LENGTH, STAFF, staffName, type StaffId } from "@/lib/game";
 import { cn } from "@/lib/utils";
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"] as const;
@@ -26,6 +26,7 @@ export function PinDialog({
   onOpenChange: (open: boolean) => void;
   onSuccess: (token: string, expiresAt: number) => void;
 }) {
+  const [staffId, setStaffId] = useState<StaffId | null>(null);
   const [pin, setPin] = useState("");
   const [message, setMessage] = useState("");
   const [shake, setShake] = useState(false);
@@ -41,15 +42,22 @@ export function PinDialog({
     return () => window.clearInterval(id);
   }, [lockedFor]);
 
+  function resetPad() {
+    setPin("");
+    setMessage("");
+    setShake(false);
+    setStaffId(null);
+  }
+
   function pushDigit(digit: string) {
-    if (busy || lockedFor > 0) return;
+    if (busy || lockedFor > 0 || !staffId) return;
     setMessage("");
     const next = (pin + digit).slice(0, PIN_LENGTH);
     setPin(next);
-    if (next.length === PIN_LENGTH) void submit(next);
+    if (next.length === PIN_LENGTH) void submit(next, staffId);
   }
 
-  async function submit(next: string) {
+  async function submit(next: string, who: StaffId) {
     if (sending.current || next.length !== PIN_LENGTH || lockedFor > 0) return;
     sending.current = true;
     setBusy(true);
@@ -57,7 +65,7 @@ export function PinDialog({
       const response = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pin: next }),
+        body: JSON.stringify({ pin: next, staffId: who }),
       });
       const body = (await response.json().catch(() => ({}))) as {
         token?: string;
@@ -70,12 +78,12 @@ export function PinDialog({
         setShake(true);
         window.setTimeout(() => setShake(false), 450);
         setPin("");
-        setMessage(body.error ?? "Try the PIN again.");
+        setMessage(body.error ?? "Try the code again.");
         if (response.status === 429 && body.retryAfter) setLockedFor(body.retryAfter);
         return;
       }
       playUnlock();
-      setPin("");
+      resetPad();
       onSuccess(body.token, body.expiresAt);
     } catch {
       playError();
@@ -87,80 +95,117 @@ export function PinDialog({
     }
   }
 
+  const who = staffName(staffId);
+
   return (
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (!next) {
-          setPin("");
-          setMessage("");
-          setShake(false);
-        }
+        if (!next) resetPad();
         onOpenChange(next);
       }}
     >
-      <DialogContent className="sm:max-w-[380px]">
+      <DialogContent className="sm:max-w-[440px]">
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl">Yard duty desk</DialogTitle>
+          <DialogTitle className="font-display text-2xl">
+            {who ? `Hi ${who}` : "Who's on yard duty?"}
+          </DialogTitle>
           <DialogDescription>
-            Six digits. This device stays signed in until you lock the desk.
+            {who
+              ? "Enter the staff code. This device stays signed in as you until you lock the desk."
+              : "Tap your name, then the staff code. This device stays signed in as you."}
           </DialogDescription>
         </DialogHeader>
-        <div className={cn("flex flex-col gap-4", shake && "pin-shake")}>
-          <Input
-            value={pin}
-            onValueChange={(value) => {
-              const next = value.replace(/\D/g, "").slice(0, PIN_LENGTH);
-              setPin(next);
-              setMessage("");
-              if (next.length === PIN_LENGTH) void submit(next);
-            }}
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            maxLength={PIN_LENGTH}
-            type="password"
-            aria-label="Six digit staff PIN"
-            disabled={busy || lockedFor > 0}
-            className="h-14 text-center font-display text-2xl tracking-[0.35em]"
-          />
-          <div className="grid grid-cols-3 gap-2">
-            {KEYS.slice(0, 9).map((digit) => (
+
+        {!who && (
+          <div className="grid grid-cols-2 gap-2">
+            {STAFF.map((person) => (
               <Button
-                key={digit}
+                key={person.id}
+                type="button"
+                variant="secondary"
+                className="h-12 rounded-xl font-display text-lg"
+                onClick={() => {
+                  setStaffId(person.id);
+                  setMessage("");
+                  setPin("");
+                }}
+              >
+                {person.name}
+              </Button>
+            ))}
+          </div>
+        )}
+
+        {who && staffId && (
+          <div className={cn("flex flex-col gap-4", shake && "pin-shake")}>
+            <Input
+              value={pin}
+              onValueChange={(value) => {
+                const next = value.replace(/\D/g, "").slice(0, PIN_LENGTH);
+                setPin(next);
+                setMessage("");
+                if (next.length === PIN_LENGTH) void submit(next, staffId);
+              }}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={PIN_LENGTH}
+              type="password"
+              aria-label="Six digit staff code"
+              disabled={busy || lockedFor > 0}
+              className="h-14 text-center font-display text-2xl tracking-[0.35em]"
+            />
+            <div className="grid grid-cols-3 gap-2">
+              {KEYS.slice(0, 9).map((digit) => (
+                <Button
+                  key={digit}
+                  type="button"
+                  variant="secondary"
+                  className="h-14 font-display text-2xl"
+                  disabled={busy || lockedFor > 0}
+                  onClick={() => pushDigit(digit)}
+                >
+                  {digit}
+                </Button>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                className="h-14"
+                disabled={busy}
+                onClick={() => {
+                  setStaffId(null);
+                  setPin("");
+                  setMessage("");
+                }}
+              >
+                Back
+              </Button>
+              <Button
                 type="button"
                 variant="secondary"
                 className="h-14 font-display text-2xl"
                 disabled={busy || lockedFor > 0}
-                onClick={() => pushDigit(digit)}
+                onClick={() => pushDigit("0")}
               >
-                {digit}
+                0
               </Button>
-            ))}
-            <span />
-            <Button
-              type="button"
-              variant="secondary"
-              className="h-14 font-display text-2xl"
-              disabled={busy || lockedFor > 0}
-              onClick={() => pushDigit("0")}
-            >
-              0
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="h-14"
-              aria-label="Delete digit"
-              disabled={busy || pin.length === 0}
-              onClick={() => setPin((current) => current.slice(0, -1))}
-            >
-              <Delete />
-            </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-14"
+                aria-label="Delete digit"
+                disabled={busy || pin.length === 0}
+                onClick={() => setPin((current) => current.slice(0, -1))}
+              >
+                <Delete />
+              </Button>
+            </div>
+            <p className="min-h-5 text-center text-sm font-semibold text-[#c23b3b]" role="status">
+              {lockedFor > 0 ? `Pad resting · ${lockedFor}s` : message}
+            </p>
           </div>
-          <p className="min-h-5 text-center text-sm font-semibold text-[#c23b3b]" role="status">
-            {lockedFor > 0 ? `Pad resting · ${lockedFor}s` : message}
-          </p>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );

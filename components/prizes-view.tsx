@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { Crosshair, IceCreamCone, LockKeyhole } from "lucide-react";
 import { CLASS_MILESTONES, UNITS, type Milestone, type PublicBoard } from "@/lib/game";
@@ -56,11 +57,38 @@ export function PrizesView({ board }: { board: PublicBoard }) {
       </div>
 
       <section className="flex flex-col gap-3">
-        <div>
-          <h3 className="font-display text-3xl">Sealed teacher takedowns</h3>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            The envelope stays shut. Your class finds out what happens to the teacher on the day.
-          </p>
+        <div className="overflow-hidden rounded-[28px] border border-black/10 bg-black shadow-[0_8px_0_#2a1c04]">
+          <Image
+            src="/takedown-banner.jpg"
+            alt="Tidy up: Teacher Takedown!"
+            width={1400}
+            height={709}
+            className="h-auto w-full"
+          />
+        </div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="flex gap-3">
+            <Image
+              src="/mystery-teacher-a.jpg"
+              alt="A mystery teacher. The face is a yellow question mark."
+              width={240}
+              height={320}
+              className="h-28 w-auto rounded-2xl border border-black/10 object-cover shadow-[0_4px_0_#2a1c04]"
+            />
+            <Image
+              src="/mystery-teacher-b.jpg"
+              alt="Another mystery teacher. The face is a yellow question mark."
+              width={240}
+              height={320}
+              className="h-28 w-auto rounded-2xl border border-black/10 object-cover shadow-[0_4px_0_#2a1c04]"
+            />
+          </div>
+          <div>
+            <h3 className="font-display text-3xl">Sealed teacher takedowns</h3>
+            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+              The envelope stays shut. Your class finds out what happens to the teacher on the day.
+            </p>
+          </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {secrets.map((milestone, index) => (

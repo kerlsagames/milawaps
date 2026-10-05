@@ -5,10 +5,15 @@ import {
   VAULT_MILESTONES,
   type ActionId,
   type MilestoneEvent,
+  type ScoreLogEntry,
   type ScoreState,
+  type StaffId,
   type UnitId,
   clampScore,
   emptyScores,
+  isActionId,
+  isStaffId,
+  isUnitId,
   vaultTotal,
 } from "@/lib/game";
 
@@ -41,11 +46,34 @@ export function sanitizeScores(raw: unknown): ScoreState {
       last.unitId === "56") &&
     typeof last.at === "number"
   ) {
+    const staffId = isStaffId(last.staffId) ? last.staffId : undefined;
     base.lastAction = {
       action: last.action,
       unitId: last.unitId,
       at: last.at,
+      staffId,
     };
+  }
+  if (Array.isArray(record.log)) {
+    const log: ScoreLogEntry[] = [];
+    for (const item of record.log) {
+      if (!item || typeof item !== "object") continue;
+      const entry = item as Partial<ScoreLogEntry>;
+      if (!isActionId(entry.action) || !isStaffId(entry.staffId)) continue;
+      if (entry.unitId !== "all" && !isUnitId(entry.unitId)) continue;
+      if (typeof entry.at !== "number") continue;
+      if (entry.action !== "reset" && entry.action !== "teamwork" && entry.unitId === "all") {
+        continue;
+      }
+      log.push({
+        action: entry.action,
+        unitId: entry.unitId,
+        at: entry.at,
+        staffId: entry.staffId,
+      });
+      if (log.length === 40) break;
+    }
+    base.log = log;
   }
   return base;
 }
@@ -72,14 +100,29 @@ export function milestonesBetween(
   return events;
 }
 
+function pushLog(state: ScoreState, entry: ScoreLogEntry): ScoreLogEntry[] {
+  return [entry, ...(state.log ?? [])].slice(0, 40);
+}
+
 export function applyAction(
   state: ScoreState,
   action: ActionId,
-  unitId?: UnitId,
+  unitId: UnitId | undefined,
+  staffId: StaffId,
   now = Date.now(),
 ): { state: ScoreState; events: MilestoneEvent[] } {
+  const entry: ScoreLogEntry = {
+    action,
+    unitId: action === "teamwork" || action === "reset" ? "all" : (unitId as UnitId),
+    at: now,
+    staffId,
+  };
+
   if (action === "reset") {
-    return { state: emptyScores(now), events: [] };
+    return {
+      state: { ...emptyScores(now), log: pushLog(state, entry) },
+      events: [],
+    };
   }
 
   if (action !== "teamwork" && !unitId) {
@@ -104,7 +147,9 @@ export function applyAction(
       action,
       unitId: action === "teamwork" ? "all" : (unitId as UnitId),
       at: now,
+      staffId,
     },
+    log: pushLog(state, entry),
   };
 
   return {

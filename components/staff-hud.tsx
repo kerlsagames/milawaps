@@ -6,6 +6,7 @@ import {
   STAFF_MYSTERY_IDEAS,
   UNIT_MAX,
   UNITS,
+  scoreLogLabel,
   type ActionId,
   type PublicBoard,
   type StorageMode,
@@ -30,6 +31,7 @@ export function StaffHud({
   open,
   onOpenChange,
   board,
+  dutyName,
   error,
   onScore,
   onLogout,
@@ -37,6 +39,7 @@ export function StaffHud({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   board: PublicBoard | undefined;
+  dutyName: string | null;
   error: string | null;
   onScore: (action: ActionId, unitId?: UnitId) => void;
   onLogout: () => void;
@@ -59,9 +62,11 @@ export function StaffHud({
         className="max-h-[88vh] gap-0 overflow-hidden rounded-t-[28px] border-black/10 p-0 sm:inset-x-auto sm:right-4 sm:bottom-4 sm:left-auto sm:w-[440px] sm:rounded-[28px]"
       >
         <SheetHeader className="border-b border-black/10 pr-12">
-          <SheetTitle className="font-display text-2xl">Yard duty desk</SheetTitle>
+          <SheetTitle className="font-display text-2xl">
+            {dutyName ? `${dutyName} on duty` : "Yard duty desk"}
+          </SheetTitle>
           <SheetDescription>
-            Tap a score. The window TV picks it up on the next refresh.
+            Ticks are saved under your name. The window TV picks them up on the next refresh.
           </SheetDescription>
         </SheetHeader>
         <div className="flex flex-col gap-3 overflow-y-auto px-4 py-4">
@@ -120,6 +125,23 @@ export function StaffHud({
             {ACTION_COPY.teamwork.short}
             <span className="text-sm font-semibold opacity-80">Teamwork</span>
           </Button>
+
+          <section className="rounded-2xl border border-black/10 bg-white/70 px-3 py-2">
+            <p className="text-[11px] font-extrabold tracking-wide text-ink-gold uppercase">
+              Who gave points
+            </p>
+            {board?.log?.length ? (
+              <ul className="mt-2 flex flex-col gap-1">
+                {board.log.slice(0, 8).map((entry) => (
+                  <li key={`${entry.at}-${entry.staffId}-${entry.action}`} className="text-sm font-semibold">
+                    {scoreLogLabel(entry)}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-1 text-sm text-muted-foreground">No named ticks yet.</p>
+            )}
+          </section>
 
           {error && (
             <p className="rounded-xl bg-[#c23b3b]/10 px-3 py-2 text-sm font-semibold text-[#8d1f1f]" role="status">

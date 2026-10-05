@@ -17,6 +17,7 @@ import {
   UNIT_IDS,
   VIEWS,
   actionLabel,
+  staffName,
   unitById,
   type ActionId,
   type MilestoneEvent,
@@ -25,6 +26,7 @@ import {
   type ViewId,
 } from "@/lib/game";
 import { milestonesBetween } from "@/lib/scoring";
+import { staffFromToken } from "@/lib/who";
 
 async function fetchBoard(url: string): Promise<PublicBoard> {
   const response = await fetch(url, { cache: "no-store" });
@@ -202,6 +204,7 @@ export function YardBoard() {
     [mutate, token],
   );
 
+  const dutyName = staffName(staffFromToken(token));
   const slide = VIEWS.find((item) => item.id === view) ?? VIEWS[0];
   const paused = kiosk && now < pausedUntil;
   const progress =
@@ -222,6 +225,7 @@ export function YardBoard() {
         pausedSeconds={pausedSeconds}
         progress={progress}
         authed={Boolean(token)}
+        dutyName={dutyName}
         onLockClick={() => {
           if (token) setHudOpen(true);
           else setPinOpen(true);
@@ -303,6 +307,7 @@ export function YardBoard() {
         open={hudOpen}
         onOpenChange={setHudOpen}
         board={data}
+        dutyName={dutyName}
         error={deskError}
         onScore={score}
         onLogout={() => {

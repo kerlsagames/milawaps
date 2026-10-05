@@ -18,16 +18,40 @@ export type ViewId = (typeof VIEWS)[number]["id"];
 export type ScoreAction = "spot" | "surge" | "strike" | "teamwork";
 export type ActionId = ScoreAction | "reset";
 
+export const STAFF = [
+  { id: "jess", name: "Jess" },
+  { id: "craig", name: "Craig" },
+  { id: "ash", name: "Ash" },
+  { id: "ricky", name: "Ricky" },
+  { id: "tiff", name: "Tiff" },
+  { id: "doug", name: "Doug" },
+  { id: "hunter", name: "Hunter" },
+  { id: "jenny", name: "Jenny" },
+  { id: "richard", name: "Richard" },
+  { id: "maria", name: "Maria" },
+] as const;
+
+export type StaffId = (typeof STAFF)[number]["id"];
+
 export type LastAction = {
   action: ScoreAction;
   unitId: UnitId | "all";
   at: number;
+  staffId?: StaffId;
+};
+
+export type ScoreLogEntry = {
+  action: ActionId;
+  unitId: UnitId | "all";
+  at: number;
+  staffId: StaffId;
 };
 
 export type ScoreState = {
   units: Record<UnitId, number>;
   updatedAt: number;
   lastAction: LastAction | null;
+  log: ScoreLogEntry[];
 };
 
 export type SecurityState = {
@@ -41,6 +65,7 @@ export type PublicBoard = {
   units: Record<UnitId, number>;
   updatedAt: number;
   lastAction: LastAction | null;
+  log: ScoreLogEntry[];
   vault: number;
   storage: StorageMode;
 };
@@ -202,7 +227,16 @@ export function emptyScores(now = Date.now()): ScoreState {
     units: { f1: 0, "234": 0, "56": 0 },
     updatedAt: now,
     lastAction: null,
+    log: [],
   };
+}
+
+export function isStaffId(value: unknown): value is StaffId {
+  return typeof value === "string" && STAFF.some((person) => person.id === value);
+}
+
+export function staffName(id: string | null | undefined): string | null {
+  return STAFF.find((person) => person.id === id)?.name ?? null;
 }
 
 export function emptySecurity(): SecurityState {
@@ -251,8 +285,17 @@ export function nextVaultMilestone(vault: number): Milestone | null {
 
 export function actionLabel(action: LastAction): string {
   const copy = ACTION_COPY[action.action];
-  if (action.unitId === "all") return `${copy.label} · all units`;
-  return `${copy.label} · ${unitById(action.unitId).code}`;
+  const where = action.unitId === "all" ? "all units" : unitById(action.unitId).code;
+  const who = staffName(action.staffId);
+  return who ? `${who} · ${copy.label} · ${where}` : `${copy.label} · ${where}`;
+}
+
+export function scoreLogLabel(entry: ScoreLogEntry): string {
+  const who = staffName(entry.staffId) ?? "Someone";
+  if (entry.action === "reset") return `${who} cleared the board`;
+  const copy = ACTION_COPY[entry.action];
+  const where = entry.unitId === "all" ? "all units" : unitById(entry.unitId).code;
+  return `${who} · ${copy.short} · ${where}`;
 }
 
 export function formatAgo(at: number, now: number): string {

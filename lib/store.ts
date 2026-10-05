@@ -6,6 +6,7 @@ import {
   type PublicBoard,
   type ScoreState,
   type SecurityState,
+  type StaffId,
   type StorageMode,
   type UnitId,
   emptySecurity,
@@ -139,6 +140,7 @@ export function toPublic(state: ScoreState): PublicBoard {
     units: state.units,
     updatedAt: state.updatedAt,
     lastAction: state.lastAction,
+    log: state.log ?? [],
     vault: vaultTotal(state.units),
     storage: storageMode(),
   };
@@ -161,11 +163,12 @@ export function writeSecurity(security: SecurityState): Promise<void> {
 
 export function commitAction(
   action: ActionId,
-  unitId?: UnitId,
+  unitId: UnitId | undefined,
+  staffId: StaffId,
 ): Promise<{ board: PublicBoard; events: ReturnType<typeof applyAction>["events"] }> {
   return serialized(async () => {
     const blob = await readBlob();
-    const result = applyAction(blob.scores, action, unitId);
+    const result = applyAction(blob.scores, action, unitId, staffId);
     await writeBlob({ ...blob, scores: result.state });
     return { board: toPublic(result.state), events: result.events };
   });

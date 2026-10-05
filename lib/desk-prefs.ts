@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { setAudioMuted } from "@/lib/audio";
+import { staffFromToken } from "@/lib/who";
 
 const TOKEN_KEY = "ott-token";
 const TOKEN_EXP_KEY = "ott-token-exp";
@@ -22,7 +23,7 @@ function readToken(): string | null {
   window.sessionStorage.removeItem(TOKEN_EXP_KEY);
   const saved = window.localStorage.getItem(TOKEN_KEY);
   const expires = Number(window.localStorage.getItem(TOKEN_EXP_KEY) || 0);
-  if (saved && expires > Date.now()) return saved;
+  if (saved && expires > Date.now() && staffFromToken(saved)) return saved;
   if (saved) {
     window.localStorage.removeItem(TOKEN_KEY);
     window.localStorage.removeItem(TOKEN_EXP_KEY);

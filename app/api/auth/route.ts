@@ -1,4 +1,5 @@
 import { getExpectedPin, pinsMatch, signToken } from "@/lib/auth";
+import { isStaffId } from "@/lib/game";
 import { readSecurity, writeSecurity } from "@/lib/store";
 
 export const runtime = "nodejs";
@@ -29,6 +30,15 @@ export async function POST(request: Request) {
     payload && typeof payload === "object" && "pin" in payload
       ? (payload as { pin?: unknown }).pin
       : undefined;
+
+  const staffId =
+    payload && typeof payload === "object" && "staffId" in payload
+      ? (payload as { staffId?: unknown }).staffId
+      : undefined;
+
+  if (!isStaffId(staffId)) {
+    return json({ error: "Choose your name first." }, 400);
+  }
 
   if (typeof pin !== "string" || !/^\d{6}$/.test(pin)) {
     return json({ error: "The PIN is six digits." }, 400);
@@ -72,5 +82,5 @@ export async function POST(request: Request) {
   }
 
   await writeSecurity({ fails: 0, lockedUntil: 0 });
-  return json(signToken(now));
+  return json(signToken(staffId, now));
 }

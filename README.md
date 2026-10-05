@@ -13,7 +13,7 @@ npm run dev
 
 Open [http://127.0.0.1:47221](http://127.0.0.1:47221).
 
-While `STAFF_PIN` is unset, the desk accepts **737373**. A custom pin must be six digits. The signed-in desk stays on that device until someone taps **Lock desk**.
+While `STAFF_PIN` is unset, the desk accepts **737373**. A custom pin must be six digits. Yard duty starts by tapping a name — Jess, Craig, Ash, Ricky, Tiff, Doug, Hunter, Jenny, Richard, or Maria — then the code. That device stays signed in as that person until someone taps **Lock desk**. Every tick is stored with their name. The window shows the latest name, and the desk keeps a short list of who gave points.
 
 ## On the TV
 
@@ -25,7 +25,7 @@ While `STAFF_PIN` is unset, the desk accepts **737373**. A custom pin must be si
 
 ## Yard duty desk
 
-The padlock in the header opens a 6-digit PIN pad. After that, the phone-sized desk can log:
+The padlock in the header opens the name list, then a 6-digit code pad. After that, the phone-sized desk can log:
 
 | Action | Effect |
 | --- | --- |
@@ -48,4 +48,4 @@ Class prizes, per unit: 20 laser tag, 25 teacher takedown, 30 two takedowns, 35 
 
 The score and PIN routes run on the Node.js runtime so local file fallback still works in dev. On Vercel, leave KV connected or each server instance only remembers scores in memory until it goes cold. The yard duty desk says which store it is using.
 
-Five wrong PINs rest the pad for 60 seconds. A successful PIN is kept in this browser until **Lock desk**.
+Five wrong codes rest the pad for 60 seconds. A successful sign-in is kept in this browser, under that teacher's name, until **Lock desk**.

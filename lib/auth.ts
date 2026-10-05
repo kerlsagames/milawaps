@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "crypto";
+import { isStaffId, type StaffId } from "@/lib/game";
 
 const TOKEN_TTL_MS = 365 * 24 * 60 * 60 * 1000;
 const SCHOOL_PIN = "737373";
@@ -20,31 +21,38 @@ export function pinsMatch(input: string, expected: string): boolean {
   return timingSafeEqual(left, right);
 }
 
-export function signToken(now = Date.now()): { token: string; expiresAt: number } {
+export function signToken(
+  staffId: StaffId,
+  now = Date.now(),
+): { token: string; expiresAt: number; staffId: StaffId } {
   const expiresAt = now + TOKEN_TTL_MS;
-  const payload = Buffer.from(JSON.stringify({ exp: expiresAt, v: 1 })).toString(
+  const payload = Buffer.from(JSON.stringify({ exp: expiresAt, v: 2, staff: staffId })).toString(
     "base64url",
   );
   const signature = createHmac("sha256", signingKey()).update(payload).digest("base64url");
-  return { token: `${payload}.${signature}`, expiresAt };
+  return { token: `${payload}.${signature}`, expiresAt, staffId };
 }
 
-export function verifyToken(token: string | null | undefined, now = Date.now()): boolean {
-  if (!token || !getExpectedPin()) return false;
+export function verifyToken(token: string | null | undefined, now = Date.now()): StaffId | null {
+  if (!token || !getExpectedPin()) return null;
   const [payload, signature] = token.split(".");
-  if (!payload || !signature) return false;
+  if (!payload || !signature) return null;
   const expected = createHmac("sha256", signingKey()).update(payload).digest("base64url");
   const actualBuffer = Buffer.from(signature);
   const expectedBuffer = Buffer.from(expected);
-  if (actualBuffer.length !== expectedBuffer.length) return false;
-  if (!timingSafeEqual(actualBuffer, expectedBuffer)) return false;
+  if (actualBuffer.length !== expectedBuffer.length) return null;
+  if (!timingSafeEqual(actualBuffer, expectedBuffer)) return null;
   try {
     const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as {
       exp?: unknown;
+      v?: unknown;
+      staff?: unknown;
     };
-    return typeof data.exp === "number" && data.exp > now;
+    if (data.v !== 2 || !isStaffId(data.staff)) return null;
+    if (typeof data.exp !== "number" || data.exp <= now) return null;
+    return data.staff;
   } catch {
-    return false;
+    return null;
   }
 }
 

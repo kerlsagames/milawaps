@@ -21,6 +21,7 @@ export function SiteHeader({
   pausedSeconds,
   progress,
   authed,
+  dutyName,
   onLockClick,
   muted,
   onToggleMute,
@@ -33,6 +34,7 @@ export function SiteHeader({
   pausedSeconds: number;
   progress: number;
   authed: boolean;
+  dutyName: string | null;
   onLockClick: () => void;
   muted: boolean;
   onToggleMute: () => void;
@@ -100,12 +102,12 @@ export function SiteHeader({
         </Button>
         <Button
           variant={authed ? "default" : "outline"}
-          size="icon"
-          aria-label={authed ? "Open yard duty desk" : "Unlock yard duty desk"}
+          aria-label={dutyName ? `Open yard duty desk for ${dutyName}` : "Unlock yard duty desk"}
           onClick={onLockClick}
-          className="size-10 rounded-xl"
+          className="h-10 rounded-xl px-3"
         >
           {authed ? <LockOpen /> : <Lock />}
+          {dutyName && <span className="hidden sm:inline">{dutyName}</span>}
         </Button>
       </div>
 

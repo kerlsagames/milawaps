@@ -22,7 +22,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  if (!verifyToken(readBearer(request))) {
+  const staffId = verifyToken(readBearer(request));
+  if (!staffId) {
     return json({ error: "The yard desk is locked." }, 401);
   }
 
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await commitAction(action, unitId);
+    const result = await commitAction(action, unitId, staffId);
     return json({ ...result.board, events: result.events });
   } catch {
     return json({ error: "The score did not save. Try the tick again." }, 500);
