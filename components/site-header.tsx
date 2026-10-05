@@ -1,0 +1,145 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Gift, Lock, LockOpen, Map, ScrollText, Trophy, Tv, Volume2, VolumeX } from "lucide-react";
+import { VIEWS, type ViewId } from "@/lib/game";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+const icons = {
+  board: Trophy,
+  prizes: Gift,
+  map: Map,
+  rules: ScrollText,
+} as const;
+
+export function SiteHeader({
+  view,
+  onView,
+  kiosk,
+  onToggleKiosk,
+  pausedSeconds,
+  progress,
+  authed,
+  onLockClick,
+  muted,
+  onToggleMute,
+  live,
+}: {
+  view: ViewId;
+  onView: (view: ViewId) => void;
+  kiosk: boolean;
+  onToggleKiosk: () => void;
+  pausedSeconds: number;
+  progress: number;
+  authed: boolean;
+  onLockClick: () => void;
+  muted: boolean;
+  onToggleMute: () => void;
+  live: "loading" | "live" | "offline";
+}) {
+  const [clock, setClock] = useState("");
+
+  useEffect(() => {
+    const tick = () => {
+      setClock(
+        new Intl.DateTimeFormat("en-AU", {
+          weekday: "short",
+          hour: "numeric",
+          minute: "2-digit",
+        }).format(new Date()),
+      );
+    };
+    tick();
+    const id = window.setInterval(tick, 10_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  return (
+    <header className="sticky top-0 z-30 border-b border-white/10 bg-[#070b18]/88 backdrop-blur-md">
+      <div className="flex items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-5">
+        <div className="grid size-10 shrink-0 place-items-center rounded-2xl bg-gold text-[#241a08] shadow-[0_4px_0_#b8892e]">
+          <span className="font-display text-lg leading-none">OT</span>
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-extrabold tracking-[0.22em] text-gold uppercase">Operation</p>
+          <h1 className="truncate font-display text-xl leading-none sm:text-2xl">Teacher Takeover</h1>
+        </div>
+        <p className="hidden text-sm font-bold text-muted-foreground md:block">{clock}</p>
+        <span className="hidden items-center gap-1.5 rounded-full border border-white/10 px-2.5 py-1 text-xs font-bold sm:inline-flex">
+          <span
+            className={cn(
+              "size-2 rounded-full",
+              live === "live" && "bg-[#2ec9a0] shadow-[0_0_8px_#2ec9a0]",
+              live === "loading" && "bg-gold",
+              live === "offline" && "bg-[#ff8b8b]",
+            )}
+          />
+          {live === "live" ? "Live" : live === "loading" ? "Linking" : "Offline"}
+        </span>
+        <Button
+          variant="outline"
+          size="icon"
+          aria-pressed={muted}
+          aria-label={muted ? "Unmute sounds" : "Mute sounds"}
+          onClick={onToggleMute}
+          className="size-10 rounded-xl"
+        >
+          {muted ? <VolumeX /> : <Volume2 />}
+        </Button>
+        <Button
+          variant={kiosk ? "default" : "outline"}
+          aria-pressed={kiosk}
+          onClick={onToggleKiosk}
+          className="h-10 rounded-xl px-3"
+        >
+          <Tv />
+          <span className="hidden sm:inline">{kiosk ? "Kiosk on" : "Kiosk"}</span>
+        </Button>
+        <Button
+          variant={authed ? "default" : "outline"}
+          size="icon"
+          aria-label={authed ? "Open yard duty desk" : "Unlock yard duty desk"}
+          onClick={onLockClick}
+          className="size-10 rounded-xl"
+        >
+          {authed ? <LockOpen /> : <Lock />}
+        </Button>
+      </div>
+
+      <div className="flex gap-1 overflow-x-auto px-3 pb-2 sm:px-5" role="tablist" aria-label="Board views">
+        {VIEWS.map((item) => {
+          const Icon = icons[item.id];
+          const selected = item.id === view;
+          return (
+            <Button
+              key={item.id}
+              role="tab"
+              aria-selected={selected}
+              variant={selected ? "default" : "ghost"}
+              onClick={() => onView(item.id)}
+              className="h-9 shrink-0 rounded-xl px-3"
+            >
+              <Icon />
+              <span className="sm:hidden">{item.short}</span>
+              <span className="hidden sm:inline">{item.label}</span>
+            </Button>
+          );
+        })}
+      </div>
+
+      {kiosk && pausedSeconds > 0 ? (
+        <p className="bg-white/5 px-3 py-1 text-[11px] font-bold text-gold sm:px-5">
+          Auto-cycle paused · {pausedSeconds}s
+        </p>
+      ) : (
+        <div className="h-1.5 bg-white/5">
+          <div
+            className="h-full bg-gold transition-[width] duration-200 ease-linear"
+            style={{ width: kiosk ? `${progress * 100}%` : "0%" }}
+          />
+        </div>
+      )}
+    </header>
+  );
+}
