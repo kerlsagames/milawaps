@@ -14,31 +14,33 @@ export function BlockMatrix({
 }) {
   const markers = new Set(CLASS_MILESTONES.map((milestone) => milestone.points));
   const crossCount = Math.max(0, Math.min(UNIT_MAX, crosses));
+  const earned = Math.max(0, Math.min(UNIT_MAX, score + crossCount));
   const crossFrom = UNIT_MAX - crossCount;
 
   return (
     <div
       role="img"
-      aria-label={`${label}: ${score} of ${UNIT_MAX} ticks, ${crossCount} crosses`}
+      aria-label={`${label}: tally ${score}. ${earned} ticks on the sheet, ${crossCount} crosses. A cross does not erase a tick.`}
       className="grid gap-0.5"
       style={{ gridTemplateColumns: "repeat(15, minmax(0, 1fr))" }}
     >
       {Array.from({ length: UNIT_MAX }, (_, index) => {
-        const crossed = index >= crossFrom;
-        const filled = index < score;
+        const crossed = crossCount > 0 && index >= crossFrom;
+        const filled = index < earned;
         const marker = markers.has(index + 1);
         return (
           <span
             key={index}
             className={cn(
               "relative aspect-square rounded-[3px] border",
-              filled && !crossed && "border-transparent",
+              filled && "border-transparent",
               !filled && !crossed && "border-black/10 bg-black/5",
-              crossed && "border-[#c23b3b]/50 bg-[#c23b3b]/15",
+              crossed && !filled && "border-[#c23b3b]/50 bg-[#c23b3b]/15",
+              crossed && filled && "border-[#9b1c1c]",
               marker && !filled && !crossed && "border-dashed",
             )}
             style={{
-              backgroundColor: filled && !crossed ? color : undefined,
+              backgroundColor: filled ? color : undefined,
               borderColor: marker && !filled && !crossed ? color : undefined,
             }}
           >

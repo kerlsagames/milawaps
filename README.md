@@ -1,4 +1,4 @@
-# Teacher Takeover
+# Term 4 Tidy Challenge
 
 A sunny window-TV scoreboard for Milawa Primary. Three units chase 75 squares each. Laser tag and ice cream are on the board. Teacher takedowns stay a secret until the day. Strikes show up as crosses on the square sheet.
 
@@ -17,11 +17,11 @@ While `STAFF_PIN` is unset, the desk accepts **737373**. A custom pin must be si
 
 ## On the TV
 
-- **Leaderboard** shows the school total (0–225) and three unit cards on one screen. Each card has the live total out of 75, a 75-square track, crosses for strikes, and the +1, +3, and −1 buttons.
-- **Prizes** shows laser tag, ice cream, and sealed teacher-takedown envelopes.
-- **Yard Map** is the aerial of Milawa Primary with a live score on each zone.
+- **Leaderboard** shows the school total and three unit cards on one screen. Each card has the grade, a circled tally, a 75-square track, crosses that do not erase ticks, and the +1, +3, and −1 buttons.
+- **Prizes** is a landscape path to the highest honour.
+- **Yard Map** is the aerial of Milawa Primary.
 - **Rules** covers spot checks, strikes, and cross-class teamwork.
-- **Kiosk** cycles Leaderboard (14s) → Prizes (10s) → Map (10s) → Rules (8s). Any tap pauses the loop for 30 seconds.
+- **Settings** (the cog) starts kiosk mode and sets how long each page stays up. Kiosk hides the header. Move the mouse or touch the screen and tap the X, or press Esc, to leave.
 
 ## Yard duty desk
 
@@ -34,7 +34,7 @@ The padlock in the header opens the name list, then a 6-digit code pad. After th
 | −1 Stray Strike | Ball, jumper, or rubbish cluster |
 | +2 Teamwork | Adds 2 to all three units |
 
-Scores clamp between 0 and 50. Taps play a short Web Audio synth tone in the browser. No audio files are shipped.
+Scores clamp between 0 and 75. A strike lowers the tally by one and adds a cross. It does not wipe a tick off the sheet. Taps play a short Web Audio synth tone in the browser. No audio files are shipped.
 
 Class prizes, per unit: 20 laser tag, 25 teacher takedown, 30 two takedowns, 35 ice cream, then 40, 45, and 50 for three, four, and five takedowns. The takedown envelopes do not say what happens. Staff can open **Mystery ideas** on the desk for pie, ice bucket, and dress-up prompts. Those lines never appear on the TV.
 

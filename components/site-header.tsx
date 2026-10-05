@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Gift, Lock, LockOpen, Map, PartyPopper, ScrollText, Trophy, Tv, Volume2, VolumeX } from "lucide-react";
+import { Gift, Lock, LockOpen, Map, PartyPopper, ScrollText, Trophy, Volume2, VolumeX } from "lucide-react";
+import { KioskSettings } from "@/components/kiosk-settings";
 import { VIEWS, type ViewId } from "@/lib/game";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -16,29 +17,23 @@ const icons = {
 export function SiteHeader({
   view,
   onView,
-  kiosk,
-  onToggleKiosk,
-  pausedSeconds,
-  progress,
   authed,
   dutyName,
   onLockClick,
   muted,
   onToggleMute,
   live,
+  onStartKiosk,
 }: {
   view: ViewId;
   onView: (view: ViewId) => void;
-  kiosk: boolean;
-  onToggleKiosk: () => void;
-  pausedSeconds: number;
-  progress: number;
   authed: boolean;
   dutyName: string | null;
   onLockClick: () => void;
   muted: boolean;
   onToggleMute: () => void;
   live: "loading" | "live" | "offline";
+  onStartKiosk: () => void;
 }) {
   const [clock, setClock] = useState("");
 
@@ -67,7 +62,9 @@ export function SiteHeader({
           <p className="text-[10px] font-extrabold tracking-[0.22em] text-ink-gold uppercase">
             Milawa Primary
           </p>
-          <h1 className="truncate font-display text-lg leading-none sm:text-xl">Teacher Takeover</h1>
+          <h1 className="font-display text-[15px] leading-tight sm:truncate sm:text-xl">
+            Term 4 Tidy Challenge
+          </h1>
         </div>
         <p className="hidden text-sm font-bold text-muted-foreground md:block">{clock}</p>
         <span className="hidden items-center gap-1.5 rounded-full border border-black/10 bg-white/70 px-2.5 py-1 text-xs font-bold sm:inline-flex">
@@ -91,15 +88,7 @@ export function SiteHeader({
         >
           {muted ? <VolumeX /> : <Volume2 />}
         </Button>
-        <Button
-          variant={kiosk ? "default" : "outline"}
-          aria-pressed={kiosk}
-          onClick={onToggleKiosk}
-          className="h-10 rounded-xl px-3"
-        >
-          <Tv />
-          <span className="hidden sm:inline">{kiosk ? "Kiosk on" : "Kiosk"}</span>
-        </Button>
+        <KioskSettings onStart={onStartKiosk} />
         <Button
           variant={authed ? "default" : "outline"}
           aria-label={dutyName ? `Open yard duty desk for ${dutyName}` : "Unlock yard duty desk"}
@@ -132,18 +121,6 @@ export function SiteHeader({
         })}
       </div>
 
-      {kiosk && pausedSeconds > 0 ? (
-        <p className="bg-[#ffe7b0] px-3 py-1 text-[11px] font-bold text-ink-gold sm:px-5">
-          Auto-cycle paused · {pausedSeconds}s
-        </p>
-      ) : (
-        <div className="h-1.5 bg-black/5">
-          <div
-            className="h-full bg-[#e2a01a] transition-[width] duration-200 ease-linear"
-            style={{ width: kiosk ? `${progress * 100}%` : "0%" }}
-          />
-        </div>
-      )}
     </header>
   );
 }

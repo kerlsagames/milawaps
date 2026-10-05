@@ -11,9 +11,19 @@ export type DeskPrefs = {
   kiosk: boolean;
   muted: boolean;
   token: string | null;
+  dwellSeconds: number;
 };
 
-const serverPrefs: DeskPrefs = { kiosk: false, muted: false, token: null };
+export const MIN_DWELL_SECONDS = 5;
+export const MAX_DWELL_SECONDS = 60;
+export const DEFAULT_DWELL_SECONDS = 12;
+
+const serverPrefs: DeskPrefs = {
+  kiosk: false,
+  muted: false,
+  token: null,
+  dwellSeconds: DEFAULT_DWELL_SECONDS,
+};
 
 let current: DeskPrefs = serverPrefs;
 const listeners = new Set<() => void>();
@@ -31,11 +41,18 @@ function readToken(): string | null {
   return null;
 }
 
+function readDwell(): number {
+  const value = Number(window.localStorage.getItem("ott-kiosk-seconds"));
+  if (!Number.isFinite(value)) return DEFAULT_DWELL_SECONDS;
+  return Math.max(MIN_DWELL_SECONDS, Math.min(MAX_DWELL_SECONDS, Math.round(value)));
+}
+
 function readPrefs(): DeskPrefs {
   return {
     kiosk: window.localStorage.getItem("ott-kiosk") === "1",
     muted: window.localStorage.getItem("ott-muted") === "1",
     token: readToken(),
+    dwellSeconds: readDwell(),
   };
 }
 
@@ -68,6 +85,15 @@ export function setKioskPref(kiosk: boolean) {
 export function setMutedPref(muted: boolean) {
   window.localStorage.setItem("ott-muted", muted ? "1" : "0");
   publish({ ...readPrefs(), muted });
+}
+
+export function setDwellSeconds(seconds: number) {
+  const dwellSeconds = Math.max(
+    MIN_DWELL_SECONDS,
+    Math.min(MAX_DWELL_SECONDS, Math.round(seconds)),
+  );
+  window.localStorage.setItem("ott-kiosk-seconds", String(dwellSeconds));
+  publish({ ...readPrefs(), dwellSeconds });
 }
 
 export function saveToken(token: string, expiresAt: number) {

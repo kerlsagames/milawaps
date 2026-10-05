@@ -15,13 +15,13 @@ const fredoka = Fredoka({
 });
 
 export const metadata: Metadata = {
-  title: "Operation: Teacher Takeover",
+  title: "Term 4 Tidy Challenge",
   description:
-    "Sunny yard tidy tracker for Milawa Primary. Three units, seventy-five squares each, and secret teacher takedowns.",
-  applicationName: "Teacher Takeover",
+    "Sunny yard tidy tracker for Milawa Primary. Three units, seventy-five squares each, and a path to the highest honour.",
+  applicationName: "Term 4 Tidy Challenge",
   appleWebApp: {
     capable: true,
-    title: "Teacher Takeover",
+    title: "Term 4 Tidy Challenge",
     statusBarStyle: "default",
   },
 };

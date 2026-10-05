@@ -48,18 +48,19 @@ export function UnitCard({
           <p
             className="font-display leading-[0.78] whitespace-nowrap"
             style={{
-              fontSize: "min(9.5rem, calc((100cqi - 6.5rem) / 3))",
+              fontSize: "min(8.5rem, calc((100cqi - 8rem) / 3))",
               letterSpacing: "-0.04em",
               textShadow: `0 5px 0 ${unit.deep}`,
             }}
           >
             {unit.code}
           </p>
-          <p className="mt-1 truncate text-sm font-extrabold opacity-80">{unit.zoneLine}</p>
         </div>
-        <div className="shrink-0 text-right">
+        <div
+          className="grid size-[4.6rem] shrink-0 place-items-center rounded-full bg-[#fffdf8] shadow-[0_4px_0_rgba(42,28,4,0.28)] sm:size-24"
+          aria-label={`${unit.code} tally ${score}`}
+        >
           <p className="font-display text-4xl leading-none tabular-nums sm:text-5xl">{score}</p>
-          <p className="font-display text-lg leading-none opacity-70 tabular-nums">/{UNIT_MAX}</p>
         </div>
       </div>
 
