@@ -79,9 +79,9 @@ export function RulesView() {
         })}
       </div>
       <p className="rounded-2xl border border-black/10 bg-white/70 px-4 py-3 text-sm leading-relaxed text-muted-foreground">
-        Each unit has 50 ticks. Laser tag waits at 20 and ice cream at 35. Teacher takedowns at
-        25, 30, 40, 45, and 50 stay a secret until the day. A full track stays full. A strike
-        cannot push a unit below zero.
+        Each unit has 75 squares. Laser tag waits at 20 and ice cream at 35. Teacher takedowns at
+        25, 30, 40, 45, and 50 stay a secret until the day. A cross marks a strike on the sheet.
+        A full track stays full. A strike cannot push a unit below zero.
       </p>
     </div>
   );

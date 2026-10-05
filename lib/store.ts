@@ -141,6 +141,7 @@ export function toPublic(state: ScoreState): PublicBoard {
     updatedAt: state.updatedAt,
     lastAction: state.lastAction,
     log: state.log ?? [],
+    crosses: state.crosses ?? { f1: 0, "234": 0, "56": 0 },
     vault: vaultTotal(state.units),
     storage: storageMode(),
   };

@@ -38,7 +38,7 @@ const surge = applyAction(secret.state, "surge", "234", "ricky", 5_000);
 assert.equal(surge.state.units["234"], 28);
 
 const capped = applyAction(
-  { ...start, units: { f1: 49, "234": 50, "56": 50 } },
+  { ...start, units: { f1: 74, "234": 75, "56": 75 } },
   "teamwork",
   undefined,
   "tiff",
@@ -46,12 +46,22 @@ const capped = applyAction(
 );
 assert.equal(capped.state.units.f1, UNIT_MAX);
 assert.equal(capped.state.units["234"], UNIT_MAX);
-assert.equal(vaultTotal(capped.state.units), 150);
-assert.ok(capped.events.some((event) => event.unitId === "f1" && event.points === 50));
+assert.equal(vaultTotal(capped.state.units), 225);
 assert.equal(capped.events.some((event) => event.scope === "vault"), false);
+
+const struck = applyAction(
+  { ...start, units: { f1: 4, "234": 0, "56": 0 } },
+  "strike",
+  "f1",
+  "jess",
+  6_500,
+);
+assert.equal(struck.state.units.f1, 3);
+assert.equal(struck.state.crosses.f1, 1);
 
 const floored = applyAction(start, "strike", "56", "doug", 7_000);
 assert.equal(floored.state.units["56"], 0);
+assert.equal(floored.state.crosses["56"], 0);
 
 const fullSchool = applyAction(
   { ...start, units: { f1: 50, "234": 50, "56": 49 } },

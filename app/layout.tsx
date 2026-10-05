@@ -17,7 +17,7 @@ const fredoka = Fredoka({
 export const metadata: Metadata = {
   title: "Operation: Teacher Takeover",
   description:
-    "Sunny yard tidy tracker for Milawa Primary. Three units, fifty ticks each, and secret teacher takedowns.",
+    "Sunny yard tidy tracker for Milawa Primary. Three units, seventy-five squares each, and secret teacher takedowns.",
   applicationName: "Teacher Takeover",
   appleWebApp: {
     capable: true,

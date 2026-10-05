@@ -1,6 +1,6 @@
 # Teacher Takeover
 
-A sunny window-TV scoreboard for Milawa Primary. Three units chase 50 ticks each. Laser tag and ice cream are on the board. Teacher takedowns stay a secret until the day.
+A sunny window-TV scoreboard for Milawa Primary. Three units chase 75 squares each. Laser tag and ice cream are on the board. Teacher takedowns stay a secret until the day. Strikes show up as crosses on the square sheet.
 
 The board polls `/api/score` every 3 seconds, so a TV in the window and a phone on yard duty stay in step without WebSockets. Scores live in Vercel KV when those environment variables are present. With no KV credentials, the dev server writes `data/yard.json` on this machine instead.
 
@@ -17,7 +17,7 @@ While `STAFF_PIN` is unset, the desk accepts **737373**. A custom pin must be si
 
 ## On the TV
 
-- **Leaderboard** shows the school total (0–150) and three unit cards. Each card has the live total out of 50, a progress bar, and a 50-square track.
+- **Leaderboard** shows the school total (0–225) and three unit cards on one screen. Each card has the live total out of 75, a 75-square track, crosses for strikes, and the +1, +3, and −1 buttons.
 - **Prizes** shows laser tag, ice cream, and sealed teacher-takedown envelopes.
 - **Yard Map** is the aerial of Milawa Primary with a live score on each zone.
 - **Rules** covers spot checks, strikes, and cross-class teamwork.

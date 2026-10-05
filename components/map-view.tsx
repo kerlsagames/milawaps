@@ -24,14 +24,14 @@ export function MapView({ board }: { board: PublicBoard }) {
         </p>
       </header>
 
-      <div className="relative overflow-hidden rounded-[28px] border border-black/10 bg-[#d7c49a] shadow-[0_16px_40px_rgba(90,60,20,0.18)]">
+      <div className="relative mx-auto overflow-hidden rounded-[28px] border border-black/10 bg-[#d7c49a] shadow-[0_16px_40px_rgba(90,60,20,0.18)] lg:max-h-[calc(100dvh-9rem)]">
         <Image
           src="/milawa-yard.jpg"
           alt="Aerial of Milawa Primary School. Gold is F/1 Oval and Construction, teal is 2/3/4 BER Deck, Toilets and Playground, purple is 5/6 Courts, Bin Area and Grass Playground."
           width={1888}
           height={2222}
           priority
-          className="h-auto w-full"
+          className="h-auto w-full lg:max-h-[calc(100dvh-9rem)] lg:object-contain"
         />
         {UNITS.map((unit) => (
           <MapChip key={unit.id} unitId={unit.id} score={board.units[unit.id]} />

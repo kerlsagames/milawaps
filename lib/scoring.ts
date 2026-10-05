@@ -28,6 +28,14 @@ export function sanitizeScores(raw: unknown): ScoreState {
       base.units[id] = clampScore(typeof value === "number" ? value : Number(value));
     }
   }
+  const crosses = record.crosses;
+  if (crosses && typeof crosses === "object") {
+    for (const id of UNIT_IDS) {
+      const value = (crosses as Record<string, unknown>)[id];
+      const count = clampScore(typeof value === "number" ? value : Number(value));
+      base.crosses[id] = count;
+    }
+  }
   base.updatedAt =
     typeof record.updatedAt === "number" && Number.isFinite(record.updatedAt)
       ? record.updatedAt
@@ -131,10 +139,16 @@ export function applyAction(
 
   const before = { ...state.units };
   const next = { ...state.units };
+  const crosses = { ...(state.crosses ?? { f1: 0, "234": 0, "56": 0 }) };
 
   if (action === "teamwork") {
     for (const id of UNIT_IDS) {
       next[id] = clampScore(next[id] + ACTION_COPY.teamwork.delta);
+    }
+  } else if (unitId && action === "strike") {
+    if (next[unitId] > 0) {
+      next[unitId] = clampScore(next[unitId] - 1);
+      crosses[unitId] = clampScore(crosses[unitId] + 1);
     }
   } else if (unitId) {
     next[unitId] = clampScore(next[unitId] + ACTION_COPY[action].delta);
@@ -142,6 +156,7 @@ export function applyAction(
 
   const updated: ScoreState = {
     units: next,
+    crosses,
     updatedAt: now,
     lastAction: {
       action,

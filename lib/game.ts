@@ -2,8 +2,8 @@ export const UNIT_IDS = ["f1", "234", "56"] as const;
 
 export type UnitId = (typeof UNIT_IDS)[number];
 
-export const UNIT_MAX = 50;
-export const VAULT_TARGET = 150;
+export const UNIT_MAX = 75;
+export const VAULT_TARGET = 225;
 export const PIN_LENGTH = 6;
 
 export const VIEWS = [
@@ -49,6 +49,7 @@ export type ScoreLogEntry = {
 
 export type ScoreState = {
   units: Record<UnitId, number>;
+  crosses: Record<UnitId, number>;
   updatedAt: number;
   lastAction: LastAction | null;
   log: ScoreLogEntry[];
@@ -63,6 +64,7 @@ export type StorageMode = "kv" | "file" | "memory";
 
 export type PublicBoard = {
   units: Record<UnitId, number>;
+  crosses: Record<UnitId, number>;
   updatedAt: number;
   lastAction: LastAction | null;
   log: ScoreLogEntry[];
@@ -225,6 +227,7 @@ export const ACTION_COPY: Record<
 export function emptyScores(now = Date.now()): ScoreState {
   return {
     units: { f1: 0, "234": 0, "56": 0 },
+    crosses: { f1: 0, "234": 0, "56": 0 },
     updatedAt: now,
     lastAction: null,
     log: [],

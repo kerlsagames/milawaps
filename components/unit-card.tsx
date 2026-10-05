@@ -5,18 +5,25 @@ import {
   CLASS_MILESTONES,
   UNIT_MAX,
   nextClassMilestone,
+  type ScoreAction,
+  type UnitId,
   type UnitTheme,
 } from "@/lib/game";
 import { BlockMatrix } from "@/components/block-matrix";
+import { Button } from "@/components/ui/button";
 
 export function UnitCard({
   unit,
   score,
+  crosses,
   index,
+  onScore,
 }: {
   unit: UnitTheme;
   score: number;
+  crosses: number;
   index: number;
+  onScore: (action: ScoreAction, unitId: UnitId) => void;
 }) {
   const percent = Math.max(0, Math.min(100, (score / UNIT_MAX) * 100));
   const next = nextClassMilestone(score);
@@ -24,46 +31,29 @@ export function UnitCard({
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.08, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-      className="relative flex flex-col rounded-[28px] border bg-card p-4 sm:p-5"
+      transition={{ delay: index * 0.05, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      className="relative flex flex-col rounded-3xl border bg-card p-3"
       style={{
         borderColor: `${unit.color}66`,
-        boxShadow: `0 8px 0 ${unit.deep}`,
+        boxShadow: `0 5px 0 ${unit.deep}`,
       }}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p
-            className="font-display text-3xl leading-none tracking-tight sm:text-4xl"
-            style={{ color: unit.color }}
-          >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="font-display text-2xl leading-none" style={{ color: unit.color }}>
             {unit.code}
           </p>
-          <p className="mt-1 text-sm font-bold text-foreground">{unit.name}</p>
-          <p className="mt-0.5 max-w-[16rem] text-sm leading-snug text-muted-foreground">
-            {unit.zoneLine}
-          </p>
+          <p className="mt-0.5 truncate text-xs font-bold text-muted-foreground">{unit.zoneLine}</p>
         </div>
-        {complete && (
-          <span
-            className="rotate-[-8deg] rounded-full border-2 px-2.5 py-1 font-display text-xs tracking-wide uppercase"
-            style={{ color: unit.color, borderColor: unit.color }}
-          >
-            Track full
-          </span>
-        )}
+        <div className="flex items-end gap-1">
+          <p className="font-display text-5xl leading-none tabular-nums">{score}</p>
+          <p className="pb-1 font-display text-lg text-muted-foreground tabular-nums">/{UNIT_MAX}</p>
+        </div>
       </div>
 
-      <div className="mt-4 flex items-end justify-between gap-3">
-        <p className="font-display text-7xl leading-none tracking-tight tabular-nums sm:text-8xl">
-          {score}
-        </p>
-        <p className="pb-1 font-display text-2xl text-muted-foreground tabular-nums">/ {UNIT_MAX}</p>
-      </div>
-
-      <div className="mt-3 h-3 overflow-hidden rounded-full bg-black/10">
+      <div className="mt-2 h-2 overflow-hidden rounded-full bg-black/10">
         <motion.div
           className="h-full rounded-full"
           style={{ backgroundColor: unit.color }}
@@ -73,37 +63,70 @@ export function UnitCard({
         />
       </div>
 
-      <div className="mt-4">
-        <BlockMatrix score={score} color={unit.color} label={unit.code} />
+      <div className="mt-2">
+        <BlockMatrix score={score} crosses={crosses} color={unit.color} label={unit.code} />
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-1.5">
+      <div className="mt-2 grid grid-cols-7 gap-1">
         {CLASS_MILESTONES.map((milestone) => {
           const reached = score >= milestone.points;
           const label = milestone.secret && !reached ? "?" : milestone.short;
           return (
             <div
               key={milestone.points}
-              className="min-w-[4.5rem] flex-1 rounded-xl px-2 py-1.5 text-center"
+              className="rounded-lg px-1 py-1 text-center"
               style={{
                 background: reached ? unit.color : "rgba(42,34,24,0.05)",
                 color: reached ? unit.ink : "#6b5844",
               }}
             >
-              <p className="text-[10px] font-extrabold tracking-wide uppercase">{milestone.points}</p>
-              <p className="font-display text-[11px] leading-tight sm:text-xs">{label}</p>
+              <p className="text-[9px] font-extrabold leading-none">{milestone.points}</p>
+              <p className="font-display text-[10px] leading-tight">{label}</p>
             </div>
           );
         })}
       </div>
 
-      <p className="mt-3 text-sm text-muted-foreground">
+      <p className="mt-1.5 truncate text-xs text-muted-foreground">
+        {crosses > 0 ? `${crosses} cross${crosses === 1 ? "" : "es"} · ` : ""}
         {next
           ? next.secret
-            ? `${next.points - score} ticks to a secret teacher takedown.`
-            : `${next.points - score} ticks to ${next.title}.`
-          : "Every tick on this track is lit."}
+            ? `${next.points - score} to a secret takedown`
+            : `${next.points - score} to ${next.title}`
+          : complete
+            ? "Sheet full"
+            : `${UNIT_MAX - score} squares left`}
       </p>
+
+      <div className="mt-2 grid grid-cols-3 gap-1.5">
+        <Button
+          type="button"
+          className="h-12 rounded-xl text-base"
+          style={{ background: unit.color, color: unit.ink }}
+          disabled={score >= UNIT_MAX}
+          onClick={() => onScore("spot", unit.id)}
+        >
+          +1
+        </Button>
+        <Button
+          type="button"
+          className="h-12 rounded-xl text-base"
+          style={{ background: unit.deep, color: "#fff7ea" }}
+          disabled={score >= UNIT_MAX}
+          onClick={() => onScore("surge", unit.id)}
+        >
+          +3
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-12 rounded-xl border-[#c23b3b]/40 bg-[#c23b3b]/10 text-base text-[#8d1f1f]"
+          disabled={score <= 0}
+          onClick={() => onScore("strike", unit.id)}
+        >
+          −1
+        </Button>
+      </div>
     </motion.article>
   );
 }

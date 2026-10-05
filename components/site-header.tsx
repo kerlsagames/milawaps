@@ -58,16 +58,16 @@ export function SiteHeader({
   }, []);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-black/10 bg-[#fff8ec]/90 backdrop-blur-md">
-      <div className="flex items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-5">
-        <div className="grid size-10 shrink-0 place-items-center rounded-2xl bg-gold text-[#2a1c04] shadow-[0_4px_0_#c48a16]">
+    <header className="z-30 shrink-0 border-b border-black/10 bg-[#fff8ec]/90 backdrop-blur-md">
+      <div className="flex items-center gap-2 px-3 py-1.5 sm:gap-3 sm:px-4">
+        <div className="grid size-9 shrink-0 place-items-center rounded-2xl bg-gold text-[#2a1c04] shadow-[0_3px_0_#c48a16]">
           <PartyPopper className="size-5" />
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-extrabold tracking-[0.22em] text-ink-gold uppercase">
             Milawa Primary
           </p>
-          <h1 className="truncate font-display text-xl leading-none sm:text-2xl">Teacher Takeover</h1>
+          <h1 className="truncate font-display text-lg leading-none sm:text-xl">Teacher Takeover</h1>
         </div>
         <p className="hidden text-sm font-bold text-muted-foreground md:block">{clock}</p>
         <span className="hidden items-center gap-1.5 rounded-full border border-black/10 bg-white/70 px-2.5 py-1 text-xs font-bold sm:inline-flex">
@@ -122,7 +122,7 @@ export function SiteHeader({
               aria-selected={selected}
               variant={selected ? "default" : "ghost"}
               onClick={() => onView(item.id)}
-              className="h-9 shrink-0 rounded-xl px-3"
+              className="h-8 shrink-0 rounded-xl px-3"
             >
               <Icon />
               <span className="sm:hidden">{item.short}</span>

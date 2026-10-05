@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import useSWR from "swr";
 import { AnimatePresence, motion } from "framer-motion";
 import { LeaderboardView } from "@/components/leaderboard-view";
@@ -214,8 +214,19 @@ export function YardBoard() {
   const pausedSeconds = paused ? Math.max(1, Math.ceil((pausedUntil - now) / 1000)) : 0;
   const live = error && !data ? "offline" : data ? "live" : "loading";
 
+  const scoreOrUnlock = useCallback(
+    (action: ActionId, unitId?: UnitId) => {
+      if (!token) {
+        setPinOpen(true);
+        return;
+      }
+      score(action, unitId);
+    },
+    [score, token],
+  );
+
   return (
-    <div className="relative min-h-dvh">
+    <div className="relative flex h-dvh flex-col overflow-hidden">
       <div className="yard-grid pointer-events-none fixed inset-0" />
       <SiteHeader
         view={view}
@@ -256,7 +267,7 @@ export function YardBoard() {
         })}
       </div>
 
-      <main className="relative mx-auto flex w-full max-w-7xl flex-col gap-4 px-3 py-4 sm:px-5 sm:py-6">
+      <main className="relative mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col overflow-y-auto px-3 py-2 lg:overflow-hidden lg:px-4">
         {error && !data && (
           <section className="rounded-[28px] border border-[#c23b3b]/30 bg-card px-5 py-8 text-center">
             <h2 className="font-display text-3xl">The board is out of reach</h2>
@@ -275,15 +286,20 @@ export function YardBoard() {
           <AnimatePresence mode="wait">
             <motion.div
               key={view}
-              initial={{ opacity: 0, y: 16 }}
+              className="h-full min-h-0"
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             >
-              {view === "board" && <LeaderboardView board={data} />}
-              {view === "prizes" && <PrizesView board={data} />}
-              {view === "map" && <MapView board={data} />}
-              {view === "rules" && <RulesView />}
+              <TvFit>
+                {view === "board" && (
+                  <LeaderboardView board={data} error={deskError} onScore={scoreOrUnlock} />
+                )}
+                {view === "prizes" && <PrizesView board={data} />}
+                {view === "map" && <MapView board={data} />}
+                {view === "rules" && <RulesView />}
+              </TvFit>
             </motion.div>
           </AnimatePresence>
         )}
@@ -299,7 +315,7 @@ export function YardBoard() {
         onSuccess={(next, expiresAt) => {
           saveToken(next, expiresAt);
           setPinOpen(false);
-          setHudOpen(true);
+          setView("board");
           setDeskError(null);
         }}
       />
@@ -354,6 +370,49 @@ async function celebrate(events: MilestoneEvent[]) {
       });
     }
   }
+}
+
+function TvFit({ children }: { children: ReactNode }) {
+  const frame = useRef<HTMLDivElement>(null);
+  const inner = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const frameEl = frame.current;
+    const innerEl = inner.current;
+    if (!frameEl || !innerEl) return;
+    const fit = () => {
+      const wide = window.matchMedia("(min-width: 1024px)").matches;
+      if (!wide) {
+        setScale(1);
+        return;
+      }
+      const available = frameEl.clientHeight;
+      const needed = innerEl.scrollHeight;
+      if (available > 0 && needed > 0) setScale(Math.min(1, available / needed));
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(frameEl);
+    observer.observe(innerEl);
+    window.addEventListener("resize", fit);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", fit);
+    };
+  }, [children]);
+
+  return (
+    <div ref={frame} className="h-full min-h-0 overflow-hidden">
+      <div
+        ref={inner}
+        className="h-full"
+        style={{ transform: `scale(${scale})`, transformOrigin: "top center" }}
+      >
+        {children}
+      </div>
+    </div>
+  );
 }
 
 function BoardSkeleton() {
