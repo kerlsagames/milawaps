@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { LockKeyhole } from "lucide-react";
 import { remainLabel, remainParts } from "@/lib/remain";
 import type { RevealDef } from "@/lib/reveals";
 
@@ -35,6 +36,7 @@ export function RevealView({
   const remain = revealAt == null ? null : revealAt - now;
   const count = remain == null || remain <= 0 ? null : remainParts(remain);
   const line = prize.trim();
+  const name = due ? reveal.title : reveal.mask;
 
   return (
     <div className="flex h-full min-h-0 flex-col items-center justify-center gap-6 lg:flex-row lg:gap-10">
@@ -43,15 +45,16 @@ export function RevealView({
         {count ? (
           <>
             <div
-              className="mt-3 flex justify-center gap-4 sm:gap-8 lg:justify-start"
-              aria-label={`${remainLabel(count)} until ${reveal.title} is revealed`}
+              className="mt-3 flex justify-center gap-3 sm:gap-6 lg:justify-start"
+              aria-label={`${remainLabel(count)} until ${name} is revealed`}
             >
               <RevealTick n={count.days} label={count.days === 1 ? "day" : "days"} />
               <RevealTick n={count.hours} label={count.hours === 1 ? "hour" : "hours"} />
               <RevealTick n={count.minutes} label={count.minutes === 1 ? "minute" : "minutes"} />
+              <RevealTick n={count.seconds} label={count.seconds === 1 ? "second" : "seconds"} />
             </div>
             <h2 className="mt-3 font-display text-3xl leading-tight sm:text-5xl">
-              until {reveal.title} is revealed
+              to go until {name} is revealed
             </h2>
           </>
         ) : due ? (
@@ -64,7 +67,7 @@ export function RevealView({
           </>
         ) : (
           <>
-            <h2 className="mt-2 font-display text-4xl leading-tight sm:text-6xl">{reveal.title}</h2>
+            <h2 className="mt-2 font-display text-4xl leading-tight sm:text-6xl">{name}</h2>
             <p className="mt-3 text-xl font-extrabold text-muted-foreground">Coming soon</p>
           </>
         )}
@@ -97,17 +100,28 @@ function FlipCard({
         }}
       >
         <div
-          className="absolute inset-0 overflow-hidden rounded-[32px] border-4 border-[#2a1c04] bg-[#cfc6b8] shadow-[0_10px_0_#6b5844]"
+          className={`absolute inset-0 overflow-hidden rounded-[32px] border-4 border-[#2a1c04] shadow-[0_10px_0_#6b5844] ${reveal.wide ? "bg-black" : "bg-[#cfc6b8]"}`}
           style={{ backfaceVisibility: "hidden" }}
         >
-          <SilhouettePair />
+          {reveal.wide ? <LockSquare /> : <SilhouettePair />}
         </div>
         <div
           className="absolute inset-0 overflow-hidden rounded-[32px] border-4 border-[#f5b942] bg-[#fff8ec] shadow-[0_10px_0_#c48a16]"
           style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
+          aria-hidden={flipped ? undefined : true}
         >
-          <PrizeArt src={reveal.image} title={reveal.title} prize={prize} />
+          <PrizeArt src={reveal.image} title={flipped ? reveal.title : ""} prize={flipped ? prize : ""} />
         </div>
+      </div>
+    </div>
+  );
+}
+
+function LockSquare() {
+  return (
+    <div className="grid size-full place-items-center bg-black">
+      <div className="grid aspect-square h-[78%] place-items-center rounded-[28px] bg-black shadow-[0_0_0_8px_#ffe14a,0_0_36px_rgba(255,225,74,0.45)]">
+        <LockKeyhole className="size-[46%] text-[#ffe14a]" strokeWidth={2.4} aria-hidden="true" />
       </div>
     </div>
   );

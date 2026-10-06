@@ -66,7 +66,7 @@ export function UnitCard({
       </div>
 
       <div className="mt-2 hidden flex-col gap-2 lg:flex">
-        <BlockMatrix score={score} color={unit.color} label={unit.code} />
+        <BlockMatrix score={score} color={unit.color} ink={unit.ink} label={unit.code} />
         <StrikeMatrix count={crosses} label={unit.code} />
       </div>
 

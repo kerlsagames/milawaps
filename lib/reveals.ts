@@ -6,6 +6,7 @@ export const REVEALS = [
     n: 1,
     points: 10,
     title: "Game with Mr K",
+    mask: "Prize 1",
     prize: "A game with Mr K",
     wide: true,
     face: "/mystery-teacher-a.jpg",
@@ -16,6 +17,7 @@ export const REVEALS = [
     n: 2,
     points: 20,
     title: "Teacher Takedown #1",
+    mask: "Takedown 1",
     prize: "Dress a teacher in clothes of your choice for a day",
     wide: false,
     face: "/mystery-teacher-a.jpg",
@@ -26,6 +28,7 @@ export const REVEALS = [
     n: 3,
     points: 30,
     title: "Laser Tag",
+    mask: "Prize 2",
     prize: "Laser tag for your class",
     wide: true,
     face: "/mystery-teacher-b.jpg",
@@ -36,6 +39,7 @@ export const REVEALS = [
     n: 4,
     points: 40,
     title: "Teacher Takedown #2",
+    mask: "Takedown 2",
     prize: "Whipped cream pie in a teacher's face",
     wide: false,
     face: "/mystery-teacher-b.jpg",
@@ -46,6 +50,7 @@ export const REVEALS = [
     n: 5,
     points: 50,
     title: "Ice Cream",
+    mask: "Prize 3",
     prize: "Ice cream",
     wide: true,
     face: "/mystery-teacher-a.jpg",
@@ -56,6 +61,7 @@ export const REVEALS = [
     n: 6,
     points: 60,
     title: "Teacher Takedown #3",
+    mask: "Takedown 3",
     prize: "Ice bucket a teacher",
     wide: false,
     face: "/mystery-teacher-a.jpg",
@@ -96,6 +102,10 @@ export function revealForPoints(points: number): RevealDef | null {
 
 export function prizeIsPublic(at: number | null | undefined, now = Date.now()): boolean {
   return typeof at === "number" && now >= at;
+}
+
+export function revealLabel(reveal: RevealDef, at: number | null | undefined, now = Date.now()) {
+  return prizeIsPublic(at, now) ? reveal.title : reveal.mask;
 }
 
 export function kioskScreens(shown: ShownMap): ScreenId[] {

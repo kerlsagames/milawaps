@@ -9,10 +9,12 @@ import { cn } from "@/lib/utils";
 export function BlockMatrix({
   score,
   color,
+  ink,
   label,
 }: {
   score: number;
   color: string;
+  ink: string;
   label: string;
 }) {
   const reveals = useDeskPrefs().reveals;
@@ -59,8 +61,19 @@ export function BlockMatrix({
                 aria-hidden="true"
                 className="absolute inset-[16%]"
                 strokeWidth={2.4}
-                style={{ color: won ? (filled ? "#2a1c04" : "#f5b942") : "#c8b89a" }}
+                style={{ color: won ? (filled ? ink : "#f5b942") : "#c8b89a" }}
               />
+            ) : filled ? (
+              <svg viewBox="0 0 12 12" className="absolute inset-[18%]" aria-hidden="true">
+                <path
+                  d="M2.1 6.2 L4.8 9 L9.9 3.1"
+                  fill="none"
+                  stroke={ink}
+                  strokeWidth="2.1"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             ) : null}
           </span>
         );

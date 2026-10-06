@@ -13,7 +13,7 @@ import { SiteHeader } from "@/components/site-header";
 import { StaffHud } from "@/components/staff-hud";
 import { Button } from "@/components/ui/button";
 import { clearToken, saveToken, setKioskPref, useDeskPrefs } from "@/lib/desk-prefs";
-import { kioskScreens, prizeIsPublic, revealById, revealForPoints, REVEALS, type ScreenId } from "@/lib/reveals";
+import { kioskScreens, prizeIsPublic, revealById, revealForPoints, revealLabel, REVEALS, type ScreenId } from "@/lib/reveals";
 import { cn } from "@/lib/utils";
 import {
   UNIT_IDS,
@@ -242,11 +242,10 @@ export function YardBoard() {
           view={view}
           tabs={[
             ...VIEWS.map((item) => ({ id: item.id, label: item.label, short: item.short })),
-            ...REVEALS.filter((item) => shown[item.id] || view === item.id).map((item) => ({
-              id: item.id,
-              label: item.title,
-              short: `#${item.n}`,
-            })),
+            ...REVEALS.filter((item) => shown[item.id] || view === item.id).map((item) => {
+              const label = revealLabel(item, prefs.reveals[item.id]?.at);
+              return { id: item.id, label, short: label };
+            }),
           ]}
           onView={chooseView}
           authed={Boolean(token)}
@@ -273,14 +272,7 @@ export function YardBoard() {
 
       {kiosk && <KioskStatus live={live} />}
 
-      {kiosk && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 h-1 bg-black/10">
-          <div
-            className="h-full bg-[#e2a01a] transition-[width] duration-200 ease-linear"
-            style={{ width: `${progress * 100}%` }}
-          />
-        </div>
-      )}
+      {kiosk && <ScreenTimer progress={progress} />}
 
       <div className="pointer-events-none fixed top-28 right-3 left-3 z-40 flex flex-col items-center gap-2 sm:top-24">
         {toasts.map((toast) => {
@@ -309,7 +301,7 @@ export function YardBoard() {
         className={cn(
           "relative mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col overflow-y-auto px-3 py-2 lg:overflow-hidden lg:px-4",
           view === "prizes" && "max-w-none",
-          kiosk && "pt-16",
+          kiosk && "pt-16 pb-12",
         )}
       >
         {error && !data && (
@@ -465,6 +457,36 @@ function TvFit({ children }: { children: ReactNode }) {
   );
 }
 
+const TIMER_COLORS = ["#f5b942", "#ff7a59", "#2ec9a0", "#5ec8ff", "#8b7cf7", "#ff7ab2"];
+
+function ScreenTimer({ progress }: { progress: number }) {
+  const segments = 16;
+  const lit = Math.round(Math.max(0, Math.min(1, progress)) * segments);
+
+  return (
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-4 pb-3" aria-hidden="true">
+      <div className="flex h-7 gap-1.5 rounded-full border-[3px] border-[#2a1c04] bg-[#fff6e4] p-1.5 shadow-[0_5px_0_#6b5844,0_0_24px_rgba(255,122,89,0.45)]">
+        {Array.from({ length: segments }, (_, index) => {
+          const on = index < lit;
+          const color = TIMER_COLORS[index % TIMER_COLORS.length];
+          const tip = on && index === lit - 1;
+          return (
+            <span
+              key={index}
+              className="h-full min-w-0 flex-1 rounded-md"
+              style={{
+                background: on ? color : "rgba(42,28,4,0.1)",
+                boxShadow: tip ? `0 0 12px ${color}` : undefined,
+                transform: tip ? "scaleY(1.25)" : undefined,
+              }}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function KioskStatus({ live }: { live: "loading" | "live" | "offline" }) {
   const [clock, setClock] = useState("");
 
@@ -484,7 +506,7 @@ function KioskStatus({ live }: { live: "loading" | "live" | "offline" }) {
   }, []);
 
   return (
-    <div className="fixed right-4 bottom-4 z-40 flex items-center gap-2 rounded-full border border-black/10 bg-white/90 px-3 py-1.5 text-xs font-bold shadow-[0_4px_0_rgba(42,28,4,0.12)]">
+    <div className="fixed right-4 bottom-14 z-40 flex items-center gap-2 rounded-full border border-black/10 bg-white/90 px-3 py-1.5 text-xs font-bold shadow-[0_4px_0_rgba(42,28,4,0.12)]">
       <span
         className={cn(
           "size-2 rounded-full",

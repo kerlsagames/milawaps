@@ -34,11 +34,15 @@ export function Countdown() {
       {done ? (
         <p className="text-center font-display text-3xl leading-none lg:text-5xl">Time's up</p>
       ) : (
-        <div className="flex items-end justify-center gap-4 lg:gap-10">
-          <Tick n={parts.days} label={parts.days === 1 ? "day" : "days"} />
-          <Tick n={parts.hours} label={parts.hours === 1 ? "hour" : "hours"} />
-          <Tick n={parts.minutes} label={parts.minutes === 1 ? "minute" : "minutes"} />
-        </div>
+        <>
+          <div className="flex items-end justify-center gap-3 sm:gap-6 lg:gap-10">
+            <Tick n={parts.days} label={parts.days === 1 ? "day" : "days"} />
+            <Tick n={parts.hours} label={parts.hours === 1 ? "hour" : "hours"} />
+            <Tick n={parts.minutes} label={parts.minutes === 1 ? "minute" : "minutes"} />
+            <Tick n={parts.seconds} label={parts.seconds === 1 ? "second" : "seconds"} />
+          </div>
+          <p className="mt-2 text-center font-display text-xl leading-none lg:text-3xl">to go</p>
+        </>
       )}
       <p className="mt-1 text-center text-xs font-bold text-[#f5b942] lg:text-sm">{when}</p>
     </section>

@@ -30,6 +30,9 @@ export function PrizesView({ board }: { board: PublicBoard }) {
       <header className="shrink-0">
         <p className="text-[11px] font-bold tracking-[0.22em] text-ink-gold uppercase">Follow the path</p>
         <h2 className="font-display text-4xl leading-none sm:text-5xl">Prizes</h2>
+        <p className="mt-1 text-lg font-extrabold text-[#5c4a32] sm:text-2xl">
+          Unlock prizes as you get more ticks.
+        </p>
       </header>
 
       <div className="flex flex-col gap-3 lg:min-h-0 lg:flex-1">
