@@ -21,18 +21,18 @@ export function Countdown() {
 
   return (
     <section
-      className="rounded-2xl border-4 border-[#2a1c04] bg-[#2a1c04] px-3 py-2 text-[#ffe08a] shadow-[0_4px_0_#6b5844] lg:rounded-[28px] lg:px-5 lg:py-3 lg:shadow-[0_6px_0_#6b5844]"
+      className="w-full shrink-0 rounded-2xl border-4 border-[#2a1c04] bg-[#2a1c04] px-3 py-2 text-[#ffe08a] shadow-[0_4px_0_#6b5844] lg:w-auto lg:rounded-[28px] lg:px-5 lg:py-2 lg:shadow-[0_6px_0_#6b5844]"
       aria-label={done ? "Countdown clock. Time's up" : `Countdown clock. ${remainLabel(parts)}`}
     >
       <div className="flex items-center justify-center gap-3 sm:gap-6 lg:gap-8">
-        <p className="shrink-0 text-left font-display text-xl leading-[0.85] sm:text-3xl lg:text-4xl">
+        <p className="shrink-0 text-left font-display text-xl leading-[0.85] sm:text-2xl lg:text-3xl">
           <span className="block sm:inline">Countdown </span>
           <span className="block sm:inline">clock</span>
         </p>
         {done ? (
           <p className="font-display text-3xl leading-none lg:text-5xl">Time's up</p>
         ) : (
-          <div className="flex items-end gap-2 sm:gap-6 lg:gap-10">
+          <div className="flex items-end gap-2 sm:gap-4 lg:gap-6">
             <Tick n={parts.days} label={parts.days === 1 ? "day" : "days"} />
             <Tick n={parts.hours} label={parts.hours === 1 ? "hour" : "hours"} />
             <Tick n={parts.minutes} label={parts.minutes === 1 ? "minute" : "minutes"} />
@@ -47,7 +47,7 @@ export function Countdown() {
 function Tick({ n, label }: { n: number; label: string }) {
   return (
     <div className="text-center">
-      <p className="font-display text-4xl leading-none tabular-nums lg:text-6xl">{n}</p>
+      <p className="font-display text-3xl leading-none tabular-nums sm:text-4xl lg:text-5xl">{n}</p>
       <p className="mt-1 text-[10px] font-extrabold tracking-[0.14em] uppercase lg:text-sm">{label}</p>
     </div>
   );

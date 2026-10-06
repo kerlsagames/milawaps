@@ -28,13 +28,15 @@ export function PrizesView({ board }: { board: PublicBoard }) {
 
   return (
     <div className="flex flex-col gap-3 lg:h-full">
-      <Countdown />
-      <header className="shrink-0">
-        <p className="text-[11px] font-bold tracking-[0.22em] text-ink-gold uppercase">Follow the path</p>
-        <h2 className="font-display text-4xl leading-none sm:text-5xl">Prizes</h2>
-        <p className="mt-1 text-lg font-extrabold text-[#5c4a32] sm:text-2xl">
-          Unlock prizes as you get more ticks.
-        </p>
+      <header className="flex shrink-0 flex-col gap-2 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold tracking-[0.22em] text-ink-gold uppercase">Follow the path</p>
+          <h2 className="font-display text-4xl leading-none sm:text-5xl">Prizes</h2>
+          <p className="mt-1 text-lg font-extrabold text-[#5c4a32] sm:text-2xl">
+            Unlock prizes as you get more ticks.
+          </p>
+        </div>
+        <Countdown />
       </header>
 
       <div className="flex flex-col gap-3 lg:min-h-0 lg:flex-1">
