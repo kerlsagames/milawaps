@@ -22,7 +22,7 @@ While `STAFF_PIN` is unset, the desk accepts **737373**. A custom pin must be si
 - **Yard & Rules** puts the aerial on the left and the four scoring rules on the right.
 - **Start Kiosk** sits next to the cog. Kiosk hides the header. Move the mouse or touch the screen and tap the X, or press Esc, to leave.
 - **Settings** (the cog) opens with an Admin button. The admin code unlocks page ticks, seconds, the days-to-go clock, and prize reveals. Yard duty names cannot change those.
-- **Prize reveals** are three extra pages, Teacher Takedown #1 to #3. Before the date, both silhouettes show with a countdown. When the time arrives the card flips and shows the prize. A cartoon can sit at `public/reveals/takedown-1.jpg` through `takedown-3.jpg`.
+- **Prize reveals** are three extra pages, Teacher Takedown #1 to #3. Before the date, both silhouettes show with a countdown. When the time arrives the card flips and shows the cartoon: dress-up for #1, pie for #2, and the ice bucket for #3.
 
 ## Yard duty desk
 

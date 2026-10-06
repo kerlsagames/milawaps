@@ -80,7 +80,7 @@ function FlipCard({
   prize: string;
 }) {
   return (
-    <div className="w-full max-w-[22rem] shrink-0 sm:max-w-[26rem]" style={{ perspective: "1400px" }}>
+    <div className="w-full max-w-[24rem] shrink-0 sm:max-w-[32rem]" style={{ perspective: "1400px" }}>
       <div
         className="relative aspect-[3/4] w-full"
         style={{
@@ -96,12 +96,10 @@ function FlipCard({
           <SilhouettePair />
         </div>
         <div
-          className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden rounded-[32px] border-4 border-[#f5b942] bg-[#fff8ec] p-5 text-center shadow-[0_10px_0_#c48a16]"
+          className="absolute inset-0 overflow-hidden rounded-[32px] border-4 border-[#f5b942] bg-[#fff8ec] shadow-[0_10px_0_#c48a16]"
           style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
         >
-          <p className="text-[11px] font-bold tracking-[0.18em] text-ink-gold uppercase">{reveal.title}</p>
-          {prize ? <p className="mt-3 font-display text-3xl leading-tight sm:text-4xl">{prize}</p> : null}
-          <PrizeArt src={reveal.image} />
+          <PrizeArt src={reveal.image} title={reveal.title} prize={prize} />
         </div>
       </div>
     </div>
@@ -127,15 +125,28 @@ function SilhouettePair() {
   );
 }
 
-function PrizeArt({ src }: { src: string }) {
-  const [hidden, setHidden] = useState(false);
-  if (hidden) return null;
+function PrizeArt({ src, title, prize }: { src: string; title: string; prize: string }) {
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
+
+  if (failed) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center p-5 text-center">
+        <p className="text-[11px] font-bold tracking-[0.18em] text-ink-gold uppercase">{title}</p>
+        {prize ? <p className="mt-3 font-display text-3xl leading-tight sm:text-4xl">{prize}</p> : null}
+      </div>
+    );
+  }
+
   return (
     <img
       src={src}
-      alt=""
-      onError={() => setHidden(true)}
-      className="mt-4 max-h-[46%] w-full object-contain"
+      alt={prize || title}
+      onError={() => setFailed(true)}
+      className="size-full object-cover"
     />
   );
 }
