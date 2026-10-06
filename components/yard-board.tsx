@@ -272,7 +272,7 @@ export function YardBoard() {
 
       {kiosk && <KioskStatus live={live} />}
 
-      {kiosk && <ScreenTimer key={startedAt || view} progress={progress} />}
+      {kiosk && <ScreenTimer progress={progress} epoch={startedAt} />}
 
       <div className="pointer-events-none fixed top-28 right-3 left-3 z-40 flex flex-col items-center gap-2 sm:top-24">
         {toasts.map((toast) => {
@@ -457,45 +457,93 @@ function TvFit({ children }: { children: ReactNode }) {
   );
 }
 
-const RUNNER_FRAMES = 8;
+const RUNNERS = [
+  { id: "runner", frames: 8 },
+  { id: "girl", frames: 8 },
+  { id: "staff", frames: 7 },
+  { id: "kid1", frames: 7 },
+  { id: "kid2", frames: 8 },
+  { id: "kid3", frames: 8 },
+  { id: "kid4", frames: 8 },
+] as const;
 
-function ScreenTimer({ progress }: { progress: number }) {
+function pickRace() {
+  const pool = RUNNERS.map((_, index) => index);
+  const first = pool.splice(Math.floor(Math.random() * pool.length), 1)[0] ?? 0;
+  const second = pool[Math.floor(Math.random() * pool.length)] ?? 1;
+  return {
+    runners: [first, second] as const,
+    changes: Math.floor(Math.random() * 4),
+    startWithFirst: Math.random() < 0.5,
+  };
+}
+
+function raceSpots(progress: number, changes: number, startWithFirst: boolean) {
+  const t = Math.min(1, Math.max(0, progress) / 0.86);
+  const wave = Math.cos(Math.PI * changes * t);
+  const firstAhead = startWithFirst ? wave >= 0 : wave < 0;
+  const gap = 0.18 * Math.abs(wave);
+  const front = t;
+  const back = Math.max(0, t - gap);
+  return {
+    spots: (firstAhead ? [front, back] : [back, front]) as [number, number],
+    ahead: firstAhead ? 0 : 1,
+    finished: t >= 1,
+  };
+}
+
+function ScreenTimer({ progress, epoch }: { progress: number; epoch: number }) {
   const [frame, setFrame] = useState(0);
-  const [winner] = useState(() => (Math.random() < 0.5 ? 0 : 1));
+  const [race, setRace] = useState(pickRace);
+  const epochRef = useRef(epoch);
 
   useEffect(() => {
-    const id = window.setInterval(() => setFrame((current) => (current + 1) % RUNNER_FRAMES), 90);
+    const id = window.setInterval(() => setFrame((current) => current + 1), 90);
     return () => window.clearInterval(id);
   }, []);
 
-  const safe = Math.max(0, Math.min(1, progress));
-  const lead = Math.min(1, safe / 0.86);
-  const chase = Math.min(0.74, safe * 0.74);
-  const spots = winner === 0 ? [lead, chase] : [chase, lead];
-  const finished = lead >= 1;
+  useEffect(() => {
+    if (epochRef.current === epoch) return;
+    const previous = epochRef.current;
+    epochRef.current = epoch;
+    if (previous === 0) return;
+    setRace(pickRace());
+  }, [epoch]);
+
+  const { spots, ahead, finished } = raceSpots(progress, race.changes, race.startWithFirst);
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 h-28" aria-hidden="true">
-      {spots.map((spot, index) => (
-        <img
-          key={index}
-          src={`/race/${index === 0 ? "runner" : "girl"}-${(frame + index * 4) % RUNNER_FRAMES}.png`}
-          alt=""
-          className="absolute h-[4.8rem] w-auto"
-          style={{
-            bottom: index === 0 ? "1.35rem" : "0.55rem",
-            left: `calc(${spot} * (100% - 6.5rem))`,
-            zIndex: spot >= spots[1 - index] ? 2 : 1,
-            filter: "drop-shadow(0 2px 0 rgba(42,28,4,0.28))",
-            transform: finished && index === winner ? "scale(1.06)" : undefined,
-            transformOrigin: "bottom center",
-          }}
-        />
-      ))}
+    <div
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-30 h-28"
+      aria-hidden="true"
+      data-changes={race.changes}
+      data-runners={race.runners.map((index) => RUNNERS[index]?.id).join(" ")}
+      data-ahead={RUNNERS[race.runners[ahead]]?.id}
+    >
+      {spots.map((spot, index) => {
+        const runner = RUNNERS[race.runners[index]];
+        if (!runner) return null;
+        return (
+          <img
+            key={runner.id}
+            src={`/race/${runner.id}-${frame % runner.frames}.png`}
+            alt=""
+            className="absolute h-[4.8rem] w-auto"
+            style={{
+              bottom: index === 0 ? "1.35rem" : "0.55rem",
+              left: `calc(${spot} * (100% - 6.5rem))`,
+              zIndex: spot >= spots[1 - index] ? 2 : 1,
+              filter: "drop-shadow(0 2px 0 rgba(42,28,4,0.28))",
+              transform: finished && index === ahead ? "scale(1.06)" : undefined,
+              transformOrigin: "bottom center",
+            }}
+          />
+        );
+      })}
       {finished ? (
         <span
           className="absolute bottom-[6.3rem] z-10 -translate-x-1/2 rounded-full bg-[#f5b942] px-3 py-0.5 font-display text-lg leading-none text-[#2a1c04] shadow-[0_3px_0_#a86a12]"
-          style={{ left: `calc(${spots[winner]} * (100% - 6.5rem) + 2.2rem)` }}
+          style={{ left: `calc(${spots[ahead]} * (100% - 6.5rem) + 2.2rem)` }}
         >
           Win!
         </span>
