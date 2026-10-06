@@ -1,42 +1,36 @@
 import { Trophy } from "lucide-react";
-import { CLASS_MILESTONES, UNIT_MAX } from "@/lib/game";
+import { CLASS_MILESTONES, STRIKE_MAX, UNIT_MAX } from "@/lib/game";
 import { cn } from "@/lib/utils";
 
 export function BlockMatrix({
   score,
-  crosses,
   color,
   label,
 }: {
   score: number;
-  crosses: number;
   color: string;
   label: string;
 }) {
-  const crossCount = Math.max(0, Math.min(UNIT_MAX, crosses));
-  const earned = Math.max(0, Math.min(UNIT_MAX, score + crossCount));
-  const crossFrom = UNIT_MAX - crossCount;
+  const earned = Math.max(0, Math.min(UNIT_MAX, score));
   const trophies = new Map<number, (typeof CLASS_MILESTONES)[number]>();
   for (const milestone of CLASS_MILESTONES) {
-    const shifted = Math.min(UNIT_MAX, milestone.points + crossCount);
-    const square = shifted > crossFrom ? crossFrom : shifted;
-    if (square >= 1 && !trophies.has(square)) trophies.set(square, milestone);
+    if (milestone.points >= 1 && milestone.points <= UNIT_MAX && !trophies.has(milestone.points)) {
+      trophies.set(milestone.points, milestone);
+    }
   }
 
   return (
     <div
       role="img"
-      aria-label={`${label}: tally ${score}. ${earned} ticks on the sheet, ${crossCount} crosses. A cross does not erase a tick.`}
+      aria-label={`${label}: ${earned} tidy squares out of ${UNIT_MAX}.`}
       className="grid gap-1"
       style={{ gridTemplateColumns: "repeat(10, minmax(0, 1fr))" }}
     >
       {Array.from({ length: UNIT_MAX }, (_, index) => {
         const square = index + 1;
-        const crossed = crossCount > 0 && index >= crossFrom;
         const filled = index < earned;
         const milestone = trophies.get(square);
         const won = Boolean(milestone && score >= milestone.points);
-        const marker = trophies.has(square);
         return (
           <span
             key={index}
@@ -44,37 +38,65 @@ export function BlockMatrix({
             className={cn(
               "relative aspect-square rounded-md border",
               filled && "border-transparent",
-              !filled && !crossed && "border-black/10 bg-black/5",
-              crossed && !filled && "border-[#c23b3b]/50 bg-[#c23b3b]/15",
-              crossed && filled && "border-[#9b1c1c]",
-              marker && !filled && !crossed && "border-dashed",
+              !filled && "border-black/10 bg-black/5",
+              milestone && !filled && "border-dashed",
             )}
             style={{
               backgroundColor: filled ? color : undefined,
-              borderColor: marker && !filled && !crossed ? color : undefined,
+              borderColor: milestone && !filled ? color : undefined,
             }}
           >
-            {milestone && !crossed && (
+            {milestone ? (
               <Trophy
                 aria-hidden="true"
                 className="absolute inset-[16%]"
                 strokeWidth={2.4}
                 style={{ color: won ? (filled ? "#2a1c04" : "#f5b942") : "#c8b89a" }}
               />
-            )}
-            {crossed && (
-              <svg viewBox="0 0 10 10" className="absolute inset-[12%]" aria-hidden="true">
-                <path
-                  d="M1.2 1.2 L8.8 8.8 M8.8 1.2 L1.2 8.8"
-                  stroke="#9b1c1c"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                />
-              </svg>
-            )}
+            ) : null}
           </span>
         );
       })}
+    </div>
+  );
+}
+
+export function StrikeMatrix({ count, label }: { count: number; label: string }) {
+  const marked = Math.max(0, Math.min(STRIKE_MAX, count));
+
+  return (
+    <div>
+      <p className="mb-1 text-[11px] font-extrabold tracking-[0.16em] text-[#8d1f1f] uppercase">Strikes</p>
+      <div
+        role="img"
+        aria-label={`${label}: ${marked} strikes out of ${STRIKE_MAX}.`}
+        className="grid gap-1"
+        style={{ gridTemplateColumns: "repeat(10, minmax(0, 1fr))" }}
+      >
+        {Array.from({ length: STRIKE_MAX }, (_, index) => {
+          const struck = index < marked;
+          return (
+            <span
+              key={index}
+              className={cn(
+                "relative aspect-square rounded-md border",
+                struck ? "border-[#9b1c1c] bg-[#c23b3b]/20" : "border-black/10 bg-black/5",
+              )}
+            >
+              {struck ? (
+                <svg viewBox="0 0 10 10" className="absolute inset-[18%]" aria-hidden="true">
+                  <path
+                    d="M1.2 1.2 L8.8 8.8 M8.8 1.2 L1.2 8.8"
+                    stroke="#9b1c1c"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              ) : null}
+            </span>
+          );
+        })}
+      </div>
     </div>
   );
 }

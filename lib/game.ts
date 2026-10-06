@@ -2,8 +2,9 @@ export const UNIT_IDS = ["f1", "234", "56"] as const;
 
 export type UnitId = (typeof UNIT_IDS)[number];
 
-export const UNIT_MAX = 80;
-export const VAULT_TARGET = 240;
+export const UNIT_MAX = 60;
+export const STRIKE_MAX = 30;
+export const VAULT_TARGET = UNIT_MAX * UNIT_IDS.length;
 /** School meter fills when the three classes add up to this many squares. */
 export const SCHOOL_GOAL = 120;
 export const PIN_LENGTH = 6;
@@ -207,7 +208,7 @@ export const ACTION_COPY: Record<
   strike: {
     label: "Stray Strike",
     short: "−1 Strike",
-    detail: "A sports ball, jumper, or rubbish cluster left behind.",
+    detail: "A sports ball, jumper, or rubbish cluster left behind. That takes one tidy square off.",
     delta: -1,
   },
   teamwork: {
@@ -270,6 +271,11 @@ export function vaultTotal(units: Record<UnitId, number>): number {
 export function clampScore(value: number): number {
   if (!Number.isFinite(value)) return 0;
   return Math.max(0, Math.min(UNIT_MAX, Math.round(value)));
+}
+
+export function clampStrike(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(STRIKE_MAX, Math.round(value)));
 }
 
 export function nextClassMilestone(score: number): Milestone | null {

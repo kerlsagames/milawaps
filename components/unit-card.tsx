@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { UNIT_MAX, type ScoreAction, type UnitId, type UnitTheme } from "@/lib/game";
-import { BlockMatrix } from "@/components/block-matrix";
+import { BlockMatrix, StrikeMatrix } from "@/components/block-matrix";
 import { Button } from "@/components/ui/button";
 
 export function UnitCard({
@@ -65,13 +65,14 @@ export function UnitCard({
         />
       </div>
 
-      <div className="mt-2 hidden lg:block">
-        <BlockMatrix score={score} crosses={crosses} color={unit.color} label={unit.code} />
+      <div className="mt-2 hidden flex-col gap-2 lg:flex">
+        <BlockMatrix score={score} color={unit.color} label={unit.code} />
+        <StrikeMatrix count={crosses} label={unit.code} />
       </div>
 
       {crosses > 0 ? (
-        <p className="mt-1.5 truncate text-xs text-muted-foreground lg:mt-2">
-          {crosses} cross{crosses === 1 ? "" : "es"}
+        <p className="mt-1.5 truncate text-xs text-muted-foreground lg:hidden">
+          {crosses} strike{crosses === 1 ? "" : "s"}
         </p>
       ) : null}
 

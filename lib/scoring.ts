@@ -10,6 +10,7 @@ import {
   type StaffId,
   type UnitId,
   clampScore,
+  clampStrike,
   emptyScores,
   isActionId,
   isStaffId,
@@ -32,7 +33,7 @@ export function sanitizeScores(raw: unknown): ScoreState {
   if (crosses && typeof crosses === "object") {
     for (const id of UNIT_IDS) {
       const value = (crosses as Record<string, unknown>)[id];
-      const count = clampScore(typeof value === "number" ? value : Number(value));
+      const count = clampStrike(typeof value === "number" ? value : Number(value));
       base.crosses[id] = count;
     }
   }
@@ -148,7 +149,7 @@ export function applyAction(
   } else if (unitId && action === "strike") {
     if (next[unitId] > 0) {
       next[unitId] = clampScore(next[unitId] - 1);
-      crosses[unitId] = clampScore(crosses[unitId] + 1);
+      crosses[unitId] = clampStrike(crosses[unitId] + 1);
     }
   } else if (unitId) {
     next[unitId] = clampScore(next[unitId] + ACTION_COPY[action].delta);

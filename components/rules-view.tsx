@@ -21,7 +21,7 @@ const rules = [
     action: "strike" as const,
     icon: CircleMinus,
     tone: "#ff8b8b",
-    title: "Crosses",
+    title: "Strikes",
   },
   {
     action: "teamwork" as const,

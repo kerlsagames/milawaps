@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { UNIT_MAX, emptyScores, vaultTotal } from "../lib/game";
+import { STRIKE_MAX, UNIT_MAX, VAULT_TARGET, emptyScores, vaultTotal } from "../lib/game";
 import { applyAction } from "../lib/scoring";
 
 const start = emptyScores(1_000);
@@ -49,7 +49,7 @@ assert.equal(laser.events[0]?.title, "Laser Tag");
 assert.equal(laser.events[0]?.secret, false);
 
 const capped = applyAction(
-  { ...start, units: { f1: 79, "234": 80, "56": 80 } },
+  { ...start, units: { f1: 59, "234": 60, "56": 60 } },
   "teamwork",
   undefined,
   "tiff",
@@ -57,7 +57,7 @@ const capped = applyAction(
 );
 assert.equal(capped.state.units.f1, UNIT_MAX);
 assert.equal(capped.state.units["234"], UNIT_MAX);
-assert.equal(vaultTotal(capped.state.units), 240);
+assert.equal(vaultTotal(capped.state.units), VAULT_TARGET);
 assert.equal(capped.events.some((event) => event.scope === "vault"), false);
 
 const struck = applyAction(
@@ -73,6 +73,16 @@ assert.equal(struck.state.crosses.f1, 1);
 const floored = applyAction(start, "strike", "56", "doug", 7_000);
 assert.equal(floored.state.units["56"], 0);
 assert.equal(floored.state.crosses["56"], 0);
+
+const fullStrikes = applyAction(
+  { ...start, units: { f1: 4, "234": 0, "56": 0 }, crosses: { f1: STRIKE_MAX, "234": 0, "56": 0 } },
+  "strike",
+  "f1",
+  "jenny",
+  7_500,
+);
+assert.equal(fullStrikes.state.units.f1, 3);
+assert.equal(fullStrikes.state.crosses.f1, STRIKE_MAX);
 
 const fullSchool = applyAction(
   { ...start, units: { f1: 50, "234": 50, "56": 49 } },
