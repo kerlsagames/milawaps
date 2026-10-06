@@ -21,7 +21,7 @@ While `STAFF_PIN` is unset, the desk accepts **737373**. A custom pin must be si
 - **Prizes** gives each class its own path. Every stop stays a lock until that prize’s reveal date. After that, the path shows the picture and the name.
 - **Yard & Rules** puts the aerial on the left and the four scoring rules on the right.
 - **Start Kiosk** sits next to the cog. Kiosk hides the header. Move the mouse or touch the screen and tap the X, or press Esc, to leave.
-- **Settings** (the cog) opens with an Admin button. The admin code unlocks page ticks, seconds, the days-to-go clock, and prize reveals. Yard duty names cannot change those.
+- **Settings** (the cog) lets anyone set how long the leaderboard, prizes, and yard pages stay on the TV. The admin code unlocks page ticks, the finish clock, prize reveals, and a reset for scores and reveals.
 - **Prize reveals** are six extra pages, one for each prize. Before the date, both silhouettes show with a countdown. When the time arrives the card flips and shows the cartoon.
 
 ## Yard duty desk
@@ -35,7 +35,7 @@ The padlock in the header opens the name list, then a 6-digit code pad. After th
 | −1 Stray Strike | Ball, jumper, or rubbish cluster |
 | +3 Teamwork | Adds 3 to all three units |
 
-Scores clamp between 0 and 60. A strike lowers the tally by one and marks the strikes grid, up to 30. Taps play a short Web Audio synth tone in the browser. No audio files are shipped.
+Scores clamp between 0 and 60. A strike lowers the tally by one and marks the strikes grid, up to 30.
 
 Class prizes, per unit: 10 Game with Mr K, 20 Teacher Takedown #1, 30 laser tag for the class, 40 Teacher Takedown #2, 50 ice cream, and 60 Teacher Takedown #3. None of those names show on the prize path until the reveal date in Settings. Staff can open **Mystery ideas** on the desk for pie, ice bucket, and dress-up prompts. Those lines never appear on the TV.
 

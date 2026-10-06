@@ -1,7 +1,6 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { setAudioMuted } from "@/lib/audio";
 import { VIEWS } from "@/lib/game";
 import {
   DEFAULT_SHOWN,
@@ -27,7 +26,6 @@ export type RevealMap = Record<RevealId, RevealPrefs>;
 
 export type DeskPrefs = {
   kiosk: boolean;
-  muted: boolean;
   token: string | null;
   dwells: DwellMap;
   finishAt: number | null;
@@ -58,7 +56,6 @@ function defaultReveals(): RevealMap {
 
 const serverPrefs: DeskPrefs = {
   kiosk: false,
-  muted: false,
   token: null,
   dwells: DEFAULT_DWELLS,
   finishAt: null,
@@ -150,7 +147,6 @@ function readFinish(): number | null {
 function readPrefs(): DeskPrefs {
   return {
     kiosk: window.localStorage.getItem("ott-kiosk") === "1",
-    muted: window.localStorage.getItem("ott-muted") === "1",
     token: readToken(),
     dwells: readDwells(),
     finishAt: readFinish(),
@@ -161,14 +157,12 @@ function readPrefs(): DeskPrefs {
 
 function publish(next: DeskPrefs) {
   current = next;
-  setAudioMuted(next.muted);
   for (const listener of listeners) listener();
 }
 
 function subscribe(listener: () => void) {
   listeners.add(listener);
   current = readPrefs();
-  setAudioMuted(current.muted);
   return () => listeners.delete(listener);
 }
 
@@ -183,11 +177,6 @@ export function useDeskPrefs() {
 export function setKioskPref(kiosk: boolean) {
   window.localStorage.setItem("ott-kiosk", kiosk ? "1" : "0");
   publish({ ...readPrefs(), kiosk });
-}
-
-export function setMutedPref(muted: boolean) {
-  window.localStorage.setItem("ott-muted", muted ? "1" : "0");
-  publish({ ...readPrefs(), muted });
 }
 
 export function setFinishAt(finishAt: number | null) {
@@ -223,6 +212,15 @@ export function setRevealAt(id: RevealId, at: number | null) {
   };
   window.localStorage.setItem("ott-reveals", JSON.stringify(reveals));
   publish({ ...readPrefs(), reveals });
+}
+
+export function resetReveals() {
+  const reveals = defaultReveals();
+  window.localStorage.setItem("ott-reveals", JSON.stringify(reveals));
+  const shown = { ...readShown() };
+  for (const reveal of REVEALS) shown[reveal.id] = false;
+  window.localStorage.setItem("ott-kiosk-shown", JSON.stringify(shown));
+  publish({ ...readPrefs(), reveals, shown });
 }
 
 export function setRevealPrize(id: RevealId, prize: string) {

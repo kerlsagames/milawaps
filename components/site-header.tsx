@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Gift, Lock, LockOpen, Map, PartyPopper, Sparkles, Trophy, Volume2, VolumeX } from "lucide-react";
+import { Gift, Lock, LockOpen, Map, PartyPopper, Sparkles, Trophy } from "lucide-react";
 import { KioskSettings } from "@/components/kiosk-settings";
 import type { ScreenId } from "@/lib/reveals";
 import { Button } from "@/components/ui/button";
@@ -20,8 +20,6 @@ export function SiteHeader({
   authed,
   dutyName,
   onLockClick,
-  muted,
-  onToggleMute,
   live,
   onStartKiosk,
 }: {
@@ -31,8 +29,6 @@ export function SiteHeader({
   authed: boolean;
   dutyName: string | null;
   onLockClick: () => void;
-  muted: boolean;
-  onToggleMute: () => void;
   live: "loading" | "live" | "offline";
   onStartKiosk: () => void;
 }) {
@@ -79,16 +75,6 @@ export function SiteHeader({
           />
           {live === "live" ? "Live" : live === "loading" ? "Linking" : "Offline"}
         </span>
-        <Button
-          variant="outline"
-          size="icon"
-          aria-pressed={muted}
-          aria-label={muted ? "Unmute sounds" : "Mute sounds"}
-          onClick={onToggleMute}
-          className="size-10 rounded-xl"
-        >
-          {muted ? <VolumeX /> : <Volume2 />}
-        </Button>
         <KioskSettings onPreview={onView} />
         <Button type="button" className="h-10 rounded-xl px-2.5 text-sm sm:px-3" onClick={onStartKiosk}>
           Start Kiosk

@@ -12,8 +12,7 @@ import { RevealView } from "@/components/reveal-view";
 import { SiteHeader } from "@/components/site-header";
 import { StaffHud } from "@/components/staff-hud";
 import { Button } from "@/components/ui/button";
-import { playAction, playChime, playError, playFanfare } from "@/lib/audio";
-import { clearToken, saveToken, setKioskPref, setMutedPref, useDeskPrefs } from "@/lib/desk-prefs";
+import { clearToken, saveToken, setKioskPref, useDeskPrefs } from "@/lib/desk-prefs";
 import { kioskScreens, prizeIsPublic, revealById, revealForPoints, REVEALS, type ScreenId } from "@/lib/reveals";
 import { cn } from "@/lib/utils";
 import {
@@ -43,7 +42,7 @@ export function YardBoard() {
     refreshInterval: 3000,
   });
   const prefs = useDeskPrefs();
-  const { kiosk, muted, token, dwells, shown } = prefs;
+  const { kiosk, token, dwells, shown } = prefs;
   const dwellsRef = useRef(dwells);
   dwellsRef.current = dwells;
   const playlist = kioskScreens(shown);
@@ -63,8 +62,6 @@ export function YardBoard() {
   const exitTimer = useRef<number | null>(null);
   const sawFullscreen = useRef(false);
   const seenUnits = useRef<Record<UnitId, number> | null>(null);
-  const seenAction = useRef<number | null>(null);
-  const selfStamp = useRef<number | null>(null);
   const chain = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
@@ -150,14 +147,10 @@ export function YardBoard() {
     if (!data) return;
     if (!seenUnits.current) {
       seenUnits.current = data.units;
-      seenAction.current = data.lastAction?.at ?? null;
       return;
     }
     const events = milestonesBetween(seenUnits.current, data.units);
     seenUnits.current = data.units;
-    const actionAt = data.lastAction?.at ?? null;
-    const actionChanged = actionAt !== null && actionAt !== seenAction.current;
-    if (actionAt !== null) seenAction.current = actionAt;
     if (events.length) {
       setToasts((current) => {
         const additions = events.map((event) => ({
@@ -167,9 +160,6 @@ export function YardBoard() {
         return [...additions, ...current].slice(0, 3);
       });
       void celebrate(events);
-      playFanfare(events.some((event) => event.secret || event.points === 50));
-    } else if (actionChanged && actionAt !== selfStamp.current) {
-      playChime();
     }
   }, [data]);
 
@@ -191,7 +181,6 @@ export function YardBoard() {
   const score = useCallback(
     (action: ActionId, unitId?: UnitId) => {
       if (!token) return;
-      playAction(action);
       setDeskError(null);
       chain.current = chain.current
         .then(async () => {
@@ -211,15 +200,12 @@ export function YardBoard() {
             setHudOpen(false);
             setPinOpen(true);
             setDeskError("The desk locked itself. Enter the PIN again.");
-            playError();
             return;
           }
           if (!response.ok) {
             setDeskError(body.error ?? "That tick did not land.");
-            playError();
             return;
           }
-          if (body.lastAction?.at) selfStamp.current = body.lastAction.at;
           await mutate(body, { revalidate: false });
         })
         .catch(() => {
@@ -269,8 +255,6 @@ export function YardBoard() {
             if (token) setHudOpen(true);
             else setPinOpen(true);
           }}
-          muted={muted}
-          onToggleMute={() => setMutedPref(!muted)}
           live={isLoading && !data ? "loading" : live}
           onStartKiosk={enterKiosk}
         />

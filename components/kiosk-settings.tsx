@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Settings, Volume2, VolumeX } from "lucide-react";
+import { Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,8 +14,8 @@ import { VIEWS } from "@/lib/game";
 import {
   MAX_DWELL_SECONDS,
   MIN_DWELL_SECONDS,
+  resetReveals,
   setFinishAt,
-  setMutedPref,
   setRevealAt,
   setRevealPrize,
   setScreenShown,
@@ -34,6 +34,8 @@ export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => 
   const [code, setCode] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [resetNote, setResetNote] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -60,6 +62,30 @@ export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => 
     setAsking(false);
     setCode("");
     setMessage("");
+  }
+
+  async function resetBoard() {
+    const token = window.sessionStorage.getItem(ADMIN_KEY);
+    if (!token) return;
+    setBusy(true);
+    setResetNote("");
+    try {
+      const response = await fetch("/api/admin/reset", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) {
+        setResetNote("The scores did not reset.");
+        return;
+      }
+      resetReveals();
+      setConfirmReset(false);
+      setResetNote("Scores and reveals are cleared.");
+    } catch {
+      setResetNote("The scores did not reset.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function submitCode(next: string) {
@@ -115,10 +141,21 @@ export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => 
             </div>
             <DialogDescription>
               {admin
-                ? "Tick a page to put it on the TV. Set how long it stays, and when each prize is revealed."
-                : "Only the admin can change the TV and the prize reveals."}
+                ? "Tick a page to put it on the TV, set the prize reveals, or reset the board."
+                : "Set how long the leaderboard, prizes, and yard pages stay on the TV."}
             </DialogDescription>
           </DialogHeader>
+          <div className="grid gap-3">
+            {VIEWS.map((view) => (
+              <ScreenRow
+                key={view.id}
+                id={view.id}
+                label={view.label}
+                seconds={prefs.dwells[view.id]}
+                shown={admin ? prefs.shown[view.id] : undefined}
+              />
+            ))}
+          </div>
           {!admin ? (
             asking ? (
               <form
@@ -156,17 +193,6 @@ export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => 
             ) : null
           ) : (
           <>
-          <div className="grid gap-3">
-            {VIEWS.map((view) => (
-              <ScreenRow
-                key={view.id}
-                id={view.id}
-                label={view.label}
-                seconds={prefs.dwells[view.id]}
-                shown={prefs.shown[view.id]}
-              />
-            ))}
-          </div>
           <section className="grid gap-3 rounded-2xl border border-[#e2a01a]/40 bg-[#fff8df] p-3">
             <div>
               <h3 className="font-display text-xl">Prize reveals</h3>
@@ -232,19 +258,35 @@ export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => 
               The board counts days, hours, and minutes until this moment. Clear both fields and tap Save to hide the clock.
             </span>
           </div>
-          <div className="flex items-center justify-between gap-3">
-            <p className="font-bold">Sounds</p>
-            <Button
-              type="button"
-              variant="outline"
-              className="rounded-xl"
-              aria-pressed={!prefs.muted}
-              onClick={() => setMutedPref(!prefs.muted)}
-            >
-              {prefs.muted ? <VolumeX /> : <Volume2 />}
-              {prefs.muted ? "Muted" : "On"}
+          {confirmReset ? (
+            <div className="grid gap-2 rounded-2xl border border-[#c23b3b]/40 bg-[#fff1f1] p-3">
+              <p className="text-sm font-bold text-[#8d1f1f]">
+                This clears every class score and every prize reveal on this TV.
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button type="button" variant="outline" className="h-10 rounded-xl" onClick={() => setConfirmReset(false)}>
+                  Keep them
+                </Button>
+                <Button
+                  type="button"
+                  className="h-10 rounded-xl bg-[#8d1f1f] text-white"
+                  disabled={busy}
+                  onClick={() => void resetBoard()}
+                >
+                  Reset now
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button type="button" variant="outline" className="h-10 rounded-xl" onClick={() => setConfirmReset(true)}>
+              Reset scores and reveals
             </Button>
-          </div>
+          )}
+          {resetNote ? (
+            <p className="text-sm font-semibold" role="status">
+              {resetNote}
+            </p>
+          ) : null}
           </>
           )}
         </DialogContent>
@@ -262,18 +304,20 @@ function ScreenRow({
   id: ScreenId;
   label: string;
   seconds: number;
-  shown: boolean;
+  shown?: boolean;
 }) {
   return (
     <div className="grid gap-1.5">
       <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={shown}
-          aria-label={`Show ${label} on the TV`}
-          onChange={(event) => setScreenShown(id, event.target.checked)}
-          className="size-5 accent-[#e2a01a]"
-        />
+        {shown === undefined ? null : (
+          <input
+            type="checkbox"
+            checked={shown}
+            aria-label={`Show ${label} on the TV`}
+            onChange={(event) => setScreenShown(id, event.target.checked)}
+            className="size-5 accent-[#e2a01a]"
+          />
+        )}
         <span className="min-w-0 flex-1 text-sm leading-tight font-bold">{label}</span>
         <span className="font-display text-lg tabular-nums">{seconds}s</span>
       </div>

@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Delete } from "lucide-react";
-import { playError, playUnlock } from "@/lib/audio";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -74,7 +73,6 @@ export function PinDialog({
         retryAfter?: number;
       };
       if (!response.ok || !body.token || !body.expiresAt) {
-        playError();
         setShake(true);
         window.setTimeout(() => setShake(false), 450);
         setPin("");
@@ -82,11 +80,9 @@ export function PinDialog({
         if (response.status === 429 && body.retryAfter) setLockedFor(body.retryAfter);
         return;
       }
-      playUnlock();
       resetPad();
       onSuccess(body.token, body.expiresAt);
     } catch {
-      playError();
       setMessage("The desk did not answer. Try again.");
       setPin("");
     } finally {
