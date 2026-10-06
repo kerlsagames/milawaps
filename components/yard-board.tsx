@@ -486,7 +486,7 @@ function ScreenTimer({ progress }: { progress: number }) {
             bottom: index === 0 ? "1.35rem" : "0.55rem",
             left: `calc(${spot} * (100% - 6.5rem))`,
             zIndex: spot >= spots[1 - index] ? 2 : 1,
-            filter: `drop-shadow(3px 4px 0 ${index === 0 ? "#f5b942" : "#8b7cf7"})`,
+            filter: "drop-shadow(0 2px 0 rgba(42,28,4,0.28))",
             transform: finished && index === winner ? "scale(1.06)" : undefined,
             transformOrigin: "bottom center",
           }}
