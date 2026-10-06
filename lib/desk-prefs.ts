@@ -24,6 +24,8 @@ export type RevealPrefs = {
 
 export type RevealMap = Record<RevealId, RevealPrefs>;
 
+export type TimerStyle = "race" | "blocks";
+
 export type DeskPrefs = {
   kiosk: boolean;
   token: string | null;
@@ -31,6 +33,7 @@ export type DeskPrefs = {
   finishAt: number | null;
   shown: ShownMap;
   reveals: RevealMap;
+  timer: TimerStyle;
 };
 
 export const MIN_DWELL_SECONDS = 5;
@@ -61,6 +64,7 @@ const serverPrefs: DeskPrefs = {
   finishAt: null,
   shown: DEFAULT_SHOWN,
   reveals: defaultReveals(),
+  timer: "race",
 };
 
 let current: DeskPrefs = serverPrefs;
@@ -144,6 +148,10 @@ function readFinish(): number | null {
   return Number.isFinite(value) && value > 0 ? value : null;
 }
 
+function readTimer(): TimerStyle {
+  return window.localStorage.getItem("ott-timer-style") === "blocks" ? "blocks" : "race";
+}
+
 function readPrefs(): DeskPrefs {
   return {
     kiosk: window.localStorage.getItem("ott-kiosk") === "1",
@@ -152,6 +160,7 @@ function readPrefs(): DeskPrefs {
     finishAt: readFinish(),
     shown: readShown(),
     reveals: readReveals(),
+    timer: readTimer(),
   };
 }
 
@@ -172,6 +181,11 @@ function getSnapshot() {
 
 export function useDeskPrefs() {
   return useSyncExternalStore(subscribe, getSnapshot, () => serverPrefs);
+}
+
+export function setTimerStyle(timer: TimerStyle) {
+  window.localStorage.setItem("ott-timer-style", timer);
+  publish({ ...readPrefs(), timer });
 }
 
 export function setKioskPref(kiosk: boolean) {

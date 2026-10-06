@@ -19,6 +19,7 @@ import {
   setRevealAt,
   setRevealPrize,
   setScreenShown,
+  setTimerStyle,
   setViewDwell,
   useDeskPrefs,
 } from "@/lib/desk-prefs";
@@ -145,6 +146,31 @@ export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => 
                 : "Set how long the leaderboard, prizes, and yard pages stay on the TV."}
             </DialogDescription>
           </DialogHeader>
+          <div className="grid gap-2">
+            <p className="text-sm font-bold">Bottom timer</p>
+            <div className="grid grid-cols-2 gap-2" role="group" aria-label="Bottom timer">
+              {(
+                [
+                  ["blocks", "Coloured rectangles"],
+                  ["race", "Running race"],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={prefs.timer === id}
+                  onClick={() => setTimerStyle(id)}
+                  className={
+                    prefs.timer === id
+                      ? "h-11 rounded-xl bg-[#2a1c04] text-sm font-extrabold text-[#ffe08a] shadow-[0_3px_0_#6b5844]"
+                      : "h-11 rounded-xl border border-black/10 bg-white text-sm font-extrabold"
+                  }
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="grid gap-3">
             {VIEWS.map((view) => (
               <ScreenRow

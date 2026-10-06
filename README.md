@@ -21,7 +21,7 @@ While `STAFF_PIN` is unset, the desk accepts **737373**. A custom pin must be si
 - **Prizes** puts the countdown clock to the right of the heading when a finish time is set, then each class path and the line “Unlock prizes as you get more ticks.” Every stop stays a lock until that prize’s reveal date. After that, the path shows the picture and the name.
 - **Yard & Rules** puts the aerial on the left and the four scoring rules on the right.
 - **Start Kiosk** sits next to the cog. Kiosk hides the header. Each screen picks two runners from the seven kids and staff. The lead can change up to three times, then one of them hits the finish. Move the mouse or touch the screen and tap the X, or press Esc, to leave.
-- **Settings** (the cog) lets anyone set how long the leaderboard, prizes, and yard pages stay on the TV. The admin code unlocks page ticks, the finish clock, prize reveals, and a reset for scores and reveals.
+- **Settings** (the cog) lets anyone choose the bottom timer — coloured rectangles or the running race — and set how long the leaderboard, prizes, and yard pages stay on the TV. The admin code unlocks page ticks, the finish clock, prize reveals, and a reset for scores and reveals.
 - **Prize reveals** are six extra pages, one for each prize. Before the date the countdown says Prize 1, Takedown 1, and so on. Prize 1, 2, and 3 show a yellow lock on a black square. The teacher takedowns show the two silhouettes. When the time arrives the card flips, the real name appears, and the cartoon shows.
 
 ## Yard duty desk

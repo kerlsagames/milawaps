@@ -301,7 +301,7 @@ export function YardBoard() {
         className={cn(
           "relative mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col overflow-y-auto px-3 py-2 lg:overflow-hidden lg:px-4",
           (view === "prizes" || view === "board") && "max-w-none",
-          kiosk && "pt-16 pb-28",
+          kiosk && (prefs.timer === "blocks" ? "pt-16 pb-16" : "pt-16 pb-28"),
         )}
       >
         {error && !data && (
@@ -493,7 +493,38 @@ function raceSpots(progress: number, changes: number, startWithFirst: boolean) {
   };
 }
 
+const BLOCK_COLORS = ["#f5b942", "#ff7a59", "#2ec9a0", "#5ec8ff", "#8b7cf7", "#ff7ab2"];
+
+function ColourBlocks({ progress }: { progress: number }) {
+  const segments = 16;
+  const lit = Math.round(Math.max(0, Math.min(1, progress)) * segments);
+
+  return (
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-4 pb-3" aria-hidden="true">
+      <div className="flex h-7 gap-1.5 rounded-full border-[3px] border-[#2a1c04] bg-[#fff6e4] p-1.5 shadow-[0_5px_0_#6b5844,0_0_24px_rgba(255,122,89,0.45)]">
+        {Array.from({ length: segments }, (_, index) => {
+          const on = index < lit;
+          const color = BLOCK_COLORS[index % BLOCK_COLORS.length] ?? "#f5b942";
+          const tip = on && index === lit - 1;
+          return (
+            <span
+              key={index}
+              className="h-full min-w-0 flex-1 rounded-md"
+              style={{
+                background: on ? color : "rgba(42,28,4,0.1)",
+                boxShadow: tip ? `0 0 12px ${color}` : undefined,
+                transform: tip ? "scaleY(1.25)" : undefined,
+              }}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ScreenTimer({ progress, epoch }: { progress: number; epoch: number }) {
+  const timer = useDeskPrefs().timer;
   const [frame, setFrame] = useState(0);
   const [race, setRace] = useState(pickRace);
   const epochRef = useRef(epoch);
@@ -512,6 +543,8 @@ function ScreenTimer({ progress, epoch }: { progress: number; epoch: number }) {
   }, [epoch]);
 
   const { spots, ahead, finished } = raceSpots(progress, race.changes, race.startWithFirst);
+
+  if (timer === "blocks") return <ColourBlocks progress={progress} />;
 
   return (
     <div
