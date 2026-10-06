@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Crosshair, Gamepad2, IceCreamCone, LockKeyhole, type LucideIcon } from "lucide-react";
+import { LockKeyhole } from "lucide-react";
+import { useDeskPrefs, type RevealMap } from "@/lib/desk-prefs";
 import {
   CLASS_MILESTONES,
   UNITS,
@@ -10,23 +11,20 @@ import {
   type PublicBoard,
   type UnitTheme,
 } from "@/lib/game";
+import { prizeIsPublic, revealForPoints } from "@/lib/reveals";
 
 const HIGHEST = CLASS_MILESTONES[CLASS_MILESTONES.length - 1]?.points ?? 60;
-
-const STOP_ICONS: Record<string, LucideIcon> = {
-  "Game with Mr K": Gamepad2,
-  "Laser Tag": Crosshair,
-  "Ice Cream": IceCreamCone,
-};
 const NODE = "clamp(3.4rem, 10vh, 6.25rem)";
-const FACES = ["/mystery-teacher-a.jpg", "/mystery-teacher-b.jpg"];
 
-function secretFace(points: number) {
-  const index = CLASS_MILESTONES.filter((item) => item.secret).findIndex((item) => item.points === points);
-  return FACES[(index < 0 ? 0 : index) % FACES.length];
+function namedPrize(points: number, reveals: RevealMap, now: number) {
+  const reveal = revealForPoints(points);
+  return prizeIsPublic(reveal ? reveals[reveal.id]?.at : null, now);
 }
 
 export function PrizesView({ board }: { board: PublicBoard }) {
+  const prefs = useDeskPrefs();
+  const now = Date.now();
+
   return (
     <div className="flex flex-col gap-3 lg:h-full">
       <header className="shrink-0">
@@ -36,16 +34,36 @@ export function PrizesView({ board }: { board: PublicBoard }) {
 
       <div className="flex flex-col gap-3 lg:min-h-0 lg:flex-1">
         {UNITS.map((unit) => (
-          <ClassPath key={unit.id} unit={unit} score={board.units[unit.id]} />
+          <ClassPath
+            key={unit.id}
+            unit={unit}
+            score={board.units[unit.id]}
+            reveals={prefs.reveals}
+            now={now}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-function ClassPath({ unit, score }: { unit: UnitTheme; score: number }) {
+function ClassPath({
+  unit,
+  score,
+  reveals,
+  now,
+}: {
+  unit: UnitTheme;
+  score: number;
+  reveals: RevealMap;
+  now: number;
+}) {
   const next = nextClassMilestone(score);
-  const status = !next ? "Every prize reached" : `${next.points - score} to ${next.title}`;
+  const status = !next
+    ? "Every prize reached"
+    : namedPrize(next.points, reveals, now)
+      ? `${next.points - score} to ${next.title}`
+      : `${next.points - score} to go`;
   const fraction = pathFraction(score);
 
   return (
@@ -106,7 +124,14 @@ function ClassPath({ unit, score }: { unit: UnitTheme; score: number }) {
             <p className="text-xs leading-tight font-bold text-muted-foreground sm:text-sm">Start</p>
           </li>
           {CLASS_MILESTONES.map((milestone) => (
-            <Stop key={milestone.points} milestone={milestone} score={score} unit={unit} />
+            <Stop
+              key={milestone.points}
+              milestone={milestone}
+              score={score}
+              unit={unit}
+              named={namedPrize(milestone.points, reveals, now)}
+              art={revealForPoints(milestone.points)?.image ?? ""}
+            />
           ))}
         </ol>
       </div>
@@ -118,16 +143,17 @@ function Stop({
   milestone,
   score,
   unit,
+  named,
+  art,
 }: {
   milestone: Milestone;
   score: number;
   unit: UnitTheme;
+  named: boolean;
+  art: string;
 }) {
   const reached = score >= milestone.points;
-  const locked = milestone.secret && !reached;
-  const revealed = milestone.secret && reached;
-  const title = milestone.short;
-  const Icon = STOP_ICONS[milestone.title] ?? LockKeyhole;
+  const title = named ? milestone.short : "Secret";
   const next = nextClassMilestone(score);
   const aiming = next?.points === milestone.points;
 
@@ -138,16 +164,16 @@ function Stop({
         style={{
           width: NODE,
           height: NODE,
-          background: revealed ? "#efe6d6" : reached ? unit.color : locked ? "#2a1c04" : "#fffdf8",
-          color: reached ? unit.ink : locked ? "#ffe08a" : "#6b5844",
-          borderColor: aiming ? unit.deep : reached ? unit.deep : "rgba(42,34,24,0.12)",
+          background: named ? "#efe6d6" : "#2a1c04",
+          color: named ? unit.ink : "#ffe08a",
+          borderColor: aiming ? unit.deep : reached && named ? unit.deep : "rgba(42,34,24,0.12)",
           boxShadow: aiming ? `0 0 0 4px ${unit.color}` : undefined,
         }}
       >
-        {revealed ? (
-          <img src={secretFace(milestone.points)} alt="" className="size-full object-cover" />
+        {named && art ? (
+          <img src={art} alt="" className="size-full object-cover" />
         ) : (
-          <Icon className="size-7 sm:size-9" />
+          <LockKeyhole className="size-7 sm:size-9" />
         )}
       </div>
       <p className="mt-1.5 text-sm leading-none font-extrabold tabular-nums">{milestone.points}</p>

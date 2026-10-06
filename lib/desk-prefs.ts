@@ -42,8 +42,11 @@ export const DEFAULT_DWELLS: DwellMap = {
   board: 14,
   prizes: 12,
   yard: 12,
+  "reveal-game": 12,
   "reveal-1": 12,
+  "reveal-laser": 12,
   "reveal-2": 12,
+  "reveal-ice": 12,
   "reveal-3": 12,
 };
 

@@ -171,8 +171,8 @@ export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => 
             <div>
               <h3 className="font-display text-xl">Prize reveals</h3>
               <p className="text-xs font-semibold text-muted-foreground">
-                One page for each teacher takedown. Before the date, the TV counts down on the
-                silhouette. On the day, the card flips and shows the prize.
+                One page for each prize. Before the date, the path stays a secret and the TV
+                counts down on the silhouette. On the day, the card flips and the prize shows.
               </p>
             </div>
             {REVEALS.map((reveal) => {
@@ -185,19 +185,13 @@ export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => 
                       seconds={prefs.dwells[reveal.id]}
                       shown={prefs.shown[reveal.id]}
                     />
-                    <label className="grid gap-1">
-                      <span className="text-xs font-bold">Reveal date and time</span>
-                      <input
-                        type="datetime-local"
-                        value={toLocalInput(saved.at)}
-                        aria-label={`${reveal.title} reveal date`}
-                        onChange={(event) => {
-                          const value = event.target.value;
-                          setRevealAt(reveal.id, value ? new Date(value).getTime() : null);
-                        }}
-                        className="h-10 rounded-xl border border-input bg-transparent px-3 text-sm font-bold"
-                      />
-                    </label>
+                    <MomentFields
+                      at={saved.at}
+                      saveLabel="Save reveal time"
+                      dateLabel={`${reveal.title} date`}
+                      timeLabel={`${reveal.title} time`}
+                      onSave={(at) => setRevealAt(reveal.id, at)}
+                    />
                     <label className="grid gap-1">
                       <span className="text-xs font-bold">Prize line</span>
                       <input
@@ -224,22 +218,19 @@ export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => 
                 );
               })}
           </section>
-          <label className="grid gap-1.5">
+          <div className="grid gap-1.5">
             <span className="text-sm font-bold">Finish date and time</span>
-            <input
-              type="datetime-local"
-              value={toLocalInput(prefs.finishAt)}
-              aria-label="Finish date and time"
-              onChange={(event) => {
-                const value = event.target.value;
-                setFinishAt(value ? new Date(value).getTime() : null);
-              }}
-              className="h-11 rounded-xl border border-input bg-transparent px-3 text-base font-bold"
+            <MomentFields
+              at={prefs.finishAt}
+              saveLabel="Save finish time"
+              dateLabel="Finish date"
+              timeLabel="Finish time"
+              onSave={setFinishAt}
             />
             <span className="text-xs font-semibold text-muted-foreground">
-              The board counts the days until this moment. Clear the field to hide the clock.
+              The board counts the days until this moment. Clear both fields and tap Save to hide the clock.
             </span>
-          </label>
+          </div>
           <div className="flex items-center justify-between gap-3">
             <p className="font-bold">Sounds</p>
             <Button
@@ -299,10 +290,108 @@ function ScreenRow({
   );
 }
 
-function toLocalInput(value: number | null) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
+function splitLocal(value: number | null) {
+  if (!value) return { date: "", time: "" };
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return { date: "", time: "" };
   const pad = (part: number) => String(part).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  return {
+    date: `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}`,
+    time: `${pad(parsed.getHours())}:${pad(parsed.getMinutes())}`,
+  };
+}
+
+function formatWhen(stamp: number) {
+  return new Intl.DateTimeFormat("en-AU", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(stamp);
+}
+
+function MomentFields({
+  at,
+  onSave,
+  dateLabel,
+  timeLabel,
+  saveLabel,
+}: {
+  at: number | null;
+  onSave: (at: number | null) => void;
+  dateLabel: string;
+  timeLabel: string;
+  saveLabel: string;
+}) {
+  const saved = splitLocal(at);
+  const [date, setDate] = useState(saved.date);
+  const [time, setTime] = useState(saved.time);
+  const [note, setNote] = useState("");
+
+  useEffect(() => {
+    const next = splitLocal(at);
+    setDate(next.date);
+    setTime(next.time);
+  }, [at]);
+
+  function save() {
+    if (!date && !time) {
+      onSave(null);
+      setNote("Cleared");
+      return;
+    }
+    if (!date || !time) {
+      setNote("Choose a date and a time, then tap Save.");
+      return;
+    }
+    const stamp = new Date(`${date}T${time}`).getTime();
+    if (!Number.isFinite(stamp)) {
+      setNote("That time did not save. Try again.");
+      return;
+    }
+    onSave(stamp);
+    setNote(`Saved ${formatWhen(stamp)}`);
+  }
+
+  return (
+    <div className="grid gap-2">
+      <div className="grid grid-cols-2 gap-2">
+        <label className="grid gap-1">
+          <span className="text-xs font-bold">Date</span>
+          <input
+            type="date"
+            value={date}
+            aria-label={dateLabel}
+            onChange={(event) => {
+              setDate(event.target.value);
+              setNote("");
+            }}
+            className="h-10 rounded-xl border border-input bg-transparent px-3 text-sm font-bold"
+          />
+        </label>
+        <label className="grid gap-1">
+          <span className="text-xs font-bold">Time</span>
+          <input
+            type="time"
+            value={time}
+            aria-label={timeLabel}
+            onChange={(event) => {
+              setTime(event.target.value);
+              setNote("");
+            }}
+            className="h-10 rounded-xl border border-input bg-transparent px-3 text-sm font-bold"
+          />
+        </label>
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-semibold text-muted-foreground" role="status">
+          {note || (at ? `Set for ${formatWhen(at)}` : "Not set yet")}
+        </p>
+        <Button type="button" className="h-9 shrink-0 rounded-xl" onClick={save}>
+          {saveLabel}
+        </Button>
+      </div>
+    </div>
+  );
 }

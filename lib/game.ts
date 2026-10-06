@@ -6,7 +6,7 @@ export const UNIT_MAX = 60;
 export const STRIKE_MAX = 30;
 export const VAULT_TARGET = UNIT_MAX * UNIT_IDS.length;
 /** School meter fills when the three classes add up to this many squares. */
-export const SCHOOL_GOAL = 120;
+export const SCHOOL_GOAL = 150;
 export const PIN_LENGTH = 6;
 
 export const VIEWS = [
@@ -93,7 +93,7 @@ export const CLASS_MILESTONES: Milestone[] = [
     title: "Game with Mr K",
     short: "Mr K",
     detail: "A game with Mr K for the class that hits 10.",
-    secret: false,
+    secret: true,
   },
   {
     points: 20,
@@ -107,7 +107,7 @@ export const CLASS_MILESTONES: Milestone[] = [
     title: "Laser Tag",
     short: "Laser",
     detail: "Laser tag for your class.",
-    secret: false,
+    secret: true,
   },
   {
     points: 40,
@@ -121,7 +121,7 @@ export const CLASS_MILESTONES: Milestone[] = [
     title: "Ice Cream",
     short: "Ice cream",
     detail: "Scoops for the unit. Tidy hands, cold treats.",
-    secret: false,
+    secret: true,
   },
   {
     points: 60,

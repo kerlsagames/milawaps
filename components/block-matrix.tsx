@@ -1,5 +1,9 @@
+"use client";
+
 import { Trophy } from "lucide-react";
+import { useDeskPrefs } from "@/lib/desk-prefs";
 import { CLASS_MILESTONES, STRIKE_MAX, UNIT_MAX } from "@/lib/game";
+import { prizeIsPublic, revealForPoints } from "@/lib/reveals";
 import { cn } from "@/lib/utils";
 
 export function BlockMatrix({
@@ -11,6 +15,8 @@ export function BlockMatrix({
   color: string;
   label: string;
 }) {
+  const reveals = useDeskPrefs().reveals;
+  const now = Date.now();
   const earned = Math.max(0, Math.min(UNIT_MAX, score));
   const trophies = new Map<number, (typeof CLASS_MILESTONES)[number]>();
   for (const milestone of CLASS_MILESTONES) {
@@ -30,11 +36,13 @@ export function BlockMatrix({
         const square = index + 1;
         const filled = index < earned;
         const milestone = trophies.get(square);
+        const reveal = milestone ? revealForPoints(milestone.points) : null;
+        const named = Boolean(reveal && prizeIsPublic(reveals[reveal.id]?.at, now));
         const won = Boolean(milestone && score >= milestone.points);
         return (
           <span
             key={index}
-            title={milestone ? `${milestone.points} ${milestone.title}` : undefined}
+            title={milestone ? (named ? `${milestone.points} ${milestone.title}` : "Prize") : undefined}
             className={cn(
               "relative aspect-square rounded-md border",
               filled && "border-transparent",

@@ -20,7 +20,7 @@ const game = applyAction(
 );
 assert.equal(game.state.units["234"], 10);
 assert.equal(game.events[0]?.title, "Game with Mr K");
-assert.equal(game.events[0]?.secret, false);
+assert.equal(game.events[0]?.secret, true);
 
 const secret = applyAction(
   { ...game.state, units: { ...game.state.units, "234": 19 } },
@@ -46,7 +46,7 @@ const laser = applyAction(
 );
 assert.equal(laser.state.units["234"], 30);
 assert.equal(laser.events[0]?.title, "Laser Tag");
-assert.equal(laser.events[0]?.secret, false);
+assert.equal(laser.events[0]?.secret, true);
 
 const capped = applyAction(
   { ...start, units: { f1: 59, "234": 60, "56": 60 } },
@@ -94,7 +94,7 @@ const fullSchool = applyAction(
 assert.equal(vaultTotal(fullSchool.state.units), 150);
 assert.equal(fullSchool.events.filter((event) => event.scope === "vault").length, 0);
 assert.equal(fullSchool.events[0]?.title, "Ice Cream");
-assert.equal(fullSchool.events[0]?.secret, false);
+assert.equal(fullSchool.events[0]?.secret, true);
 
 const reset = applyAction(fullSchool.state, "reset", undefined, "hunter", 9_000);
 assert.equal(vaultTotal(reset.state.units), 0);

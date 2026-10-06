@@ -80,9 +80,12 @@ function FlipCard({
   prize: string;
 }) {
   return (
-    <div className="w-full max-w-[24rem] shrink-0 sm:max-w-[32rem]" style={{ perspective: "1400px" }}>
+    <div
+      className={reveal.wide ? "w-full max-w-[42rem] shrink-0" : "w-full max-w-[24rem] shrink-0 sm:max-w-[32rem]"}
+      style={{ perspective: "1400px" }}
+    >
       <div
-        className="relative aspect-[3/4] w-full"
+        className={reveal.wide ? "relative aspect-[4/3] w-full" : "relative aspect-[3/4] w-full"}
         style={{
           transformStyle: "preserve-3d",
           transition: "transform 0.9s cubic-bezier(0.22, 1, 0.36, 1)",

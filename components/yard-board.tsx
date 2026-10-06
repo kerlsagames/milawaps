@@ -14,7 +14,7 @@ import { StaffHud } from "@/components/staff-hud";
 import { Button } from "@/components/ui/button";
 import { playAction, playChime, playError, playFanfare } from "@/lib/audio";
 import { clearToken, saveToken, setKioskPref, setMutedPref, useDeskPrefs } from "@/lib/desk-prefs";
-import { kioskScreens, revealById, REVEALS, type ScreenId } from "@/lib/reveals";
+import { kioskScreens, prizeIsPublic, revealById, revealForPoints, REVEALS, type ScreenId } from "@/lib/reveals";
 import { cn } from "@/lib/utils";
 import {
   UNIT_IDS,
@@ -302,6 +302,8 @@ export function YardBoard() {
         {toasts.map((toast) => {
           const unit = toast.unitId ? unitById(toast.unitId) : null;
           const tone = unit?.color ?? "#e2a01a";
+          const reveal = revealForPoints(toast.points);
+          const named = prizeIsPublic(reveal ? prefs.reveals[reveal.id]?.at : null);
           return (
             <div
               key={toast.id}
@@ -312,8 +314,8 @@ export function YardBoard() {
               <p className="text-[11px] font-extrabold tracking-[0.16em] uppercase" style={{ color: tone }}>
                 {unit ? unit.code : "School"} unlocked
               </p>
-              <p className="font-display text-xl leading-tight">{toast.title}</p>
-              <p className="text-sm text-muted-foreground">{toast.detail}</p>
+              <p className="font-display text-xl leading-tight">{named ? toast.title : "Secret prize"}</p>
+              {named ? <p className="text-sm text-muted-foreground">{toast.detail}</p> : null}
             </div>
           );
         })}

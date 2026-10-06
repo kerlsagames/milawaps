@@ -1,6 +1,6 @@
 # Term 4 Tidy Challenge
 
-A sunny window-TV scoreboard for Milawa Primary. Three units chase 60 tidy squares each. A game with Mr K, laser tag, and ice cream are on the board. The three teacher takedowns stay a secret until the day. Strikes sit on their own grid and take one tidy square off.
+A sunny window-TV scoreboard for Milawa Primary. Three units chase 60 tidy squares each. Six prizes stay secret on the path until each reveal date. Strikes sit on their own grid and take one tidy square off.
 
 The board polls `/api/score` every 3 seconds, so a TV in the window and a phone on yard duty stay in step without WebSockets. Scores live in Vercel KV when those environment variables are present. With no KV credentials, the dev server writes `data/yard.json` on this machine instead.
 
@@ -17,12 +17,12 @@ While `STAFF_PIN` is unset, the desk accepts **737373**. A custom pin must be si
 
 ## On the TV
 
-- **Leaderboard** shows the school tidy total out of 120 squares, a days-to-go clock when a finish time is set, and three unit cards on one screen. On the TV each card has the grade, a circled tally, a 60-square tidy track with a trophy on each prize square, and a separate 30-square strikes grid. A strike takes one tidy square off and fills one strike space. Trophies stay on their prize squares. On a phone the grids stay off so all three classes fit, with large +1, +2, and −1 buttons. The school button is +3 all.
-- **Prizes** gives each class its own path. A takedown stays a lock until that class reaches it, then the stop shows a silhouette.
+- **Leaderboard** shows the school tidy total out of 150 squares, a days-to-go clock when a finish time is set, and three unit cards on one screen. On the TV each card has the grade, a circled tally, a 60-square tidy track with a trophy on each prize square, and a separate 30-square strikes grid. A strike takes one tidy square off and fills one strike space. Trophies stay on their prize squares. On a phone the grids stay off so all three classes fit, with large +1, +2, and −1 buttons. The school button is +3 all.
+- **Prizes** gives each class its own path. Every stop stays a lock until that prize’s reveal date. After that, the path shows the picture and the name.
 - **Yard & Rules** puts the aerial on the left and the four scoring rules on the right.
 - **Start Kiosk** sits next to the cog. Kiosk hides the header. Move the mouse or touch the screen and tap the X, or press Esc, to leave.
 - **Settings** (the cog) opens with an Admin button. The admin code unlocks page ticks, seconds, the days-to-go clock, and prize reveals. Yard duty names cannot change those.
-- **Prize reveals** are three extra pages, Teacher Takedown #1 to #3. Before the date, both silhouettes show with a countdown. When the time arrives the card flips and shows the cartoon: dress-up for #1, pie for #2, and the ice bucket for #3.
+- **Prize reveals** are six extra pages, one for each prize. Before the date, both silhouettes show with a countdown. When the time arrives the card flips and shows the cartoon.
 
 ## Yard duty desk
 
@@ -37,7 +37,7 @@ The padlock in the header opens the name list, then a 6-digit code pad. After th
 
 Scores clamp between 0 and 60. A strike lowers the tally by one and marks the strikes grid, up to 30. Taps play a short Web Audio synth tone in the browser. No audio files are shipped.
 
-Class prizes, per unit: 10 Game with Mr K, 20 Teacher Takedown #1, 30 laser tag for the class, 40 Teacher Takedown #2, 50 ice cream, and 60 Teacher Takedown #3. The takedown stops do not say what happens. Staff can open **Mystery ideas** on the desk for pie, ice bucket, and dress-up prompts. Those lines never appear on the TV.
+Class prizes, per unit: 10 Game with Mr K, 20 Teacher Takedown #1, 30 laser tag for the class, 40 Teacher Takedown #2, 50 ice cream, and 60 Teacher Takedown #3. None of those names show on the prize path until the reveal date in Settings. Staff can open **Mystery ideas** on the desk for pie, ice bucket, and dress-up prompts. Those lines never appear on the TV.
 
 ## Deploy on Vercel
 
