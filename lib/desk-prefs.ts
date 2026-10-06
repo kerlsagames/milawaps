@@ -45,8 +45,6 @@ export const DEFAULT_DWELLS: DwellMap = {
   "reveal-1": 12,
   "reveal-2": 12,
   "reveal-3": 12,
-  "reveal-4": 12,
-  "reveal-5": 12,
 };
 
 function defaultReveals(): RevealMap {

@@ -11,31 +11,42 @@ assert.equal(spot.state.lastAction?.staffId, "jess");
 assert.equal(spot.state.log[0]?.staffId, "jess");
 assert.equal(spot.state.log[0]?.action, "spot");
 
-const laser = applyAction(
-  { ...start, units: { f1: 0, "234": 19, "56": 0 } },
+const game = applyAction(
+  { ...start, units: { f1: 0, "234": 9, "56": 0 } },
   "spot",
   "234",
   "craig",
   4_000,
 );
-assert.equal(laser.state.units["234"], 20);
-assert.equal(laser.events[0]?.title, "Laser Tag");
-assert.equal(laser.events[0]?.secret, false);
+assert.equal(game.state.units["234"], 10);
+assert.equal(game.events[0]?.title, "Game with Mr K");
+assert.equal(game.events[0]?.secret, false);
 
 const secret = applyAction(
-  { ...laser.state, units: { ...laser.state.units, "234": 24 } },
+  { ...game.state, units: { ...game.state.units, "234": 19 } },
   "spot",
   "234",
   "ash",
   4_100,
 );
-assert.equal(secret.state.units["234"], 25);
+assert.equal(secret.state.units["234"], 20);
 assert.equal(secret.events[0]?.title, "Teacher Takedown #1");
 assert.equal(secret.events[0]?.secret, true);
 assert.equal(secret.events.some((event) => event.scope === "vault"), false);
 
 const surge = applyAction(secret.state, "surge", "234", "ricky", 5_000);
-assert.equal(surge.state.units["234"], 27);
+assert.equal(surge.state.units["234"], 22);
+
+const laser = applyAction(
+  { ...start, units: { f1: 0, "234": 29, "56": 0 } },
+  "spot",
+  "234",
+  "craig",
+  5_500,
+);
+assert.equal(laser.state.units["234"], 30);
+assert.equal(laser.events[0]?.title, "Laser Tag");
+assert.equal(laser.events[0]?.secret, false);
 
 const capped = applyAction(
   { ...start, units: { f1: 79, "234": 80, "56": 80 } },
@@ -72,7 +83,8 @@ const fullSchool = applyAction(
 );
 assert.equal(vaultTotal(fullSchool.state.units), 150);
 assert.equal(fullSchool.events.filter((event) => event.scope === "vault").length, 0);
-assert.equal(fullSchool.events[0]?.title, "Teacher Takedown #5");
+assert.equal(fullSchool.events[0]?.title, "Ice Cream");
+assert.equal(fullSchool.events[0]?.secret, false);
 
 const reset = applyAction(fullSchool.state, "reset", undefined, "hunter", 9_000);
 assert.equal(vaultTotal(reset.state.units), 0);

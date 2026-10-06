@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Crosshair, IceCreamCone, LockKeyhole } from "lucide-react";
+import { Crosshair, Gamepad2, IceCreamCone, LockKeyhole, type LucideIcon } from "lucide-react";
 import {
   CLASS_MILESTONES,
   UNITS,
@@ -11,7 +11,13 @@ import {
   type UnitTheme,
 } from "@/lib/game";
 
-const HIGHEST = CLASS_MILESTONES[CLASS_MILESTONES.length - 1]?.points ?? 50;
+const HIGHEST = CLASS_MILESTONES[CLASS_MILESTONES.length - 1]?.points ?? 60;
+
+const STOP_ICONS: Record<string, LucideIcon> = {
+  "Game with Mr K": Gamepad2,
+  "Laser Tag": Crosshair,
+  "Ice Cream": IceCreamCone,
+};
 const NODE = "clamp(3.4rem, 10vh, 6.25rem)";
 const FACES = ["/mystery-teacher-a.jpg", "/mystery-teacher-b.jpg"];
 
@@ -120,9 +126,8 @@ function Stop({
   const reached = score >= milestone.points;
   const locked = milestone.secret && !reached;
   const revealed = milestone.secret && reached;
-  const title =
-    milestone.points === 20 ? "Laser" : milestone.points === 35 ? "Ice cream" : milestone.short;
-  const Icon = milestone.points === 35 ? IceCreamCone : milestone.points === 20 ? Crosshair : LockKeyhole;
+  const title = milestone.short;
+  const Icon = STOP_ICONS[milestone.title] ?? LockKeyhole;
   const next = nextClassMilestone(score);
   const aiming = next?.points === milestone.points;
 

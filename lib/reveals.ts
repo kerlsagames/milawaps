@@ -25,22 +25,6 @@ export const REVEALS = [
     face: "/mystery-teacher-a.jpg",
     image: "/reveals/takedown-3.jpg",
   },
-  {
-    id: "reveal-4",
-    n: 4,
-    title: "Teacher Takedown #4",
-    prize: "",
-    face: "/mystery-teacher-b.jpg",
-    image: "/reveals/takedown-4.jpg",
-  },
-  {
-    id: "reveal-5",
-    n: 5,
-    title: "Teacher Takedown #5",
-    prize: "",
-    face: "/mystery-teacher-a.jpg",
-    image: "/reveals/takedown-5.jpg",
-  },
 ] as const;
 
 export type RevealId = (typeof REVEALS)[number]["id"];
@@ -61,8 +45,6 @@ export const DEFAULT_SHOWN: ShownMap = {
   "reveal-1": false,
   "reveal-2": false,
   "reveal-3": false,
-  "reveal-4": false,
-  "reveal-5": false,
 };
 
 export function revealById(id: string): RevealDef | null {
