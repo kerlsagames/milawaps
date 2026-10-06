@@ -171,8 +171,9 @@ export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => 
             <div>
               <h3 className="font-display text-xl">Prize reveals</h3>
               <p className="text-xs font-semibold text-muted-foreground">
-                One page for each prize. Before the date, the path stays a secret and the TV
-                counts down on the silhouette. On the day, the card flips and the prize shows.
+                Game with Mr K, the teacher takedowns, laser tag, and ice cream. Before the
+                date, the path shows a lock. On the day, the card flips and that prize shows
+                in the circle.
               </p>
             </div>
             {REVEALS.map((reveal) => {
@@ -228,7 +229,7 @@ export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => 
               onSave={setFinishAt}
             />
             <span className="text-xs font-semibold text-muted-foreground">
-              The board counts the days until this moment. Clear both fields and tap Save to hide the clock.
+              The board counts days, hours, and minutes until this moment. Clear both fields and tap Save to hide the clock.
             </span>
           </div>
           <div className="flex items-center justify-between gap-3">
@@ -264,28 +265,28 @@ function ScreenRow({
   shown: boolean;
 }) {
   return (
-    <div className="grid grid-cols-[1.4rem_minmax(0,1fr)_2.6rem] items-center gap-2">
-      <input
-        type="checkbox"
-        checked={shown}
-        aria-label={`Show ${label} on the TV`}
-        onChange={(event) => setScreenShown(id, event.target.checked)}
-        className="size-5 accent-[#e2a01a]"
-      />
-      <label className="grid grid-cols-[7.5rem_minmax(0,1fr)] items-center gap-2 sm:grid-cols-[9.5rem_minmax(0,1fr)]">
-        <span className="truncate text-sm font-bold">{label}</span>
+    <div className="grid gap-1.5">
+      <div className="flex items-center gap-2">
         <input
-          type="range"
-          min={MIN_DWELL_SECONDS}
-          max={MAX_DWELL_SECONDS}
-          step={1}
-          value={seconds}
-          aria-label={`${label} seconds`}
-          onChange={(event) => setViewDwell(id, Number(event.target.value))}
-          className="accent-[#e2a01a]"
+          type="checkbox"
+          checked={shown}
+          aria-label={`Show ${label} on the TV`}
+          onChange={(event) => setScreenShown(id, event.target.checked)}
+          className="size-5 accent-[#e2a01a]"
         />
-      </label>
-      <span className="text-right font-display text-lg tabular-nums">{seconds}s</span>
+        <span className="min-w-0 flex-1 text-sm leading-tight font-bold">{label}</span>
+        <span className="font-display text-lg tabular-nums">{seconds}s</span>
+      </div>
+      <input
+        type="range"
+        min={MIN_DWELL_SECONDS}
+        max={MAX_DWELL_SECONDS}
+        step={1}
+        value={seconds}
+        aria-label={`${label} seconds`}
+        onChange={(event) => setViewDwell(id, Number(event.target.value))}
+        className="accent-[#e2a01a]"
+      />
     </div>
   );
 }

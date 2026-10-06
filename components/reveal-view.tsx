@@ -1,11 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { remainLabel, remainParts } from "@/lib/remain";
 import type { RevealDef } from "@/lib/reveals";
-
-const DAY = 86_400_000;
-const HOUR = 3_600_000;
-const MINUTE = 60_000;
 
 export function RevealView({
   reveal,
@@ -36,7 +33,7 @@ export function RevealView({
   }, [due, reveal.id]);
 
   const remain = revealAt == null ? null : revealAt - now;
-  const count = remain == null || remain <= 0 ? null : countdown(remain);
+  const count = remain == null || remain <= 0 ? null : remainParts(remain);
   const line = prize.trim();
 
   return (
@@ -45,9 +42,16 @@ export function RevealView({
         <p className="text-[11px] font-bold tracking-[0.22em] text-ink-gold uppercase">Prize reveal</p>
         {count ? (
           <>
-            <p className="mt-2 font-display text-7xl leading-none tabular-nums sm:text-8xl">{count.n}</p>
+            <div
+              className="mt-3 flex justify-center gap-4 sm:gap-8 lg:justify-start"
+              aria-label={`${remainLabel(count)} until ${reveal.title} is revealed`}
+            >
+              <RevealTick n={count.days} label={count.days === 1 ? "day" : "days"} />
+              <RevealTick n={count.hours} label={count.hours === 1 ? "hour" : "hours"} />
+              <RevealTick n={count.minutes} label={count.minutes === 1 ? "minute" : "minutes"} />
+            </div>
             <h2 className="mt-3 font-display text-3xl leading-tight sm:text-5xl">
-              {count.unit} until {reveal.title} is revealed
+              until {reveal.title} is revealed
             </h2>
           </>
         ) : due ? (
@@ -154,11 +158,13 @@ function PrizeArt({ src, title, prize }: { src: string; title: string; prize: st
   );
 }
 
-function countdown(remain: number) {
-  const days = Math.floor(remain / DAY);
-  if (days >= 1) return { n: days, unit: days === 1 ? "day" : "days" };
-  const hours = Math.floor(remain / HOUR);
-  if (hours >= 1) return { n: hours, unit: hours === 1 ? "hour" : "hours" };
-  const minutes = Math.max(1, Math.ceil(remain / MINUTE));
-  return { n: minutes, unit: minutes === 1 ? "minute" : "minutes" };
+function RevealTick({ n, label }: { n: number; label: string }) {
+  return (
+    <div className="text-center">
+      <p className="font-display text-5xl leading-none tabular-nums sm:text-7xl">{n}</p>
+      <p className="mt-1 text-[11px] font-extrabold tracking-[0.14em] text-muted-foreground uppercase sm:text-sm">
+        {label}
+      </p>
+    </div>
+  );
 }

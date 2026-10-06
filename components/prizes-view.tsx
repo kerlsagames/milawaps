@@ -58,12 +58,6 @@ function ClassPath({
   reveals: RevealMap;
   now: number;
 }) {
-  const next = nextClassMilestone(score);
-  const status = !next
-    ? "Every prize reached"
-    : namedPrize(next.points, reveals, now)
-      ? `${next.points - score} to ${next.title}`
-      : `${next.points - score} to go`;
   const fraction = pathFraction(score);
 
   return (
@@ -81,9 +75,6 @@ function ClassPath({
           aria-label={`${unit.code} tally ${score}`}
         >
           {score}
-        </p>
-        <p className="max-w-[6.5rem] text-center text-[11px] leading-tight font-extrabold sm:max-w-[8rem] sm:text-xs">
-          {status}
         </p>
       </div>
 
@@ -153,7 +144,7 @@ function Stop({
   art: string;
 }) {
   const reached = score >= milestone.points;
-  const title = named ? milestone.short : "Secret";
+  const title = named ? milestone.short : "";
   const next = nextClassMilestone(score);
   const aiming = next?.points === milestone.points;
 
