@@ -300,7 +300,7 @@ export function YardBoard() {
       <main
         className={cn(
           "relative mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col overflow-y-auto px-3 py-2 lg:overflow-hidden lg:px-4",
-          view === "prizes" && "max-w-none",
+          (view === "prizes" || view === "board") && "max-w-none",
           kiosk && "pt-16 pb-12",
         )}
       >

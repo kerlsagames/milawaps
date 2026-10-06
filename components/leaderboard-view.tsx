@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { UNITS, actionLabel, formatAgo, type PublicBoard, type ScoreAction, type UnitId } from "@/lib/game";
-import { Countdown } from "@/components/countdown";
 import { UnitCard } from "@/components/unit-card";
 import { VaultMeter } from "@/components/vault-meter";
 
@@ -25,7 +24,6 @@ export function LeaderboardView({
   return (
     <div className="flex flex-col gap-2 lg:gap-3">
       <VaultMeter vault={board.vault} onTeamwork={() => onScore("teamwork")} />
-      <Countdown />
       {board.lastAction && (
         <p className="truncate text-center text-xs font-bold text-ink-gold">
           {actionLabel(board.lastAction)} · {formatAgo(board.lastAction.at, now)}

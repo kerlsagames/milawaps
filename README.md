@@ -17,8 +17,8 @@ While `STAFF_PIN` is unset, the desk accepts **737373**. A custom pin must be si
 
 ## On the TV
 
-- **Leaderboard** shows the school tidy total out of 150 squares, a days, hours, minutes, and seconds to go clock when a finish time is set, and three unit cards on one screen. On the TV each card has the grade, a circled tally, a 60-square tidy track with a coloured tick in each earned square and a trophy on each prize square, and a separate 30-square strikes grid. A strike takes one tidy square off and fills one strike space. Trophies stay on their prize squares. On a phone the grids stay off so all three classes fit, with large +1, +2, and −1 buttons. The school button is +3 all.
-- **Prizes** gives each class its own path, with the line “Unlock prizes as you get more ticks.” Every stop stays a lock until that prize’s reveal date. After that, the path shows the picture and the name.
+- **Leaderboard** shows the school tidy total out of 150 squares and three grade cards stretched across the TV. On the TV each card has the grade, a circled tally, a 60-square tidy track with a coloured tick in each earned square and a trophy on each prize square, and a separate 30-square strikes grid. A strike takes one tidy square off and fills one strike space. Trophies stay on their prize squares. On a phone the grids stay off so all three classes fit, with large +1, +2, and −1 buttons. The school button is +3 all.
+- **Prizes** opens with the countdown clock when a finish time is set, then each class path and the line “Unlock prizes as you get more ticks.” Every stop stays a lock until that prize’s reveal date. After that, the path shows the picture and the name.
 - **Yard & Rules** puts the aerial on the left and the four scoring rules on the right.
 - **Start Kiosk** sits next to the cog. Kiosk hides the header. Move the mouse or touch the screen and tap the X, or press Esc, to leave.
 - **Settings** (the cog) lets anyone set how long the leaderboard, prizes, and yard pages stay on the TV. The admin code unlocks page ticks, the finish clock, prize reveals, and a reset for scores and reveals.

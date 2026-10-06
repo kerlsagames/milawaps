@@ -255,7 +255,7 @@ export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => 
               onSave={setFinishAt}
             />
             <span className="text-xs font-semibold text-muted-foreground">
-              The board counts days, hours, minutes, and seconds to go. Clear both fields and tap Save to hide the clock.
+              The prizes page shows Countdown clock beside the days, hours, minutes, and seconds. Clear both fields and tap Save to hide the clock.
             </span>
           </div>
           {confirmReset ? (

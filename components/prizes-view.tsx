@@ -11,6 +11,7 @@ import {
   type PublicBoard,
   type UnitTheme,
 } from "@/lib/game";
+import { Countdown } from "@/components/countdown";
 import { prizeIsPublic, revealForPoints } from "@/lib/reveals";
 
 const HIGHEST = CLASS_MILESTONES[CLASS_MILESTONES.length - 1]?.points ?? 60;
@@ -27,6 +28,7 @@ export function PrizesView({ board }: { board: PublicBoard }) {
 
   return (
     <div className="flex flex-col gap-3 lg:h-full">
+      <Countdown />
       <header className="shrink-0">
         <p className="text-[11px] font-bold tracking-[0.22em] text-ink-gold uppercase">Follow the path</p>
         <h2 className="font-display text-4xl leading-none sm:text-5xl">Prizes</h2>
