@@ -458,13 +458,13 @@ function TvFit({ children }: { children: ReactNode }) {
 }
 
 const RUNNERS = [
-  { id: "runner", frames: 8 },
-  { id: "girl", frames: 8 },
-  { id: "staff", frames: 7 },
-  { id: "kid1", frames: 7 },
-  { id: "kid2", frames: 8 },
-  { id: "kid3", frames: 8 },
-  { id: "kid4", frames: 8 },
+  { id: "runner", frames: 8, height: "3.7rem" },
+  { id: "girl", frames: 8, height: "4.8rem" },
+  { id: "staff", frames: 7, height: "4.8rem" },
+  { id: "kid1", frames: 7, height: "3.15rem" },
+  { id: "kid2", frames: 8, height: "3.4rem" },
+  { id: "kid3", frames: 8, height: "3.55rem" },
+  { id: "kid4", frames: 8, height: "3.25rem" },
 ] as const;
 
 function pickRace() {
@@ -480,14 +480,15 @@ function pickRace() {
 
 function raceSpots(progress: number, changes: number, startWithFirst: boolean) {
   const t = Math.min(1, Math.max(0, progress) / 0.86);
-  const wave = Math.cos(Math.PI * changes * t);
-  const firstAhead = startWithFirst ? wave >= 0 : wave < 0;
-  const gap = 0.18 * Math.abs(wave);
-  const front = t;
-  const back = Math.max(0, t - gap);
+  const amplitude = 0.16;
+  const wave = Math.cos(Math.PI * changes * t) * (startWithFirst ? 1 : -1);
+  const average = t * (1 - amplitude / 2);
+  const spots = [average + (wave * amplitude) / 2, average - (wave * amplitude) / 2].map((spot) =>
+    Math.max(0, Math.min(1, spot)),
+  ) as [number, number];
   return {
-    spots: (firstAhead ? [front, back] : [back, front]) as [number, number],
-    ahead: firstAhead ? 0 : 1,
+    spots,
+    ahead: spots[0] >= spots[1] ? 0 : 1,
     finished: t >= 1,
   };
 }
@@ -528,8 +529,9 @@ function ScreenTimer({ progress, epoch }: { progress: number; epoch: number }) {
             key={runner.id}
             src={`/race/${runner.id}-${frame % runner.frames}.png`}
             alt=""
-            className="absolute h-[4.8rem] w-auto"
+            className="absolute w-auto"
             style={{
+              height: runner.height,
               bottom: index === 0 ? "1.35rem" : "0.55rem",
               left: `calc(${spot} * (100% - 6.5rem))`,
               zIndex: spot >= spots[1 - index] ? 2 : 1,

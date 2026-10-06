@@ -15,7 +15,7 @@ import { Countdown } from "@/components/countdown";
 import { prizeIsPublic, revealForPoints } from "@/lib/reveals";
 
 const HIGHEST = CLASS_MILESTONES[CLASS_MILESTONES.length - 1]?.points ?? 60;
-const NODE = "clamp(3.4rem, 10vh, 6.25rem)";
+const NODE = "var(--node)";
 
 function namedPrize(points: number, reveals: RevealMap, now: number) {
   const reveal = revealForPoints(points);
@@ -28,11 +28,11 @@ export function PrizesView({ board }: { board: PublicBoard }) {
 
   return (
     <div className="flex flex-col gap-3 lg:h-full">
-      <header className="flex shrink-0 flex-col gap-2 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
+      <header className="flex shrink-0 flex-col gap-1.5 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
         <div className="min-w-0">
           <p className="text-[11px] font-bold tracking-[0.22em] text-ink-gold uppercase">Follow the path</p>
-          <h2 className="font-display text-4xl leading-none sm:text-5xl">Prizes</h2>
-          <p className="mt-1 text-lg font-extrabold text-[#5c4a32] sm:text-2xl">
+          <h2 className="font-display text-3xl leading-none lg:text-5xl">Prizes</h2>
+          <p className="mt-0.5 text-sm font-extrabold text-[#5c4a32] lg:mt-1 lg:text-2xl">
             Unlock prizes as you get more ticks.
           </p>
         </div>
@@ -69,36 +69,37 @@ function ClassPath({
 
   return (
     <section
-      className="flex flex-1 items-center gap-2 rounded-[28px] border-4 bg-card px-2 py-3 sm:gap-3 sm:px-3"
+      className="flex flex-1 items-center gap-1.5 rounded-2xl border-4 bg-card px-1.5 py-2 lg:gap-3 lg:rounded-[28px] lg:px-3 lg:py-3"
       style={{ borderColor: unit.color }}
     >
       <div
-        className="flex shrink-0 flex-col items-center justify-center gap-2 self-stretch rounded-3xl px-2 py-2"
+        className="flex shrink-0 flex-col items-center justify-center gap-1 self-stretch rounded-2xl px-1.5 py-1.5 lg:gap-2 lg:rounded-3xl lg:px-2 lg:py-2"
         style={{ background: unit.color, color: unit.ink }}
       >
-        <p className="font-display text-2xl leading-none whitespace-nowrap sm:text-3xl">{unit.code}</p>
+        <p className="font-display text-lg leading-none whitespace-nowrap lg:text-3xl">{unit.code}</p>
         <p
-          className="grid size-14 place-items-center rounded-full bg-[#fffdf8] font-display text-3xl leading-none tabular-nums shadow-[0_3px_0_rgba(42,28,4,0.28)] sm:size-[4.25rem] sm:text-4xl"
+          className="grid size-10 place-items-center rounded-full bg-[#fffdf8] font-display text-xl leading-none tabular-nums shadow-[0_3px_0_rgba(42,28,4,0.28)] lg:size-[4.25rem] lg:text-4xl"
           aria-label={`${unit.code} tally ${score}`}
         >
           {score}
         </p>
       </div>
 
-      <div className="relative min-w-0 flex-1 [--stop:3.6rem] sm:[--stop:5rem]">
+      <div className="relative min-w-0 flex-1 overflow-x-auto [--node:2.15rem] [--stop:2.4rem] lg:overflow-visible lg:[--node:clamp(3.4rem,10vh,6.25rem)] lg:[--stop:5rem]">
+        <div className="relative min-w-[16.8rem] lg:min-w-0">
         <div
-          className="absolute h-4 -translate-y-1/2 rounded-full bg-[#f3e2c0]"
+          className="absolute h-3 -translate-y-1/2 rounded-full bg-[#f3e2c0] lg:h-4"
           style={{ top: `calc(${NODE} / 2)`, left: "calc(var(--stop) / 2)", right: "calc(var(--stop) / 2)" }}
         />
         <motion.div
-          className="absolute h-4 -translate-y-1/2 rounded-full"
+          className="absolute h-3 -translate-y-1/2 rounded-full lg:h-4"
           style={{ top: `calc(${NODE} / 2)`, left: "calc(var(--stop) / 2)", background: unit.color }}
           initial={false}
           animate={{ width: `calc((100% - var(--stop)) * ${fraction})` }}
           transition={{ type: "spring", stiffness: 90, damping: 18 }}
         />
         <span
-          className="absolute size-7 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-white shadow"
+          className="absolute size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow lg:size-7 lg:border-4"
           style={{
             top: `calc(${NODE} / 2)`,
             left: `calc(var(--stop) / 2 + (100% - var(--stop)) * ${fraction})`,
@@ -118,8 +119,8 @@ function ClassPath({
             >
               <span className="size-3 rounded-full" style={{ background: unit.deep }} />
             </div>
-            <p className="mt-1.5 text-sm leading-none font-extrabold tabular-nums">0</p>
-            <p className="text-xs leading-tight font-bold text-muted-foreground sm:text-sm">Start</p>
+            <p className="mt-1 text-xs leading-none font-extrabold tabular-nums lg:mt-1.5 lg:text-sm">0</p>
+            <p className="hidden text-xs leading-tight font-bold text-muted-foreground lg:block lg:text-sm">Start</p>
           </li>
           {CLASS_MILESTONES.map((milestone) => (
             <Stop
@@ -132,6 +133,7 @@ function ClassPath({
             />
           ))}
         </ol>
+        </div>
       </div>
     </section>
   );
@@ -171,11 +173,11 @@ function Stop({
         {named && art ? (
           <img src={art} alt="" className="size-full object-cover" />
         ) : (
-          <LockKeyhole className="size-7 sm:size-9" />
+          <LockKeyhole className="size-4 lg:size-9" />
         )}
       </div>
-      <p className="mt-1.5 text-sm leading-none font-extrabold tabular-nums">{milestone.points}</p>
-      <p className="text-xs leading-tight font-bold text-muted-foreground sm:text-sm">{title}</p>
+      <p className="mt-1 text-xs leading-none font-extrabold tabular-nums lg:mt-1.5 lg:text-sm">{milestone.points}</p>
+      <p className="hidden text-xs leading-tight font-bold text-muted-foreground lg:block lg:text-sm">{title}</p>
     </li>
   );
 }
