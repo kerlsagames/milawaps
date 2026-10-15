@@ -9,7 +9,7 @@ const rules = [
     action: "spot" as const,
     icon: ScanSearch,
     tone: "#f5b942",
-    title: "Spot checks",
+    title: "Any great thing",
   },
   {
     action: "surge" as const,

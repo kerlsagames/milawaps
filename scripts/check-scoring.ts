@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { STRIKE_MAX, UNIT_MAX, VAULT_TARGET, emptyScores, vaultTotal } from "../lib/game";
-import { applyAction } from "../lib/scoring";
+import { applyAction, attachReason } from "../lib/scoring";
+import { tickerLine } from "../lib/ticker";
 
 const start = emptyScores(1_000);
 
@@ -101,5 +102,25 @@ assert.equal(vaultTotal(reset.state.units), 0);
 assert.equal(reset.state.lastAction, null);
 assert.equal(reset.state.log[0]?.action, "reset");
 assert.equal(reset.state.log[0]?.staffId, "hunter");
+
+const noted = applyAction(start, "spot", "f1", "jess", 10_000);
+const withReason = attachReason(
+  noted.state,
+  noted.state.log[0].id,
+  "jess",
+  "keeping the toilets so clean",
+  11_000,
+);
+assert.equal(withReason.units.f1, 1);
+assert.equal(withReason.log[0]?.reason, "keeping the toilets so clean");
+assert.equal(withReason.reasons[0]?.reason, "keeping the toilets so clean");
+assert.equal(
+  tickerLine(withReason.log[0]),
+  "F/1 +1 point from Miss B for keeping the toilets so clean",
+);
+assert.equal(tickerLine(noted.state.log[0]), "Miss B has just given F/1 +1 point");
+const kept = applyAction(withReason, "reset", undefined, "craig", 12_000);
+assert.equal(kept.state.units.f1, 0);
+assert.equal(kept.state.reasons.length, 1);
 
 console.log("scoring checks passed");

@@ -4,16 +4,19 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { X } from "lucide-react";
 import useSWR from "swr";
 import { AnimatePresence, motion } from "framer-motion";
+import { CricketView } from "@/components/cricket-view";
 import { LeaderboardView } from "@/components/leaderboard-view";
 import { YardRulesView } from "@/components/yard-rules-view";
 import { PinDialog } from "@/components/pin-dialog";
 import { PrizesView } from "@/components/prizes-view";
+import { ReasonPrompt } from "@/components/reason-prompt";
 import { RevealView } from "@/components/reveal-view";
 import { SiteHeader } from "@/components/site-header";
 import { StaffHud } from "@/components/staff-hud";
 import { Button } from "@/components/ui/button";
 import { clearToken, saveToken, setKioskPref, useDeskPrefs } from "@/lib/desk-prefs";
 import { kioskScreens, prizeIsPublic, revealById, revealForPoints, revealLabel, REVEALS, type ScreenId } from "@/lib/reveals";
+import { tickerLine } from "@/lib/ticker";
 import { cn } from "@/lib/utils";
 import {
   UNIT_IDS,
@@ -55,6 +58,11 @@ export function YardBoard() {
   const [pinOpen, setPinOpen] = useState(false);
   const [hudOpen, setHudOpen] = useState(false);
   const [deskError, setDeskError] = useState<string | null>(null);
+  const [reasonPrompt, setReasonPrompt] = useState<{ id: string; line: string } | null>(null);
+
+  useEffect(() => {
+    if (view === "cricket" && !prefs.cricketCode) setView("board");
+  }, [view, prefs.cricketCode]);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const startedRef = useRef(0);
@@ -206,6 +214,12 @@ export function YardBoard() {
             setDeskError(body.error ?? "That tick did not land.");
             return;
           }
+          const entry = body.log?.[0];
+          if (action !== "reset" && entry?.id) {
+            setReasonPrompt({ id: entry.id, line: tickerLine(entry) ?? "Points saved" });
+          } else {
+            setReasonPrompt(null);
+          }
           await mutate(body, { revalidate: false });
         })
         .catch(() => {
@@ -242,6 +256,9 @@ export function YardBoard() {
           view={view}
           tabs={[
             ...VIEWS.map((item) => ({ id: item.id, label: item.label, short: item.short })),
+            ...(prefs.cricketCode
+              ? [{ id: "cricket" as const, label: "Cricket", short: "Cricket" }]
+              : []),
             ...REVEALS.filter((item) => shown[item.id] || view === item.id).map((item) => {
               const label = revealLabel(item, prefs.reveals[item.id]?.at);
               return { id: item.id, label, short: label };
@@ -334,11 +351,13 @@ export function YardBoard() {
                 )}
                 {view === "prizes" && <PrizesView board={data} />}
                 {view === "yard" && <YardRulesView />}
+                {view === "cricket" && <CricketView code={prefs.cricketCode} />}
                 {activeReveal && (
                   <RevealView
                     reveal={activeReveal}
                     revealAt={prefs.reveals[activeReveal.id].at}
                     prize={prefs.reveals[activeReveal.id].prize}
+                    image={prefs.reveals[activeReveal.id].image}
                   />
                 )}
               </TvFit>
@@ -366,6 +385,7 @@ export function YardBoard() {
         onOpenChange={setHudOpen}
         board={data}
         dutyName={dutyName}
+        staffId={staffFromToken(token)}
         error={deskError}
         onScore={score}
         onLogout={() => {
@@ -373,6 +393,35 @@ export function YardBoard() {
           setHudOpen(false);
         }}
       />
+      {reasonPrompt && token ? (
+        <ReasonPrompt
+          key={reasonPrompt.id}
+          id={reasonPrompt.id}
+          line={reasonPrompt.line}
+          onDismiss={() => setReasonPrompt(null)}
+          onSave={async (reason) => {
+            const response = await fetch("/api/score/reason", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ id: reasonPrompt.id, reason }),
+            });
+            const body = (await response.json().catch(() => ({}))) as PublicBoard & { error?: string };
+            if (response.status === 401) {
+              clearToken();
+              setReasonPrompt(null);
+              setPinOpen(true);
+              return "The desk locked itself. Enter the PIN again.";
+            }
+            if (!response.ok) return body.error ?? "The reason did not save.";
+            await mutate(body, { revalidate: false });
+            setReasonPrompt(null);
+            return null;
+          }}
+        />
+      ) : null}
     </div>
   );
 }

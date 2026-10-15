@@ -21,16 +21,17 @@ export type ScoreAction = "spot" | "surge" | "strike" | "teamwork";
 export type ActionId = ScoreAction | "reset";
 
 export const STAFF = [
-  { id: "jess", name: "Jess" },
-  { id: "craig", name: "Craig" },
-  { id: "ash", name: "Ash" },
-  { id: "ricky", name: "Ricky" },
-  { id: "tiff", name: "Tiff" },
-  { id: "doug", name: "Doug" },
-  { id: "hunter", name: "Hunter" },
-  { id: "jenny", name: "Jenny" },
-  { id: "richard", name: "Richard" },
-  { id: "maria", name: "Maria" },
+  { id: "jess", name: "Jess", kid: "Miss B" },
+  { id: "craig", name: "Craig", kid: "Mr Kerlin" },
+  { id: "ash", name: "Ash", kid: "Mr C" },
+  { id: "ricky", name: "Ricky", kid: "Mr Petts" },
+  { id: "tiff", name: "Tiff", kid: "Mrs Stirling" },
+  { id: "doug", name: "Doug", kid: "Doug" },
+  { id: "hunter", name: "Hunter", kid: "Hunter" },
+  { id: "jenny", name: "Jenny", kid: "Jenny" },
+  { id: "charlie", name: "Charlie", kid: "Charlie" },
+  { id: "richard", name: "Richard", kid: "Mr Hall" },
+  { id: "maria", name: "Maria", kid: "Mrs Rinaldi" },
 ] as const;
 
 export type StaffId = (typeof STAFF)[number]["id"];
@@ -43,10 +44,21 @@ export type LastAction = {
 };
 
 export type ScoreLogEntry = {
+  id: string;
   action: ActionId;
   unitId: UnitId | "all";
   at: number;
   staffId: StaffId;
+  reason: string | null;
+};
+
+export type ReasonRecord = {
+  id: string;
+  at: number;
+  staffId: StaffId;
+  unitId: UnitId | "all";
+  action: ScoreAction;
+  reason: string;
 };
 
 export type ScoreState = {
@@ -55,6 +67,7 @@ export type ScoreState = {
   updatedAt: number;
   lastAction: LastAction | null;
   log: ScoreLogEntry[];
+  reasons: ReasonRecord[];
 };
 
 export type SecurityState = {
@@ -70,6 +83,7 @@ export type PublicBoard = {
   updatedAt: number;
   lastAction: LastAction | null;
   log: ScoreLogEntry[];
+  reasons: ReasonRecord[];
   vault: number;
   storage: StorageMode;
 };
@@ -194,9 +208,10 @@ export const ACTION_COPY: Record<
   { label: string; short: string; detail: string; delta: number }
 > = {
   spot: {
-    label: "Spot Check Tick",
-    short: "+1 Tick",
-    detail: "A teacher checks your area and it's tidy. This can happen at any time.",
+    label: "Great things",
+    short: "+1",
+    detail:
+      "One point when kids do something great. A tidy patch counts, and so does helping, leading, or a job done properly.",
     delta: 1,
   },
   surge: {
@@ -226,6 +241,7 @@ export function emptyScores(now = Date.now()): ScoreState {
     updatedAt: now,
     lastAction: null,
     log: [],
+    reasons: [],
   };
 }
 
@@ -235,6 +251,10 @@ export function isStaffId(value: unknown): value is StaffId {
 
 export function staffName(id: string | null | undefined): string | null {
   return STAFF.find((person) => person.id === id)?.name ?? null;
+}
+
+export function kidName(id: string | null | undefined): string {
+  return STAFF.find((person) => person.id === id)?.kid ?? "A teacher";
 }
 
 export function emptySecurity(): SecurityState {
@@ -289,7 +309,7 @@ export function nextVaultMilestone(vault: number): Milestone | null {
 export function actionLabel(action: LastAction): string {
   const copy = ACTION_COPY[action.action];
   const where = action.unitId === "all" ? "all units" : unitById(action.unitId).code;
-  const who = staffName(action.staffId);
+  const who = action.staffId ? kidName(action.staffId) : null;
   return who ? `${who} · ${copy.label} · ${where}` : `${copy.label} · ${where}`;
 }
 
@@ -298,7 +318,8 @@ export function scoreLogLabel(entry: ScoreLogEntry): string {
   if (entry.action === "reset") return `${who} cleared the board`;
   const copy = ACTION_COPY[entry.action];
   const where = entry.unitId === "all" ? "all units" : unitById(entry.unitId).code;
-  return `${who} · ${copy.short} · ${where}`;
+  const because = entry.reason ? ` · ${entry.reason}` : "";
+  return `${who} · ${copy.short} · ${where}${because}`;
 }
 
 export function formatAgo(at: number, now: number): string {

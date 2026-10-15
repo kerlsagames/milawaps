@@ -71,13 +71,14 @@ export const REVEALS = [
 
 export type RevealId = (typeof REVEALS)[number]["id"];
 export type RevealDef = (typeof REVEALS)[number];
-export type ScreenId = ViewId | RevealId;
+export type ScreenId = ViewId | RevealId | "cricket";
 
 export type ShownMap = Record<ScreenId, boolean>;
 
 export const SCREEN_IDS: ScreenId[] = [
   ...VIEWS.map((view) => view.id),
   ...REVEALS.map((reveal) => reveal.id),
+  "cricket",
 ];
 
 export const DEFAULT_SHOWN: ShownMap = {
@@ -90,6 +91,7 @@ export const DEFAULT_SHOWN: ShownMap = {
   "reveal-2": false,
   "reveal-ice": false,
   "reveal-3": false,
+  cricket: false,
 };
 
 export function revealById(id: string): RevealDef | null {

@@ -190,9 +190,24 @@
   animation: pin-shake 0.42s ease;
 }
 
+@keyframes ticker-move {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.ticker-move {
+  display: inline-block;
+  animation: ticker-move 28s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .barber-stripe,
-  .pin-shake {
+  .pin-shake,
+  .ticker-move {
     animation: none;
   }
 }

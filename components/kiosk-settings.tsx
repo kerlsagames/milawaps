@@ -15,14 +15,18 @@ import {
   MAX_DWELL_SECONDS,
   MIN_DWELL_SECONDS,
   resetReveals,
+  setCricketCode,
   setFinishAt,
   setRevealAt,
+  setRevealImage,
+  setRevealLabel,
   setRevealPrize,
   setScreenShown,
   setTimerStyle,
   setViewDwell,
   useDeskPrefs,
 } from "@/lib/desk-prefs";
+import { compressPrizeImage } from "@/lib/prize-image";
 import { REVEALS, type ScreenId } from "@/lib/reveals";
 
 const ADMIN_KEY = "ott-admin";
@@ -182,6 +186,29 @@ export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => 
               />
             ))}
           </div>
+          <label className="grid gap-1.5">
+            <span className="text-sm font-bold">Cricket code</span>
+            <input
+              type="text"
+              value={prefs.cricketCode}
+              aria-label="Cricket code"
+              placeholder="Code or share link from Jimmy’s cricket"
+              onChange={(event) => setCricketCode(event.target.value)}
+              className="h-11 rounded-xl border border-input bg-transparent px-3 text-base font-bold"
+            />
+            <span className="text-xs font-semibold text-muted-foreground">
+              Paste the code Jimmy’s cricket gives you, or the share link. The TV adds a Cricket
+              page with the ladder, the draw, and a few stats. Clear this to take the page off.
+            </span>
+          </label>
+          {prefs.cricketCode ? (
+            <ScreenRow
+              id="cricket"
+              label="Cricket"
+              seconds={prefs.dwells.cricket}
+              shown={undefined}
+            />
+          ) : null}
           {!admin ? (
             asking ? (
               <form
@@ -223,9 +250,9 @@ export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => 
             <div>
               <h3 className="font-display text-xl">Prize reveals</h3>
               <p className="text-xs font-semibold text-muted-foreground">
-                Game with Mr K, the teacher takedowns, laser tag, and ice cream. Before the
-                date, the path shows a lock. On the day, the card flips and that prize shows
-                in the circle.
+                Rename a reward and add a picture, so ice cream can become movie day. Before the
+                date, prize stops show a lock and teacher takedowns show the silhouette. On the
+                day, the card flips and that prize shows in the circle.
               </p>
             </div>
             {REVEALS.map((reveal) => {
@@ -246,6 +273,17 @@ export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => 
                       onSave={(at) => setRevealAt(reveal.id, at)}
                     />
                     <label className="grid gap-1">
+                      <span className="text-xs font-bold">TV name</span>
+                      <input
+                        type="text"
+                        value={saved.label}
+                        aria-label={`${reveal.title} TV name`}
+                        placeholder="Ice cream"
+                        onChange={(event) => setRevealLabel(reveal.id, event.target.value)}
+                        className="h-10 rounded-xl border border-input bg-transparent px-3 text-sm font-bold"
+                      />
+                    </label>
+                    <label className="grid gap-1">
                       <span className="text-xs font-bold">Prize line</span>
                       <input
                         type="text"
@@ -256,6 +294,11 @@ export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => 
                         className="h-10 rounded-xl border border-input bg-transparent px-3 text-sm font-bold"
                       />
                     </label>
+                    <PrizeImageField
+                      label={`${reveal.title} picture`}
+                      image={saved.image}
+                      onPick={(image) => setRevealImage(reveal.id, image)}
+                    />
                     <Button
                       type="button"
                       variant="outline"
@@ -318,6 +361,72 @@ export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => 
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function PrizeImageField({
+  label,
+  image,
+  onPick,
+}: {
+  label: string;
+  image: string | null;
+  onPick: (image: string | null) => boolean;
+}) {
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <div className="grid gap-1">
+      <span className="text-xs font-bold">{label}</span>
+      <div className="flex items-center gap-3">
+        <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-input bg-[#fffdf8]">
+          {image ? (
+            <img src={image} alt="" className="size-full object-cover" />
+          ) : (
+            <span className="px-1 text-center text-[10px] leading-tight font-bold text-muted-foreground">
+              No picture
+            </span>
+          )}
+        </div>
+        <div className="grid gap-1">
+          <label className="inline-flex h-9 cursor-pointer items-center rounded-xl border border-input px-3 text-sm font-bold">
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              aria-label={label}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (!file) return;
+                void compressPrizeImage(file)
+                  .then((data) => {
+                    const saved = onPick(data);
+                    setError(saved ? null : "That picture is too big for this TV to keep.");
+                  })
+                  .catch((reason: unknown) => {
+                    setError(reason instanceof Error ? reason.message : "Could not read that picture.");
+                  });
+              }}
+            />
+            {image ? "Change picture" : "Add picture"}
+          </label>
+          {image ? (
+            <button
+              type="button"
+              className="text-left text-xs font-bold text-muted-foreground underline"
+              onClick={() => {
+                onPick(null);
+                setError(null);
+              }}
+            >
+              Use the original
+            </button>
+          ) : null}
+        </div>
+      </div>
+      {error ? <p className="text-xs font-bold text-[#8d1f1f]">{error}</p> : null}
+    </div>
   );
 }
 

@@ -12,7 +12,7 @@ import {
   type UnitTheme,
 } from "@/lib/game";
 import { Countdown } from "@/components/countdown";
-import { prizeIsPublic, revealForPoints } from "@/lib/reveals";
+import { prizeIsPublic, revealForPoints, type RevealDef } from "@/lib/reveals";
 
 const HIGHEST = CLASS_MILESTONES[CLASS_MILESTONES.length - 1]?.points ?? 60;
 const NODE = "var(--node)";
@@ -122,16 +122,29 @@ function ClassPath({
             <p className="mt-1 text-xs leading-none font-extrabold tabular-nums lg:mt-1.5 lg:text-sm">0</p>
             <p className="hidden text-xs leading-tight font-bold text-muted-foreground lg:block lg:text-sm">Start</p>
           </li>
-          {CLASS_MILESTONES.map((milestone) => (
-            <Stop
-              key={milestone.points}
-              milestone={milestone}
-              score={score}
-              unit={unit}
-              named={namedPrize(milestone.points, reveals, now)}
-              art={revealForPoints(milestone.points)?.image ?? ""}
-            />
-          ))}
+          {CLASS_MILESTONES.map((milestone) => {
+            const reveal = revealForPoints(milestone.points);
+            const saved = reveal ? reveals[reveal.id] : null;
+            const named = namedPrize(milestone.points, reveals, now);
+            return (
+              <Stop
+                key={milestone.points}
+                milestone={milestone}
+                score={score}
+                unit={unit}
+                named={named}
+                reveal={reveal}
+                title={
+                  named
+                    ? saved?.label?.trim() || milestone.short
+                    : reveal && !reveal.wide
+                      ? "Teacher takedown"
+                      : ""
+                }
+                art={named ? saved?.image || reveal?.image || "" : reveal && !reveal.wide ? reveal.face : ""}
+              />
+            );
+          })}
         </ol>
         </div>
       </div>
@@ -144,18 +157,23 @@ function Stop({
   score,
   unit,
   named,
+  reveal,
+  title,
   art,
 }: {
   milestone: Milestone;
   score: number;
   unit: UnitTheme;
   named: boolean;
+  reveal: RevealDef | null;
+  title: string;
   art: string;
 }) {
   const reached = score >= milestone.points;
-  const title = named ? milestone.short : "";
   const next = nextClassMilestone(score);
   const aiming = next?.points === milestone.points;
+  const takedownLocked = Boolean(reveal && !reveal.wide && !named);
+  const showPicture = Boolean(art);
 
   return (
     <li className="flex w-[var(--stop)] flex-col items-center text-center">
@@ -164,20 +182,28 @@ function Stop({
         style={{
           width: NODE,
           height: NODE,
-          background: named ? "#efe6d6" : "#2a1c04",
-          color: named ? unit.ink : "#ffe08a",
+          background: showPicture ? "#efe6d6" : "#2a1c04",
+          color: showPicture ? unit.ink : "#ffe08a",
           borderColor: aiming ? unit.deep : reached && named ? unit.deep : "rgba(42,34,24,0.12)",
           boxShadow: aiming ? `0 0 0 4px ${unit.color}` : undefined,
         }}
       >
-        {named && art ? (
+        {showPicture ? (
           <img src={art} alt="" className="size-full object-cover" />
         ) : (
           <LockKeyhole className="size-4 lg:size-9" />
         )}
       </div>
       <p className="mt-1 text-xs leading-none font-extrabold tabular-nums lg:mt-1.5 lg:text-sm">{milestone.points}</p>
-      <p className="hidden text-xs leading-tight font-bold text-muted-foreground lg:block lg:text-sm">{title}</p>
+      <p
+        className={
+          takedownLocked || named
+            ? "text-[10px] leading-tight font-bold text-muted-foreground lg:text-sm"
+            : "hidden text-xs leading-tight font-bold text-muted-foreground lg:block lg:text-sm"
+        }
+      >
+        {title}
+      </p>
     </li>
   );
 }

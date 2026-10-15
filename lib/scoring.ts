@@ -5,6 +5,8 @@ import {
   VAULT_MILESTONES,
   type ActionId,
   type MilestoneEvent,
+  type ReasonRecord,
+  type ScoreAction,
   type ScoreLogEntry,
   type ScoreState,
   type StaffId,
@@ -13,10 +15,21 @@ import {
   clampStrike,
   emptyScores,
   isActionId,
+  isScoreAction,
   isStaffId,
   isUnitId,
   vaultTotal,
 } from "@/lib/game";
+
+const LOG_LIMIT = 80;
+const REASON_ARCHIVE = 200;
+const REASON_WINDOW_MS = 3 * 60 * 1000;
+
+export function cleanReason(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const text = value.replace(/\s+/g, " ").trim().slice(0, 80);
+  return text.length > 0 ? text : null;
+}
 
 export function sanitizeScores(raw: unknown): ScoreState {
   const base = emptyScores();
@@ -74,15 +87,42 @@ export function sanitizeScores(raw: unknown): ScoreState {
       if (entry.action !== "reset" && entry.action !== "teamwork" && entry.unitId === "all") {
         continue;
       }
+      const id =
+        typeof entry.id === "string" && entry.id.length > 0 && entry.id.length <= 80
+          ? entry.id
+          : `legacy-${entry.at}-${entry.staffId}-${log.length}`;
       log.push({
+        id,
         action: entry.action,
         unitId: entry.unitId,
         at: entry.at,
         staffId: entry.staffId,
+        reason: cleanReason(entry.reason),
       });
-      if (log.length === 40) break;
+      if (log.length === LOG_LIMIT) break;
     }
     base.log = log;
+  }
+  if (Array.isArray(record.reasons)) {
+    const reasons: ReasonRecord[] = [];
+    for (const item of record.reasons) {
+      if (!item || typeof item !== "object") continue;
+      const entry = item as Partial<ReasonRecord>;
+      const reason = cleanReason(entry.reason);
+      if (!reason || !isScoreAction(entry.action) || !isStaffId(entry.staffId)) continue;
+      if (entry.unitId !== "all" && !isUnitId(entry.unitId)) continue;
+      if (typeof entry.at !== "number" || typeof entry.id !== "string" || entry.id.length === 0) continue;
+      reasons.push({
+        id: entry.id.slice(0, 80),
+        at: entry.at,
+        staffId: entry.staffId,
+        unitId: entry.unitId,
+        action: entry.action,
+        reason,
+      });
+      if (reasons.length === REASON_ARCHIVE) break;
+    }
+    base.reasons = reasons;
   }
   return base;
 }
@@ -110,7 +150,11 @@ export function milestonesBetween(
 }
 
 function pushLog(state: ScoreState, entry: ScoreLogEntry): ScoreLogEntry[] {
-  return [entry, ...(state.log ?? [])].slice(0, 40);
+  return [entry, ...(state.log ?? [])].slice(0, LOG_LIMIT);
+}
+
+function nextEntryId(now: number, staffId: StaffId) {
+  return `${now.toString(36)}-${staffId}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 export function applyAction(
@@ -121,15 +165,17 @@ export function applyAction(
   now = Date.now(),
 ): { state: ScoreState; events: MilestoneEvent[] } {
   const entry: ScoreLogEntry = {
+    id: nextEntryId(now, staffId),
     action,
     unitId: action === "teamwork" || action === "reset" ? "all" : (unitId as UnitId),
     at: now,
     staffId,
+    reason: null,
   };
 
   if (action === "reset") {
     return {
-      state: { ...emptyScores(now), log: pushLog(state, entry) },
+      state: { ...emptyScores(now), reasons: state.reasons ?? [], log: pushLog(state, entry) },
       events: [],
     };
   }
@@ -166,10 +212,47 @@ export function applyAction(
       staffId,
     },
     log: pushLog(state, entry),
+    reasons: state.reasons ?? [],
   };
 
   return {
     state: updated,
     events: milestonesBetween(before, next),
   };
+}
+
+export function attachReason(
+  state: ScoreState,
+  id: string,
+  staffId: StaffId,
+  reason: string,
+  now = Date.now(),
+): ScoreState {
+  const clean = cleanReason(reason);
+  if (!clean) throw new Error("Write a short reason.");
+  const entry = (state.log ?? []).find((item) => item.id === id);
+  if (!entry || entry.action === "reset" || !isScoreAction(entry.action)) {
+    throw new Error("That tick is not on the board.");
+  }
+  if (entry.staffId !== staffId) {
+    throw new Error("Only the teacher who gave the points can add the reason.");
+  }
+  if (now - entry.at > REASON_WINDOW_MS) {
+    throw new Error("That tick is too old for a reason. The points stayed.");
+  }
+  const action = entry.action as ScoreAction;
+  const log = state.log.map((item) => (item.id === id ? { ...item, reason: clean } : item));
+  const record: ReasonRecord = {
+    id: entry.id,
+    at: entry.at,
+    staffId,
+    unitId: entry.unitId,
+    action,
+    reason: clean,
+  };
+  const reasons = [record, ...(state.reasons ?? []).filter((item) => item.id !== id)].slice(
+    0,
+    REASON_ARCHIVE,
+  );
+  return { ...state, log, reasons, updatedAt: now };
 }

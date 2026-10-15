@@ -9,10 +9,12 @@ export function RevealView({
   reveal,
   revealAt,
   prize,
+  image,
 }: {
   reveal: RevealDef;
   revealAt: number | null;
   prize: string;
+  image: string | null;
 }) {
   const [now, setNow] = useState(() => Date.now());
   const due = revealAt != null && now >= revealAt;
@@ -72,7 +74,7 @@ export function RevealView({
           </>
         )}
       </div>
-      <FlipCard reveal={reveal} flipped={flipped} prize={line} />
+      <FlipCard reveal={reveal} flipped={flipped} prize={line} image={image} />
     </div>
   );
 }
@@ -81,10 +83,12 @@ function FlipCard({
   reveal,
   flipped,
   prize,
+  image,
 }: {
   reveal: RevealDef;
   flipped: boolean;
   prize: string;
+  image: string | null;
 }) {
   return (
     <div
@@ -110,7 +114,11 @@ function FlipCard({
           style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
           aria-hidden={flipped ? undefined : true}
         >
-          <PrizeArt src={reveal.image} title={flipped ? reveal.title : ""} prize={flipped ? prize : ""} />
+          <PrizeArt
+            src={image || reveal.image}
+            title={flipped ? reveal.title : ""}
+            prize={flipped ? prize : ""}
+          />
         </div>
       </div>
     </div>

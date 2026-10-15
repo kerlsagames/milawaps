@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { VIEWS } from "@/lib/game";
+import { CLASS_MILESTONES, VIEWS } from "@/lib/game";
 import {
   DEFAULT_SHOWN,
   REVEALS,
@@ -12,6 +12,10 @@ import {
 } from "@/lib/reveals";
 import { staffFromToken } from "@/lib/who";
 
+function revealDefaultLabel(reveal: (typeof REVEALS)[number]) {
+  return CLASS_MILESTONES.find((item) => item.points === reveal.points)?.short ?? reveal.title;
+}
+
 const TOKEN_KEY = "ott-token";
 const TOKEN_EXP_KEY = "ott-token-exp";
 
@@ -20,6 +24,8 @@ export type DwellMap = Record<ScreenId, number>;
 export type RevealPrefs = {
   at: number | null;
   prize: string;
+  label: string;
+  image: string | null;
 };
 
 export type RevealMap = Record<RevealId, RevealPrefs>;
@@ -34,6 +40,7 @@ export type DeskPrefs = {
   shown: ShownMap;
   reveals: RevealMap;
   timer: TimerStyle;
+  cricketCode: string;
 };
 
 export const MIN_DWELL_SECONDS = 5;
@@ -49,12 +56,20 @@ export const DEFAULT_DWELLS: DwellMap = {
   "reveal-2": 12,
   "reveal-ice": 12,
   "reveal-3": 12,
+  cricket: 16,
 };
 
 function defaultReveals(): RevealMap {
   return Object.fromEntries(
-    REVEALS.map((reveal) => [reveal.id, { at: null, prize: reveal.prize }]),
+    REVEALS.map((reveal) => [
+      reveal.id,
+      { at: null, prize: reveal.prize, label: revealDefaultLabel(reveal), image: null },
+    ]),
   ) as RevealMap;
+}
+
+function readStoredImage(value: unknown): string | null {
+  return typeof value === "string" && value.startsWith("data:image/") ? value : null;
 }
 
 const serverPrefs: DeskPrefs = {
@@ -65,6 +80,7 @@ const serverPrefs: DeskPrefs = {
   shown: DEFAULT_SHOWN,
   reveals: defaultReveals(),
   timer: "race",
+  cricketCode: "",
 };
 
 let current: DeskPrefs = serverPrefs;
@@ -126,10 +142,15 @@ function readShown(): ShownMap {
 }
 
 function readReveals(): RevealMap {
-  let stored: Record<string, { at?: unknown; prize?: unknown }> = {};
+  let stored: Record<string, { at?: unknown; prize?: unknown; label?: unknown; image?: unknown }> = {};
   try {
     const raw = window.localStorage.getItem("ott-reveals");
-    if (raw) stored = JSON.parse(raw) as Record<string, { at?: unknown; prize?: unknown }>;
+    if (raw) {
+      stored = JSON.parse(raw) as Record<
+        string,
+        { at?: unknown; prize?: unknown; label?: unknown; image?: unknown }
+      >;
+    }
   } catch {
     stored = {};
   }
@@ -138,9 +159,17 @@ function readReveals(): RevealMap {
     const saved = stored[reveal.id];
     const at = typeof saved?.at === "number" && Number.isFinite(saved.at) && saved.at > 0 ? saved.at : null;
     const prize = typeof saved?.prize === "string" ? saved.prize : reveal.prize;
-    reveals[reveal.id] = { at, prize };
+    const label =
+      typeof saved?.label === "string" && saved.label.trim()
+        ? saved.label.trim().slice(0, 40)
+        : revealDefaultLabel(reveal);
+    reveals[reveal.id] = { at, prize, label, image: readStoredImage(saved?.image) };
   }
   return reveals;
+}
+
+function readCricket(): string {
+  return (window.localStorage.getItem("ott-cricket-code") || "").trim().slice(0, 300);
 }
 
 function readFinish(): number | null {
@@ -153,14 +182,18 @@ function readTimer(): TimerStyle {
 }
 
 function readPrefs(): DeskPrefs {
+  const cricketCode = readCricket();
+  const shown = readShown();
+  if (!cricketCode) shown.cricket = false;
   return {
     kiosk: window.localStorage.getItem("ott-kiosk") === "1",
     token: readToken(),
     dwells: readDwells(),
     finishAt: readFinish(),
-    shown: readShown(),
+    shown,
     reveals: readReveals(),
     timer: readTimer(),
+    cricketCode,
   };
 }
 
@@ -242,6 +275,36 @@ export function setRevealPrize(id: RevealId, prize: string) {
   reveals[id] = { ...reveals[id], prize };
   window.localStorage.setItem("ott-reveals", JSON.stringify(reveals));
   publish({ ...readPrefs(), reveals });
+}
+
+export function setRevealLabel(id: RevealId, label: string) {
+  const reveals = readReveals();
+  reveals[id] = { ...reveals[id], label: label.trim().slice(0, 40) };
+  window.localStorage.setItem("ott-reveals", JSON.stringify(reveals));
+  publish({ ...readPrefs(), reveals });
+}
+
+export function setRevealImage(id: RevealId, image: string | null): boolean {
+  const reveals = readReveals();
+  const previous = reveals[id].image;
+  reveals[id] = { ...reveals[id], image };
+  try {
+    window.localStorage.setItem("ott-reveals", JSON.stringify(reveals));
+    publish({ ...readPrefs(), reveals });
+    return true;
+  } catch {
+    reveals[id] = { ...reveals[id], image: previous };
+    return false;
+  }
+}
+
+export function setCricketCode(code: string) {
+  const cricketCode = code.trim().slice(0, 300);
+  if (cricketCode) window.localStorage.setItem("ott-cricket-code", cricketCode);
+  else window.localStorage.removeItem("ott-cricket-code");
+  const shown = { ...readShown(), cricket: cricketCode.length > 0 };
+  window.localStorage.setItem("ott-kiosk-shown", JSON.stringify(shown));
+  publish({ ...readPrefs(), cricketCode, shown });
 }
 
 export function saveToken(token: string, expiresAt: number) {

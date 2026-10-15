@@ -12,7 +12,7 @@ import {
   emptySecurity,
   vaultTotal,
 } from "@/lib/game";
-import { applyAction, sanitizeScores } from "@/lib/scoring";
+import { applyAction, attachReason, sanitizeScores } from "@/lib/scoring";
 
 const SCORE_KEY = "ott:scores";
 const SECURITY_KEY = "ott:security";
@@ -141,6 +141,7 @@ export function toPublic(state: ScoreState): PublicBoard {
     updatedAt: state.updatedAt,
     lastAction: state.lastAction,
     log: state.log ?? [],
+    reasons: state.reasons ?? [],
     crosses: state.crosses ?? { f1: 0, "234": 0, "56": 0 },
     vault: vaultTotal(state.units),
     storage: storageMode(),
@@ -172,5 +173,18 @@ export function commitAction(
     const result = applyAction(blob.scores, action, unitId, staffId);
     await writeBlob({ ...blob, scores: result.state });
     return { board: toPublic(result.state), events: result.events };
+  });
+}
+
+export function commitReason(
+  id: string,
+  reason: string,
+  staffId: StaffId,
+): Promise<PublicBoard> {
+  return serialized(async () => {
+    const blob = await readBlob();
+    const next = attachReason(blob.scores, id, staffId, reason);
+    await writeBlob({ ...blob, scores: next });
+    return toPublic(next);
   });
 }

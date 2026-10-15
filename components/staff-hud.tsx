@@ -6,7 +6,9 @@ import {
   STAFF_MYSTERY_IDEAS,
   UNIT_MAX,
   UNITS,
+  kidName,
   scoreLogLabel,
+  unitById,
   type ActionId,
   type PublicBoard,
   type StorageMode,
@@ -32,6 +34,7 @@ export function StaffHud({
   onOpenChange,
   board,
   dutyName,
+  staffId,
   error,
   onScore,
   onLogout,
@@ -40,6 +43,7 @@ export function StaffHud({
   onOpenChange: (open: boolean) => void;
   board: PublicBoard | undefined;
   dutyName: string | null;
+  staffId: string | null;
   error: string | null;
   onScore: (action: ActionId, unitId?: UnitId) => void;
   onLogout: () => void;
@@ -143,6 +147,26 @@ export function StaffHud({
             )}
           </section>
 
+          {staffId === "craig" && (
+            <section className="rounded-2xl border border-black/10 bg-white/70 px-3 py-2">
+              <p className="text-[11px] font-extrabold tracking-wide text-ink-gold uppercase">
+                Reason record
+              </p>
+              {board?.reasons?.length ? (
+                <ul className="mt-2 flex max-h-48 flex-col gap-1 overflow-y-auto">
+                  {board.reasons.map((entry) => (
+                    <li key={entry.id} className="text-sm font-semibold">
+                      {reasonStamp(entry.at)} · {entry.unitId === "all" ? "All" : unitById(entry.unitId).code}{" "}
+                      {ACTION_COPY[entry.action].short} · {kidName(entry.staffId)} · {entry.reason}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-1 text-sm text-muted-foreground">No reasons saved yet.</p>
+              )}
+            </section>
+          )}
+
           {error && (
             <p className="rounded-xl bg-[#c23b3b]/10 px-3 py-2 text-sm font-semibold text-[#8d1f1f]" role="status">
               {error}
@@ -195,6 +219,16 @@ export function StaffHud({
       </SheetContent>
     </Sheet>
   );
+}
+
+function reasonStamp(at: number) {
+  return new Intl.DateTimeFormat("en-AU", {
+    timeZone: "Australia/Melbourne",
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(at));
 }
 
 function ScoreButton({
