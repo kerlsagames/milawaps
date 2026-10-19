@@ -12,15 +12,26 @@ import {
   emptySecurity,
   vaultTotal,
 } from "@/lib/game";
+import {
+  createHighlight,
+  sanitizeHighlights,
+  type HighlightEntry,
+  type HighlightStudent,
+} from "@/lib/highlights";
+import { emptyNews, newsFromInput, sanitizeNews, type DailyNews } from "@/lib/news";
 import { applyAction, attachReason, sanitizeScores } from "@/lib/scoring";
 
 const SCORE_KEY = "ott:scores";
 const SECURITY_KEY = "ott:security";
+const NEWS_KEY = "ott:news";
+const HIGHLIGHT_KEY = "ott:highlights";
 const FILE_PATH = path.join(process.cwd(), "data", "yard.json");
 
 type FileBlob = {
   scores: ScoreState;
   security: SecurityState;
+  news: DailyNews;
+  highlights: HighlightEntry[];
 };
 
 type MemoryGlobal = typeof globalThis & {
@@ -57,7 +68,12 @@ export function storageMode(): StorageMode {
 }
 
 function freshBlob(): FileBlob {
-  return { scores: sanitizeScores(null), security: emptySecurity() };
+  return {
+    scores: sanitizeScores(null),
+    security: emptySecurity(),
+    news: emptyNews(),
+    highlights: [],
+  };
 }
 
 function sanitizeSecurity(raw: unknown): SecurityState {
@@ -75,14 +91,20 @@ function sanitizeSecurity(raw: unknown): SecurityState {
   };
 }
 
+function normalizeBlob(raw: Partial<FileBlob> | null | undefined): FileBlob {
+  return {
+    scores: sanitizeScores(raw?.scores),
+    security: sanitizeSecurity(raw?.security),
+    news: sanitizeNews(raw?.news),
+    highlights: sanitizeHighlights(raw?.highlights),
+  };
+}
+
 async function readFileBlob(): Promise<FileBlob> {
   try {
     const text = await fs.readFile(FILE_PATH, "utf8");
     const parsed = JSON.parse(text) as Partial<FileBlob>;
-    return {
-      scores: sanitizeScores(parsed.scores),
-      security: sanitizeSecurity(parsed.security),
-    };
+    return normalizeBlob(parsed);
   } catch (error) {
     const code = (error as NodeJS.ErrnoException).code;
     if (code !== "ENOENT") {
@@ -108,14 +130,13 @@ async function writeFileBlob(blob: FileBlob) {
 async function readBlob(): Promise<FileBlob> {
   ensureKvEnv();
   if (storageMode() === "kv") {
-    const [scores, security] = await Promise.all([
+    const [scores, security, news, highlights] = await Promise.all([
       kv.get<unknown>(SCORE_KEY),
       kv.get<unknown>(SECURITY_KEY),
+      kv.get<unknown>(NEWS_KEY),
+      kv.get<unknown>(HIGHLIGHT_KEY),
     ]);
-    return {
-      scores: sanitizeScores(scores),
-      security: sanitizeSecurity(security),
-    };
+    return normalizeBlob({ scores: scores as ScoreState, security: security as SecurityState, news: news as DailyNews, highlights: highlights as HighlightEntry[] });
   }
   if (memory.__ottStorage === "memory" && memory.__ottBoard) {
     return memory.__ottBoard;
@@ -129,27 +150,31 @@ async function writeBlob(blob: FileBlob) {
     await Promise.all([
       kv.set(SCORE_KEY, blob.scores),
       kv.set(SECURITY_KEY, blob.security),
+      kv.set(NEWS_KEY, blob.news),
+      kv.set(HIGHLIGHT_KEY, blob.highlights),
     ]);
     return;
   }
   await writeFileBlob(blob);
 }
 
-export function toPublic(state: ScoreState): PublicBoard {
+export function toPublic(blob: FileBlob): PublicBoard {
   return {
-    units: state.units,
-    updatedAt: state.updatedAt,
-    lastAction: state.lastAction,
-    log: state.log ?? [],
-    reasons: state.reasons ?? [],
-    crosses: state.crosses ?? { f1: 0, "234": 0, "56": 0 },
-    vault: vaultTotal(state.units),
+    units: blob.scores.units,
+    updatedAt: blob.scores.updatedAt,
+    lastAction: blob.scores.lastAction,
+    log: blob.scores.log ?? [],
+    reasons: blob.scores.reasons ?? [],
+    crosses: blob.scores.crosses ?? { f1: 0, "234": 0, "56": 0 },
+    vault: vaultTotal(blob.scores.units),
     storage: storageMode(),
+    news: blob.news,
+    highlights: sanitizeHighlights(blob.highlights),
   };
 }
 
 export function readBoard(): Promise<PublicBoard> {
-  return serialized(async () => toPublic((await readBlob()).scores));
+  return serialized(async () => toPublic(await readBlob()));
 }
 
 export function readSecurity(): Promise<SecurityState> {
@@ -171,8 +196,9 @@ export function commitAction(
   return serialized(async () => {
     const blob = await readBlob();
     const result = applyAction(blob.scores, action, unitId, staffId);
-    await writeBlob({ ...blob, scores: result.state });
-    return { board: toPublic(result.state), events: result.events };
+    const next = { ...blob, scores: result.state };
+    await writeBlob(next);
+    return { board: toPublic(next), events: result.events };
   });
 }
 
@@ -183,8 +209,32 @@ export function commitReason(
 ): Promise<PublicBoard> {
   return serialized(async () => {
     const blob = await readBlob();
-    const next = attachReason(blob.scores, id, staffId, reason);
-    await writeBlob({ ...blob, scores: next });
+    const next = { ...blob, scores: attachReason(blob.scores, id, staffId, reason) };
+    await writeBlob(next);
+    return toPublic(next);
+  });
+}
+
+export function commitNews(raw: unknown): Promise<PublicBoard> {
+  return serialized(async () => {
+    const blob = await readBlob();
+    const next = { ...blob, news: newsFromInput(raw) };
+    await writeBlob(next);
+    return toPublic(next);
+  });
+}
+
+export function commitHighlight(
+  students: HighlightStudent[],
+  reason: string,
+  staffId: StaffId,
+): Promise<PublicBoard> {
+  return serialized(async () => {
+    const blob = await readBlob();
+    const entry = createHighlight(students, reason, staffId);
+    const highlights = sanitizeHighlights([entry, ...blob.highlights]);
+    const next = { ...blob, highlights };
+    await writeBlob(next);
     return toPublic(next);
   });
 }

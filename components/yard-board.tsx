@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { X } from "lucide-react";
 import useSWR from "swr";
 import { AnimatePresence, motion } from "framer-motion";
 import { CricketView } from "@/components/cricket-view";
+import { HighlightView } from "@/components/highlight-view";
 import { LeaderboardView } from "@/components/leaderboard-view";
+import { NewsView } from "@/components/news-view";
 import { YardRulesView } from "@/components/yard-rules-view";
 import { PinDialog } from "@/components/pin-dialog";
 import { PrizesView } from "@/components/prizes-view";
@@ -16,7 +18,17 @@ import { StaffHud } from "@/components/staff-hud";
 import { TodayColumn } from "@/components/today-column";
 import { Button } from "@/components/ui/button";
 import { clearToken, saveToken, setKioskPref, useDeskPrefs } from "@/lib/desk-prefs";
-import { kioskScreens, prizeIsPublic, revealById, revealForPoints, revealLabel, REVEALS, type ScreenId } from "@/lib/reveals";
+import { emptyNews } from "@/lib/news";
+import {
+  dwellForScreen,
+  kioskScreens,
+  prizeIsPublic,
+  revealById,
+  revealForPoints,
+  revealLabel,
+  REVEALS,
+  type ScreenId,
+} from "@/lib/reveals";
 import { tickerLine } from "@/lib/ticker";
 import { cn } from "@/lib/utils";
 import {
@@ -30,6 +42,7 @@ import {
   type PublicBoard,
   type UnitId,
 } from "@/lib/game";
+import { activeHighlights, parseHighlightScreen } from "@/lib/highlights";
 import { milestonesBetween } from "@/lib/scoring";
 import { staffFromToken } from "@/lib/who";
 
@@ -49,7 +62,11 @@ export function YardBoard() {
   const { kiosk, token, dwells, shown } = prefs;
   const dwellsRef = useRef(dwells);
   dwellsRef.current = dwells;
-  const playlist = kioskScreens(shown);
+  const liveHighlights = useMemo(
+    () => activeHighlights(data?.highlights ?? []),
+    [data?.highlights],
+  );
+  const playlist = useMemo(() => kioskScreens(shown, liveHighlights), [shown, liveHighlights]);
   const playlistRef = useRef(playlist);
   playlistRef.current = playlist;
   const [view, setView] = useState<ScreenId>("board");
@@ -63,7 +80,10 @@ export function YardBoard() {
 
   useEffect(() => {
     if (view === "cricket" && !prefs.cricketCode) setView("board");
-  }, [view, prefs.cricketCode]);
+    if (view === "news" && !shown.news) setView("board");
+    const highlightId = parseHighlightScreen(view);
+    if (highlightId && !liveHighlights.some((entry) => entry.id === highlightId)) setView("board");
+  }, [view, prefs.cricketCode, shown.news, liveHighlights]);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const startedRef = useRef(0);
@@ -110,7 +130,7 @@ export function YardBoard() {
         setStartedAt(time);
         return;
       }
-      const dwellMs = (dwellsRef.current[viewRef.current] ?? 12) * 1000;
+      const dwellMs = dwellForScreen(viewRef.current, dwellsRef.current) * 1000;
       if (time - startedRef.current >= dwellMs) {
         const screens = playlistRef.current;
         const index = screens.indexOf(viewRef.current);
@@ -234,9 +254,13 @@ export function YardBoard() {
   const progress =
     !kiosk || startedAt === 0
       ? 0
-      : Math.max(0, Math.min(1, (now - startedAt) / ((dwells[view] ?? 12) * 1000)));
+      : Math.max(0, Math.min(1, (now - startedAt) / (dwellForScreen(view, dwells) * 1000)));
   const live = error && !data ? "offline" : data ? "live" : "loading";
   const activeReveal = revealById(view);
+  const activeHighlightId = parseHighlightScreen(view);
+  const activeHighlight = activeHighlightId
+    ? liveHighlights.find((entry) => entry.id === activeHighlightId) ?? null
+    : null;
 
   const scoreOrUnlock = useCallback(
     (action: ActionId, unitId?: UnitId) => {
@@ -257,9 +281,17 @@ export function YardBoard() {
           view={view}
           tabs={[
             ...VIEWS.map((item) => ({ id: item.id, label: item.label, short: item.short })),
+            ...(shown.news || view === "news"
+              ? [{ id: "news" as const, label: "Daily News", short: "News" }]
+              : []),
             ...(prefs.cricketCode
               ? [{ id: "cricket" as const, label: "Cricket", short: "Cricket" }]
               : []),
+            ...liveHighlights.map((entry, index) => ({
+              id: `highlight:${entry.id}` as ScreenId,
+              label: liveHighlights.length === 1 ? "Highlight" : `Highlight ${index + 1}`,
+              short: liveHighlights.length === 1 ? "Star" : `Star ${index + 1}`,
+            })),
             ...REVEALS.filter((item) => shown[item.id] || view === item.id).map((item) => {
               const label = revealLabel(item, prefs.reveals[item.id]?.at);
               return { id: item.id, label, short: label };
@@ -268,6 +300,10 @@ export function YardBoard() {
           onView={chooseView}
           authed={Boolean(token)}
           dutyName={dutyName}
+          news={data?.news ?? emptyNews()}
+          onBoard={(board) => {
+            void mutate(board, { revalidate: false });
+          }}
           onLockClick={() => {
             if (token) setHudOpen(true);
             else setPinOpen(true);
@@ -357,7 +393,9 @@ export function YardBoard() {
                 ) : null}
                 {view === "prizes" && <PrizesView board={data} />}
                 {view === "yard" && <YardRulesView />}
+                {view === "news" ? <NewsView news={data.news ?? emptyNews()} /> : null}
                 {view === "cricket" && <CricketView code={prefs.cricketCode} />}
+                {activeHighlight ? <HighlightView entry={activeHighlight} /> : null}
                 {activeReveal && (
                   <RevealView
                     reveal={activeReveal}
@@ -397,8 +435,12 @@ export function YardBoard() {
         board={data}
         dutyName={dutyName}
         staffId={staffFromToken(token)}
+        token={token}
         error={deskError}
         onScore={score}
+        onBoard={(board) => {
+          void mutate(board, { revalidate: false });
+        }}
         onLogout={() => {
           clearToken();
           setHudOpen(false);

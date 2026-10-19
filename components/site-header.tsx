@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Gift, Lock, LockOpen, Map, PartyPopper, Sparkles, Trophy } from "lucide-react";
+import { Gift, Lock, LockOpen, Map, Newspaper, PartyPopper, Sparkles, Trophy } from "lucide-react";
 import { KioskSettings } from "@/components/kiosk-settings";
+import type { PublicBoard } from "@/lib/game";
+import type { DailyNews } from "@/lib/news";
 import type { ScreenId } from "@/lib/reveals";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -11,6 +13,7 @@ const icons = {
   board: Trophy,
   prizes: Gift,
   yard: Map,
+  news: Newspaper,
 } as const;
 
 export function SiteHeader({
@@ -19,6 +22,8 @@ export function SiteHeader({
   onView,
   authed,
   dutyName,
+  news,
+  onBoard,
   onLockClick,
   live,
   onStartKiosk,
@@ -28,6 +33,8 @@ export function SiteHeader({
   onView: (view: ScreenId) => void;
   authed: boolean;
   dutyName: string | null;
+  news: DailyNews;
+  onBoard: (board: PublicBoard) => void;
   onLockClick: () => void;
   live: "loading" | "live" | "offline";
   onStartKiosk: () => void;
@@ -75,7 +82,7 @@ export function SiteHeader({
           />
           {live === "live" ? "Live" : live === "loading" ? "Linking" : "Offline"}
         </span>
-        <KioskSettings onPreview={onView} />
+        <KioskSettings onPreview={onView} news={news} onBoard={onBoard} />
         <Button type="button" className="h-10 rounded-xl px-2.5 text-sm sm:px-3" onClick={onStartKiosk}>
           Start Kiosk
         </Button>

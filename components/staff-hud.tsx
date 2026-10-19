@@ -14,6 +14,7 @@ import {
   type StorageMode,
   type UnitId,
 } from "@/lib/game";
+import { HighlightDialog } from "@/components/highlight-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -35,8 +36,10 @@ export function StaffHud({
   board,
   dutyName,
   staffId,
+  token,
   error,
   onScore,
+  onBoard,
   onLogout,
 }: {
   open: boolean;
@@ -44,11 +47,14 @@ export function StaffHud({
   board: PublicBoard | undefined;
   dutyName: string | null;
   staffId: string | null;
+  token: string | null;
   error: string | null;
   onScore: (action: ActionId, unitId?: UnitId) => void;
+  onBoard: (board: PublicBoard) => void;
   onLogout: () => void;
 }) {
   const [confirmReset, setConfirmReset] = useState(false);
+  const [highlightOpen, setHighlightOpen] = useState(false);
   const allFull = board
     ? UNITS.every((unit) => board.units[unit.id] >= UNIT_MAX)
     : false;
@@ -128,6 +134,16 @@ export function StaffHud({
           >
             {ACTION_COPY.teamwork.short}
             <span className="text-sm font-semibold opacity-80">Teamwork</span>
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="h-14 rounded-2xl border-[#e2a01a] bg-[#fff8df] text-base font-extrabold"
+            disabled={!token}
+            onClick={() => setHighlightOpen(true)}
+          >
+            Student highlight
           </Button>
 
           <section className="rounded-2xl border border-black/10 bg-white/70 px-3 py-2">
@@ -217,6 +233,17 @@ export function StaffHud({
           )}
         </div>
       </SheetContent>
+      {token ? (
+        <HighlightDialog
+          open={highlightOpen}
+          onOpenChange={setHighlightOpen}
+          token={token}
+          onSaved={(next) => {
+            onBoard(next);
+            setHighlightOpen(false);
+          }}
+        />
+      ) : null}
     </Sheet>
   );
 }

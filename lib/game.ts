@@ -86,6 +86,8 @@ export type PublicBoard = {
   reasons: ReasonRecord[];
   vault: number;
   storage: StorageMode;
+  news: import("@/lib/news").DailyNews;
+  highlights: import("@/lib/highlights").HighlightEntry[];
 };
 
 export type Milestone = {

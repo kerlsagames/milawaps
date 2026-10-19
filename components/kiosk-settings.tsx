@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { VIEWS } from "@/lib/game";
+import { VIEWS, type PublicBoard } from "@/lib/game";
 import {
   MAX_DWELL_SECONDS,
   MIN_DWELL_SECONDS,
@@ -26,12 +26,21 @@ import {
   setViewDwell,
   useDeskPrefs,
 } from "@/lib/desk-prefs";
+import { emptyNews, type DailyNews } from "@/lib/news";
 import { compressPrizeImage } from "@/lib/prize-image";
-import { REVEALS, type ScreenId } from "@/lib/reveals";
+import { REVEALS, type FixedScreenId, type ScreenId } from "@/lib/reveals";
 
 const ADMIN_KEY = "ott-admin";
 
-export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => void }) {
+export function KioskSettings({
+  onPreview,
+  news,
+  onBoard,
+}: {
+  onPreview: (screen: ScreenId) => void;
+  news?: DailyNews;
+  onBoard?: (board: PublicBoard) => void;
+}) {
   const prefs = useDeskPrefs();
   const [open, setOpen] = useState(false);
   const [admin, setAdmin] = useState(false);
@@ -41,6 +50,12 @@ export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => 
   const [busy, setBusy] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetNote, setResetNote] = useState("");
+  const [draftNews, setDraftNews] = useState<DailyNews>(news ?? emptyNews());
+
+  useEffect(() => {
+    if (!open) return;
+    setDraftNews(news ?? emptyNews());
+  }, [open, news]);
 
   useEffect(() => {
     if (!open) return;
@@ -185,6 +200,22 @@ export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => 
                 shown={admin ? prefs.shown[view.id] : undefined}
               />
             ))}
+            <ScreenRow
+              id="news"
+              label="Daily News"
+              seconds={prefs.dwells.news}
+              shown={admin ? prefs.shown.news : undefined}
+            />
+            <ScreenRow
+              id="highlight"
+              label="Student Highlight pages"
+              seconds={prefs.dwells.highlight}
+              shown={admin ? prefs.shown.highlight : undefined}
+            />
+            <p className="text-xs font-semibold text-muted-foreground">
+              Daily News and Student Highlight stay off the kiosk until a teacher ticks them here.
+              Each new highlight becomes its own TV page for two days.
+            </p>
           </div>
           <label className="grid gap-1.5">
             <span className="text-sm font-bold">Cricket code</span>
@@ -246,6 +277,41 @@ export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => 
             ) : null
           ) : (
           <>
+          <NewsEditor
+            news={draftNews}
+            busy={busy}
+            onChange={setDraftNews}
+            onSave={async () => {
+              const token = window.sessionStorage.getItem(ADMIN_KEY);
+              if (!token) return;
+              setBusy(true);
+              setResetNote("");
+              try {
+                const response = await fetch("/api/news", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                  },
+                  body: JSON.stringify(draftNews),
+                });
+                const body = (await response.json().catch(() => ({}))) as PublicBoard & {
+                  error?: string;
+                };
+                if (!response.ok) {
+                  setResetNote(body.error ?? "The news page did not save.");
+                  return;
+                }
+                onBoard?.(body);
+                setDraftNews(body.news);
+                setResetNote("Daily News saved.");
+              } catch {
+                setResetNote("The news page did not save.");
+              } finally {
+                setBusy(false);
+              }
+            }}
+          />
           <section className="grid gap-3 rounded-2xl border border-[#e2a01a]/40 bg-[#fff8df] p-3">
             <div>
               <h3 className="font-display text-xl">Prize reveals</h3>
@@ -442,13 +508,230 @@ function PrizeWords({
   );
 }
 
+function NewsEditor({
+  news,
+  busy,
+  onChange,
+  onSave,
+}: {
+  news: DailyNews;
+  busy: boolean;
+  onChange: (news: DailyNews) => void;
+  onSave: () => Promise<void>;
+}) {
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <section className="grid gap-3 rounded-2xl border border-[#1f6f8b]/30 bg-[#eef9ff] p-3">
+      <div>
+        <h3 className="font-display text-xl">Daily News</h3>
+        <p className="text-xs font-semibold text-muted-foreground">
+          Write the headline kids will check, add reminders and coming-up lines, and upload a photo.
+        </p>
+      </div>
+      <label className="grid gap-1">
+        <span className="text-xs font-bold">Headline</span>
+        <input
+          type="text"
+          value={news.headline}
+          aria-label="News headline"
+          onChange={(event) => onChange({ ...news, headline: event.target.value.slice(0, 80) })}
+          className="h-10 rounded-xl border border-input bg-white px-3 text-sm font-bold"
+        />
+      </label>
+      <label className="grid gap-1">
+        <span className="text-xs font-bold">Blurb</span>
+        <input
+          type="text"
+          value={news.blurb}
+          aria-label="News blurb"
+          onChange={(event) => onChange({ ...news, blurb: event.target.value.slice(0, 200) })}
+          className="h-10 rounded-xl border border-input bg-white px-3 text-sm font-bold"
+        />
+      </label>
+      <div className="flex items-center gap-3">
+        <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-input bg-white">
+          {news.picture ? (
+            <img src={news.picture} alt="" className="size-full object-cover" />
+          ) : (
+            <span className="px-1 text-center text-[10px] font-bold text-muted-foreground">No pic</span>
+          )}
+        </div>
+        <div className="grid gap-1">
+          <label className="inline-flex h-9 cursor-pointer items-center rounded-xl border border-input bg-white px-3 text-sm font-bold">
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              aria-label="News picture"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (!file) return;
+                void compressPrizeImage(file)
+                  .then((data) => {
+                    onChange({ ...news, picture: data });
+                    setError(null);
+                  })
+                  .catch((reason: unknown) => {
+                    setError(reason instanceof Error ? reason.message : "Could not read that picture.");
+                  });
+              }}
+            />
+            {news.picture ? "Change picture" : "Upload picture"}
+          </label>
+          {news.picture ? (
+            <button
+              type="button"
+              className="text-left text-xs font-bold text-muted-foreground underline"
+              onClick={() => onChange({ ...news, picture: null })}
+            >
+              Clear picture
+            </button>
+          ) : null}
+        </div>
+      </div>
+      <LineList
+        title="Reminders"
+        lines={news.reminders.map((item) => item.text)}
+        onChange={(lines) =>
+          onChange({
+            ...news,
+            reminders: lines.map((text, index) => ({
+              id: news.reminders[index]?.id || `reminder-${index}`,
+              text,
+            })),
+          })
+        }
+      />
+      <UpcomingList
+        rows={news.upcoming}
+        onChange={(upcoming) => onChange({ ...news, upcoming })}
+      />
+      {error ? <p className="text-xs font-bold text-[#8d1f1f]">{error}</p> : null}
+      <Button type="button" className="h-10 rounded-xl" disabled={busy} onClick={() => void onSave()}>
+        Save Daily News
+      </Button>
+    </section>
+  );
+}
+
+function LineList({
+  title,
+  lines,
+  onChange,
+}: {
+  title: string;
+  lines: string[];
+  onChange: (lines: string[]) => void;
+}) {
+  return (
+    <div className="grid gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-bold">{title}</span>
+        <button
+          type="button"
+          className="text-xs font-bold underline"
+          onClick={() => onChange([...lines, ""].slice(0, 8))}
+        >
+          Add
+        </button>
+      </div>
+      {lines.map((line, index) => (
+        <div key={index} className="flex gap-2">
+          <input
+            type="text"
+            value={line}
+            aria-label={`${title} ${index + 1}`}
+            onChange={(event) => {
+              const next = [...lines];
+              next[index] = event.target.value.slice(0, 120);
+              onChange(next);
+            }}
+            className="h-10 min-w-0 flex-1 rounded-xl border border-input bg-white px-3 text-sm font-bold"
+          />
+          <button
+            type="button"
+            className="text-xs font-bold text-muted-foreground underline"
+            onClick={() => onChange(lines.filter((_, item) => item !== index))}
+          >
+            Remove
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function UpcomingList({
+  rows,
+  onChange,
+}: {
+  rows: DailyNews["upcoming"];
+  onChange: (rows: DailyNews["upcoming"]) => void;
+}) {
+  return (
+    <div className="grid gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-bold">Coming up</span>
+        <button
+          type="button"
+          className="text-xs font-bold underline"
+          onClick={() =>
+            onChange([...rows, { id: `upcoming-${rows.length}`, when: "", text: "" }].slice(0, 8))
+          }
+        >
+          Add
+        </button>
+      </div>
+      {rows.map((row, index) => (
+        <div key={row.id} className="grid gap-1 rounded-xl bg-white/80 p-2">
+          <input
+            type="text"
+            value={row.when}
+            aria-label={`Coming up when ${index + 1}`}
+            placeholder="Fri recess"
+            onChange={(event) => {
+              const next = [...rows];
+              next[index] = { ...row, when: event.target.value.slice(0, 40) };
+              onChange(next);
+            }}
+            className="h-9 rounded-xl border border-input bg-transparent px-3 text-sm font-bold"
+          />
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={row.text}
+              aria-label={`Coming up text ${index + 1}`}
+              placeholder="Assembly in the hall"
+              onChange={(event) => {
+                const next = [...rows];
+                next[index] = { ...row, text: event.target.value.slice(0, 120) };
+                onChange(next);
+              }}
+              className="h-9 min-w-0 flex-1 rounded-xl border border-input bg-transparent px-3 text-sm font-bold"
+            />
+            <button
+              type="button"
+              className="text-xs font-bold text-muted-foreground underline"
+              onClick={() => onChange(rows.filter((_, item) => item !== index))}
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ScreenRow({
   id,
   label,
   seconds,
   shown,
 }: {
-  id: ScreenId;
+  id: FixedScreenId;
   label: string;
   seconds: number;
   shown?: boolean;

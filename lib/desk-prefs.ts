@@ -6,8 +6,8 @@ import {
   DEFAULT_SHOWN,
   REVEALS,
   SCREEN_IDS,
+  type FixedScreenId,
   type RevealId,
-  type ScreenId,
   type ShownMap,
 } from "@/lib/reveals";
 import { staffFromToken } from "@/lib/who";
@@ -19,7 +19,7 @@ function revealDefaultLabel(reveal: (typeof REVEALS)[number]) {
 const TOKEN_KEY = "ott-token";
 const TOKEN_EXP_KEY = "ott-token-exp";
 
-export type DwellMap = Record<ScreenId, number>;
+export type DwellMap = Record<FixedScreenId, number>;
 
 export type RevealPrefs = {
   at: number | null;
@@ -55,6 +55,8 @@ export const DEFAULT_DWELLS: DwellMap = {
   "reveal-laser": 12,
   "reveal-2": 12,
   cricket: 16,
+  news: 18,
+  highlight: 16,
 };
 
 function defaultReveals(): RevealMap {
@@ -234,7 +236,7 @@ export function setFinishAt(finishAt: number | null) {
   publish({ ...readPrefs(), finishAt });
 }
 
-export function setViewDwell(view: ScreenId, seconds: number) {
+export function setViewDwell(view: FixedScreenId, seconds: number) {
   const dwells = {
     ...readDwells(),
     [view]: clampDwell(seconds, DEFAULT_DWELLS[view]),
@@ -243,7 +245,7 @@ export function setViewDwell(view: ScreenId, seconds: number) {
   publish({ ...readPrefs(), dwells });
 }
 
-export function setScreenShown(screen: ScreenId, shown: boolean) {
+export function setScreenShown(screen: FixedScreenId, shown: boolean) {
   const next = { ...readShown(), [screen]: shown };
   window.localStorage.setItem("ott-kiosk-shown", JSON.stringify(next));
   publish({ ...readPrefs(), shown: next });

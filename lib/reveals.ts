@@ -1,4 +1,5 @@
 import { VIEWS, type ViewId } from "@/lib/game";
+import { activeHighlights, highlightScreenId, type HighlightEntry } from "@/lib/highlights";
 
 export const REVEALS = [
   {
@@ -49,14 +50,18 @@ export const REVEALS = [
 
 export type RevealId = (typeof REVEALS)[number]["id"];
 export type RevealDef = (typeof REVEALS)[number];
-export type ScreenId = ViewId | RevealId | "cricket";
+export type HighlightScreenId = `highlight:${string}`;
+export type FixedScreenId = ViewId | RevealId | "cricket" | "news" | "highlight";
+export type ScreenId = FixedScreenId | HighlightScreenId;
 
-export type ShownMap = Record<ScreenId, boolean>;
+export type ShownMap = Record<FixedScreenId, boolean>;
 
-export const SCREEN_IDS: ScreenId[] = [
+export const SCREEN_IDS: FixedScreenId[] = [
   ...VIEWS.map((view) => view.id),
   ...REVEALS.map((reveal) => reveal.id),
   "cricket",
+  "news",
+  "highlight",
 ];
 
 export const DEFAULT_SHOWN: ShownMap = {
@@ -68,6 +73,8 @@ export const DEFAULT_SHOWN: ShownMap = {
   "reveal-laser": false,
   "reveal-2": false,
   cricket: false,
+  news: false,
+  highlight: false,
 };
 
 export function revealById(id: string): RevealDef | null {
@@ -86,7 +93,26 @@ export function revealLabel(reveal: RevealDef, at: number | null | undefined, no
   return prizeIsPublic(at, now) ? reveal.title : reveal.mask;
 }
 
-export function kioskScreens(shown: ShownMap): ScreenId[] {
-  const visible = SCREEN_IDS.filter((id) => shown[id]);
+export function isFixedScreenId(id: string): id is FixedScreenId {
+  return SCREEN_IDS.includes(id as FixedScreenId);
+}
+
+export function dwellForScreen(id: ScreenId, dwells: Record<FixedScreenId, number>) {
+  if (id.startsWith("highlight:")) return dwells.highlight;
+  if (isFixedScreenId(id)) return dwells[id];
+  return 12;
+}
+
+export function kioskScreens(
+  shown: ShownMap,
+  highlights: HighlightEntry[] = [],
+  now = Date.now(),
+): ScreenId[] {
+  const visible: ScreenId[] = SCREEN_IDS.filter((id) => id !== "highlight" && shown[id]);
+  if (shown.highlight) {
+    for (const entry of activeHighlights(highlights, now)) {
+      visible.push(highlightScreenId(entry.id));
+    }
+  }
   return visible.length > 0 ? visible : ["board"];
 }
