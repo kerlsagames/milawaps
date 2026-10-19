@@ -21,7 +21,7 @@ export async function GET(request: Request) {
       {
         error: code.startsWith("https://")
           ? "That share link cannot be used."
-          : "Paste the share link from Jimmy’s cricket, or a code once that app is publishing one.",
+          : "Use the short code from Jimmy’s cricket, such as BQWA8Z.",
       },
       400,
     );

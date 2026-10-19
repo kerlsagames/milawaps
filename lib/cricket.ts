@@ -82,24 +82,24 @@ export function parseCricketSnapshot(raw: unknown, preview = false): CricketSnap
   const draw = drawRaw.slice(0, 12).flatMap((item) => {
     if (!item || typeof item !== "object") return [];
     const row = item as Record<string, unknown>;
-    const home = text(row.home, 40);
-    const away = text(row.away, 40);
-    if (!home || !away) return [];
+    const home = text(row.home, 80);
+    const away = text(row.away, 80);
+    if (!home && !away) return [];
     return [
       {
-        when: text(row.when ?? row.date, 40),
+        when: text(row.when ?? row.date, 80),
         home,
         away,
-        ground: text(row.ground ?? row.venue, 40),
-        result: text(row.result, 40),
+        ground: text(row.ground ?? row.venue, 80),
+        result: text(row.result, 80),
       },
     ];
   });
-  const stats = statsRaw.slice(0, 4).flatMap((item) => {
+  const stats = statsRaw.slice(0, 6).flatMap((item) => {
     if (!item || typeof item !== "object") return [];
     const row = item as Record<string, unknown>;
-    const label = text(row.label, 24);
-    const value = text(row.value, 24);
+    const label = text(row.label, 40);
+    const value = text(row.value, 40);
     if (!label || !value) return [];
     return [{ label, value }];
   });
@@ -131,26 +131,22 @@ export function blockedShareHost(hostname: string) {
   return false;
 }
 
+export const JIMMY_CRICKET_BOARD = "https://jimmyscricket.vercel.app/api/board";
+
 export function shareUrlForCode(code: string): string | null {
   const trimmed = code.trim();
   if (!trimmed || trimmed.toLowerCase() === "preview") return null;
   if (trimmed.startsWith("https://")) {
     try {
       const url = new URL(trimmed);
-      if (url.username || url.password || blockedShareHost(url.hostname)) return null;
+      if (url.username || url.password || url.protocol !== "https:" || blockedShareHost(url.hostname)) {
+        return null;
+      }
       return url.toString();
     } catch {
       return null;
     }
   }
   if (!/^[a-zA-Z0-9_-]{4,40}$/.test(trimmed)) return null;
-  const origin = process.env.CRICKET_SHARE_ORIGIN?.trim().replace(/\/$/, "");
-  if (!origin || !origin.startsWith("https://")) return null;
-  try {
-    const url = new URL(origin);
-    if (blockedShareHost(url.hostname)) return null;
-    return `${origin}/api/share/${encodeURIComponent(trimmed)}`;
-  } catch {
-    return null;
-  }
+  return `${JIMMY_CRICKET_BOARD}/${encodeURIComponent(trimmed)}`;
 }

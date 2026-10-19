@@ -16,7 +16,7 @@ export function UnitCard({
   score: number;
   crosses: number;
   index: number;
-  onScore: (action: ScoreAction, unitId: UnitId) => void;
+  onScore?: (action: ScoreAction, unitId: UnitId) => void;
 }) {
   const percent = Math.max(0, Math.min(100, (score / UNIT_MAX) * 100));
 
@@ -76,35 +76,37 @@ export function UnitCard({
         </p>
       ) : null}
 
-      <div className="mt-2 grid grid-cols-3 gap-1.5">
-        <Button
-          type="button"
-          className="h-14 rounded-xl text-lg lg:h-12 lg:text-base"
-          style={{ background: unit.color, color: unit.ink }}
-          disabled={score >= UNIT_MAX}
-          onClick={() => onScore("spot", unit.id)}
-        >
-          +1
-        </Button>
-        <Button
-          type="button"
-          className="h-14 rounded-xl text-lg lg:h-12 lg:text-base"
-          style={{ background: unit.deep, color: "#fff7ea" }}
-          disabled={score >= UNIT_MAX}
-          onClick={() => onScore("surge", unit.id)}
-        >
-          +2
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="h-14 rounded-xl border-[#c23b3b]/40 bg-[#c23b3b]/10 text-lg text-[#8d1f1f] lg:h-12 lg:text-base"
-          disabled={score <= 0}
-          onClick={() => onScore("strike", unit.id)}
-        >
-          −1
-        </Button>
-      </div>
+      {onScore ? (
+        <div className="mt-2 grid grid-cols-3 gap-1.5">
+          <Button
+            type="button"
+            className="h-14 rounded-xl text-lg lg:h-12 lg:text-base"
+            style={{ background: unit.color, color: unit.ink }}
+            disabled={score >= UNIT_MAX}
+            onClick={() => onScore("spot", unit.id)}
+          >
+            +1
+          </Button>
+          <Button
+            type="button"
+            className="h-14 rounded-xl text-lg lg:h-12 lg:text-base"
+            style={{ background: unit.deep, color: "#fff7ea" }}
+            disabled={score >= UNIT_MAX}
+            onClick={() => onScore("surge", unit.id)}
+          >
+            +2
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-14 rounded-xl border-[#c23b3b]/40 bg-[#c23b3b]/10 text-lg text-[#8d1f1f] lg:h-12 lg:text-base"
+            disabled={score <= 0}
+            onClick={() => onScore("strike", unit.id)}
+          >
+            −1
+          </Button>
+        </div>
+      ) : null}
       </div>
     </motion.article>
   );

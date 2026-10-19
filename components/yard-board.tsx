@@ -13,6 +13,7 @@ import { ReasonPrompt } from "@/components/reason-prompt";
 import { RevealView } from "@/components/reveal-view";
 import { SiteHeader } from "@/components/site-header";
 import { StaffHud } from "@/components/staff-hud";
+import { TodayColumn } from "@/components/today-column";
 import { Button } from "@/components/ui/button";
 import { clearToken, saveToken, setKioskPref, useDeskPrefs } from "@/lib/desk-prefs";
 import { kioskScreens, prizeIsPublic, revealById, revealForPoints, revealLabel, REVEALS, type ScreenId } from "@/lib/reveals";
@@ -287,9 +288,7 @@ export function YardBoard() {
         </button>
       )}
 
-      {kiosk && <KioskStatus live={live} />}
-
-      {kiosk && <ScreenTimer progress={progress} epoch={startedAt} />}
+      {kiosk ? <ScreenTimer progress={progress} epoch={startedAt} /> : null}
 
       <div className="pointer-events-none fixed top-28 right-3 left-3 z-40 flex flex-col items-center gap-2 sm:top-24">
         {toasts.map((toast) => {
@@ -314,6 +313,7 @@ export function YardBoard() {
         })}
       </div>
 
+      <div className="flex min-h-0 flex-1">
       <main
         className={cn(
           "relative mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col overflow-y-auto px-3 py-2 lg:overflow-hidden lg:px-4",
@@ -346,9 +346,14 @@ export function YardBoard() {
               transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             >
               <TvFit>
-                {view === "board" && (
-                  <LeaderboardView board={data} error={deskError} onScore={scoreOrUnlock} />
-                )}
+                {view === "board" ? (
+                  <LeaderboardView
+                    board={data}
+                    error={deskError}
+                    onScore={scoreOrUnlock}
+                    showScores={!kiosk}
+                  />
+                ) : null}
                 {view === "prizes" && <PrizesView board={data} />}
                 {view === "yard" && <YardRulesView />}
                 {view === "cricket" && <CricketView code={prefs.cricketCode} />}
@@ -369,6 +374,8 @@ export function YardBoard() {
           {data?.lastAction ? actionLabel(data.lastAction) : "Waiting for the first tick."}
         </p>
       </main>
+      {kiosk ? <TodayColumn board={data} live={live} /> : null}
+      </div>
 
       <PinDialog
         open={pinOpen}
@@ -643,40 +650,6 @@ function ScreenTimer({ progress, epoch }: { progress: number; epoch: number }) {
           }}
         />
       </div>
-    </div>
-  );
-}
-
-function KioskStatus({ live }: { live: "loading" | "live" | "offline" }) {
-  const [clock, setClock] = useState("");
-
-  useEffect(() => {
-    const tick = () => {
-      setClock(
-        new Intl.DateTimeFormat("en-AU", {
-          weekday: "short",
-          hour: "numeric",
-          minute: "2-digit",
-        }).format(new Date()),
-      );
-    };
-    tick();
-    const id = window.setInterval(tick, 10_000);
-    return () => window.clearInterval(id);
-  }, []);
-
-  return (
-    <div className="fixed top-4 right-4 z-40 flex items-center gap-2 rounded-full border border-black/10 bg-white/90 px-3 py-1.5 text-xs font-bold shadow-[0_4px_0_rgba(42,28,4,0.12)]">
-      <span
-        className={cn(
-          "size-2 rounded-full",
-          live === "live" && "bg-[#2ec9a0] shadow-[0_0_8px_#2ec9a0]",
-          live === "loading" && "bg-gold",
-          live === "offline" && "bg-[#ff8b8b]",
-        )}
-      />
-      {live === "live" ? "Live" : live === "loading" ? "Linking" : "Offline"}
-      <span className="text-muted-foreground">{clock}</span>
     </div>
   );
 }

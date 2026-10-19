@@ -3,6 +3,12 @@
 import useSWR from "swr";
 import type { CricketSnapshot } from "@/lib/cricket";
 
+function fixtureMeta(when: string, ground: string) {
+  if (!ground) return when;
+  if (when.toLowerCase().includes(ground.toLowerCase())) return when;
+  return [when, ground].filter(Boolean).join(" · ");
+}
+
 const fetcher = async (url: string) => {
   const response = await fetch(url);
   const body = (await response.json().catch(() => ({}))) as CricketSnapshot & { error?: string };
@@ -111,10 +117,10 @@ export function CricketView({ code }: { code: string }) {
               {data.draw.map((game, index) => (
                 <li key={`${game.home}-${game.away}-${index}`} className="rounded-2xl bg-[#f6f3ff] px-3 py-2">
                   <p className="text-xs font-extrabold tracking-wide text-[#5146b8] uppercase">
-                    {[game.when, game.ground].filter(Boolean).join(" · ")}
+                    {fixtureMeta(game.when, game.ground)}
                   </p>
                   <p className="font-display text-xl leading-tight">
-                    {game.home} vs {game.away}
+                    {game.away ? `${game.home} vs ${game.away}` : game.home}
                   </p>
                   {game.result ? <p className="text-sm font-bold">{game.result}</p> : null}
                 </li>

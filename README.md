@@ -20,7 +20,7 @@ While `STAFF_PIN` is unset, the desk accepts **737373**. A custom pin must be si
 - **Leaderboard** shows a ticker of today’s points (with kid-facing teacher names like Miss B and Mr Kerlin), the school tidy total out of 150 squares, and three grade cards stretched across the TV. On the TV each card has the grade, a circled tally, a 60-square tidy track with a coloured tick in each earned square and a trophy on each prize square, and a separate 30-square strikes grid. A strike takes one tidy square off and fills one strike space. Trophies stay on their prize squares. On a phone the grids stay off so all three classes fit, with large +1, +2, and −1 buttons. The school button is +3 all.
 - **Prizes** puts the countdown clock to the right of the heading when a finish time is set, then each class path and the line “Unlock prizes as you get more ticks.” Every stop stays a lock until that prize’s reveal date. After that, the path shows the picture and the name.
 - **Yard & Rules** puts the aerial on the left and the four scoring rules on the right.
-- **Start Kiosk** sits next to the cog. Kiosk hides the header. Each screen picks two runners from the seven kids and staff. The lead can change up to three times, then one of them hits the finish. Move the mouse or touch the screen and tap the X, or press Esc, to leave.
+- **Start Kiosk** sits next to the cog. Kiosk hides the header and the score buttons, and keeps a Today column on the right with the eight latest ticks, strikes, and prize unlocks. Each screen picks two runners from the seven kids and staff. The lead can change up to three times, then one of them hits the finish. Move the mouse or touch the screen and tap the X, or press Esc, to leave.
 - **Settings** (the cog) lets anyone choose the bottom timer — coloured rectangles or the running race — set how long the leaderboard, prizes, and yard pages stay on the TV, and paste a Jimmy’s cricket code or share link to add a Cricket page. The admin code unlocks page ticks, the finish clock, prize reveals (including TV name and picture), and a reset for scores and reveals.
 - **Prize reveals** are six extra pages, one for each prize. Before the date the countdown says Prize 1, Takedown 1, and so on. Prize 1, 2, and 3 show a yellow lock on a black square. The teacher takedowns show the silhouette and the words Teacher takedown on the path. When the time arrives the card flips, the real name appears, and the cartoon shows.
 
@@ -41,7 +41,7 @@ After a tick, **Give reason** appears for a few seconds. Skip it and the points 
 
 Class prizes, per unit: 10 Game with Mr K, 20 Teacher Takedown #1, 30 laser tag for the class, 40 Teacher Takedown #2, 50 ice cream, and 60 Teacher Takedown #3. None of those names show on the prize path until the reveal date in Settings. Staff can open **Mystery ideas** on the desk for pie, ice bucket, and dress-up prompts. Those lines never appear on the TV.
 
-Jimmy’s cricket can feed one TV page. In Settings, paste the share link, or a short code when `CRICKET_SHARE_ORIGIN` points at that app. Type `preview` to see a sample ladder.
+Jimmy’s cricket can feed one TV page. In Settings, paste a short code such as BQWA8Z, or a share link. Short codes load from `https://jimmyscricket.vercel.app/api/board/<code>`. Type `preview` to see a sample ladder.
 
 ## Deploy on Vercel
 

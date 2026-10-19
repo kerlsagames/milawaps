@@ -10,10 +10,12 @@ export function LeaderboardView({
   board,
   onScore,
   error,
+  showScores = true,
 }: {
   board: PublicBoard;
   onScore: (action: ScoreAction, unitId?: UnitId) => void;
   error: string | null;
+  showScores?: boolean;
 }) {
   const [now, setNow] = useState(() => Date.now());
 
@@ -25,7 +27,7 @@ export function LeaderboardView({
   return (
     <div className="flex flex-col gap-2 lg:gap-3">
       <TickerTape log={board.log ?? []} now={now} />
-      <VaultMeter vault={board.vault} onTeamwork={() => onScore("teamwork")} />
+      <VaultMeter vault={board.vault} onTeamwork={showScores ? () => onScore("teamwork") : undefined} />
       {error && (
         <p className="rounded-xl bg-[#c23b3b]/10 px-3 py-1.5 text-center text-sm font-semibold text-[#8d1f1f]" role="status">
           {error}
@@ -39,7 +41,7 @@ export function LeaderboardView({
             score={board.units[unit.id]}
             crosses={board.crosses?.[unit.id] ?? 0}
             index={index}
-            onScore={onScore}
+            onScore={showScores ? onScore : undefined}
           />
         ))}
       </div>

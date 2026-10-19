@@ -9,7 +9,7 @@ export function VaultMeter({
   onTeamwork,
 }: {
   vault: number;
-  onTeamwork: () => void;
+  onTeamwork?: () => void;
 }) {
   const total = Math.max(0, vault);
   const fill = Math.max(0, Math.min(100, (total / SCHOOL_GOAL) * 100));
@@ -42,9 +42,11 @@ export function VaultMeter({
           />
         </div>
       </div>
-      <Button type="button" className="h-12 shrink-0 rounded-xl px-3 text-base lg:h-16 lg:rounded-2xl lg:px-5 lg:text-lg" onClick={onTeamwork}>
-        +3 all
-      </Button>
+      {onTeamwork ? (
+        <Button type="button" className="h-12 shrink-0 rounded-xl px-3 text-base lg:h-16 lg:rounded-2xl lg:px-5 lg:text-lg" onClick={onTeamwork}>
+          +3 all
+        </Button>
+      ) : null}
     </section>
   );
 }

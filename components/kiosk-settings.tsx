@@ -192,12 +192,12 @@ export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => 
               type="text"
               value={prefs.cricketCode}
               aria-label="Cricket code"
-              placeholder="Code or share link from Jimmy’s cricket"
+              placeholder="Short code, such as BQWA8Z"
               onChange={(event) => setCricketCode(event.target.value)}
               className="h-11 rounded-xl border border-input bg-transparent px-3 text-base font-bold"
             />
             <span className="text-xs font-semibold text-muted-foreground">
-              Paste the code Jimmy’s cricket gives you, or the share link. The TV adds a Cricket
+              Paste the short code from Jimmy’s cricket, or a share link. The TV adds a Cricket
               page with the ladder, the draw, and a few stats. Clear this to take the page off.
             </span>
           </label>
