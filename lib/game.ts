@@ -103,45 +103,31 @@ export type MilestoneEvent = Milestone & {
 
 export const CLASS_MILESTONES: Milestone[] = [
   {
-    points: 10,
+    points: 15,
     title: "Game with Mr K",
     short: "Mr K",
-    detail: "A game with Mr K for the class that hits 10.",
+    detail: "A game with Mr K for the class that hits 15.",
     secret: true,
   },
   {
-    points: 20,
+    points: 30,
     title: "Teacher Takedown #1",
     short: "Takedown #1",
     detail: "Teacher Takedown #1. The class finds out on the day.",
     secret: true,
   },
   {
-    points: 30,
+    points: 45,
     title: "Laser Tag",
     short: "Laser",
     detail: "Laser tag for your class.",
     secret: true,
   },
   {
-    points: 40,
+    points: 60,
     title: "Teacher Takedown #2",
     short: "Takedown #2",
-    detail: "Teacher Takedown #2. Still no spoilers.",
-    secret: true,
-  },
-  {
-    points: 50,
-    title: "Ice Cream",
-    short: "Ice cream",
-    detail: "Scoops for the unit. Tidy hands, cold treats.",
-    secret: true,
-  },
-  {
-    points: 60,
-    title: "Teacher Takedown #3",
-    short: "Takedown #3",
-    detail: "Teacher Takedown #3. The teachers look nervous.",
+    detail: "Teacher Takedown #2. The teachers look nervous.",
     secret: true,
   },
 ];

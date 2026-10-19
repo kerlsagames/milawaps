@@ -364,6 +364,7 @@ export function YardBoard() {
                     revealAt={prefs.reveals[activeReveal.id].at}
                     prize={prefs.reveals[activeReveal.id].prize}
                     image={prefs.reveals[activeReveal.id].image}
+                    label={prefs.reveals[activeReveal.id].label}
                   />
                 )}
               </TvFit>
@@ -443,7 +444,7 @@ async function celebrate(events: MilestoneEvent[]) {
     const colors = unit
       ? [unit.color, "#ffe08a", "#fff7e8"]
       : ["#ffe08a", "#ff5d8f", "#8b7cf7", "#ffffff"];
-    const jackpot = event.secret || event.points === 50;
+    const jackpot = event.secret || event.points === 60;
     void confetti({
       particleCount: jackpot ? 140 : 70,
       spread: jackpot ? 100 : 65,

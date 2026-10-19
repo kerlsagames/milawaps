@@ -40,11 +40,13 @@ export function BlockMatrix({
         const milestone = trophies.get(square);
         const reveal = milestone ? revealForPoints(milestone.points) : null;
         const named = Boolean(reveal && prizeIsPublic(reveals[reveal.id]?.at, now));
+        const caption =
+          reveal && named ? reveals[reveal.id]?.label?.trim() || milestone?.title || "Prize" : "Prize";
         const won = Boolean(milestone && score >= milestone.points);
         return (
           <span
             key={index}
-            title={milestone ? (named ? `${milestone.points} ${milestone.title}` : "Prize") : undefined}
+            title={milestone ? (named ? `${milestone.points} ${caption}` : "Prize") : undefined}
             className={cn(
               "relative aspect-square rounded-md border",
               filled && "border-transparent",

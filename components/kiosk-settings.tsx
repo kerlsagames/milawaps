@@ -250,9 +250,10 @@ export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => 
             <div>
               <h3 className="font-display text-xl">Prize reveals</h3>
               <p className="text-xs font-semibold text-muted-foreground">
-                Rename a reward and add a picture, so ice cream can become movie day. Before the
-                date, prize stops show a lock and teacher takedowns show the silhouette. On the
-                day, the card flips and that prize shows in the circle.
+                Change what a prize says, and upload a picture if ice cream becomes movie day. The
+                thumbnail is the picture this TV will use. Before the date, prize stops show a lock
+                and teacher takedowns show the silhouette. On the day, the card flips and that
+                prize shows in the circle.
               </p>
             </div>
             {REVEALS.map((reveal) => {
@@ -272,32 +273,14 @@ export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => 
                       timeLabel={`${reveal.title} time`}
                       onSave={(at) => setRevealAt(reveal.id, at)}
                     />
-                    <label className="grid gap-1">
-                      <span className="text-xs font-bold">TV name</span>
-                      <input
-                        type="text"
-                        value={saved.label}
-                        aria-label={`${reveal.title} TV name`}
-                        placeholder="Ice cream"
-                        onChange={(event) => setRevealLabel(reveal.id, event.target.value)}
-                        className="h-10 rounded-xl border border-input bg-transparent px-3 text-sm font-bold"
-                      />
-                    </label>
-                    <label className="grid gap-1">
-                      <span className="text-xs font-bold">Prize line</span>
-                      <input
-                        type="text"
-                        value={saved.prize}
-                        aria-label={`${reveal.title} prize line`}
-                        placeholder="Dress a teacher in clothes of your choice for a day"
-                        onChange={(event) => setRevealPrize(reveal.id, event.target.value)}
-                        className="h-10 rounded-xl border border-input bg-transparent px-3 text-sm font-bold"
-                      />
-                    </label>
-                    <PrizeImageField
-                      label={`${reveal.title} picture`}
+                    <PrizeWords
+                      reveal={reveal}
+                      says={saved.label}
+                      line={saved.prize}
                       image={saved.image}
-                      onPick={(image) => setRevealImage(reveal.id, image)}
+                      onSays={(value) => setRevealLabel(reveal.id, value)}
+                      onLine={(value) => setRevealPrize(reveal.id, value)}
+                      onImage={(image) => setRevealImage(reveal.id, image)}
                     />
                     <Button
                       type="button"
@@ -364,67 +347,96 @@ export function KioskSettings({ onPreview }: { onPreview: (screen: ScreenId) => 
   );
 }
 
-function PrizeImageField({
-  label,
+function PrizeWords({
+  reveal,
+  says,
+  line,
   image,
-  onPick,
+  onSays,
+  onLine,
+  onImage,
 }: {
-  label: string;
+  reveal: (typeof REVEALS)[number];
+  says: string;
+  line: string;
   image: string | null;
-  onPick: (image: string | null) => boolean;
+  onSays: (value: string) => void;
+  onLine: (value: string) => void;
+  onImage: (image: string | null) => boolean;
 }) {
   const [error, setError] = useState<string | null>(null);
+  const thumb = image || reveal.image;
+  const caption = says.trim() || reveal.title;
 
   return (
-    <div className="grid gap-1">
-      <span className="text-xs font-bold">{label}</span>
-      <div className="flex items-center gap-3">
-        <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-input bg-[#fffdf8]">
-          {image ? (
-            <img src={image} alt="" className="size-full object-cover" />
-          ) : (
-            <span className="px-1 text-center text-[10px] leading-tight font-bold text-muted-foreground">
-              No picture
-            </span>
-          )}
-        </div>
-        <div className="grid gap-1">
-          <label className="inline-flex h-9 cursor-pointer items-center rounded-xl border border-input px-3 text-sm font-bold">
+    <div className="grid gap-2">
+      <div className="flex items-start gap-3">
+        <img
+          src={thumb}
+          alt=""
+          className="size-16 shrink-0 rounded-xl border border-input object-cover"
+        />
+        <div className="grid min-w-0 flex-1 gap-2">
+          <label className="grid gap-1">
+            <span className="text-xs font-bold">Says</span>
             <input
-              type="file"
-              accept="image/*"
-              className="sr-only"
-              aria-label={label}
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                event.target.value = "";
-                if (!file) return;
-                void compressPrizeImage(file)
-                  .then((data) => {
-                    const saved = onPick(data);
-                    setError(saved ? null : "That picture is too big for this TV to keep.");
-                  })
-                  .catch((reason: unknown) => {
-                    setError(reason instanceof Error ? reason.message : "Could not read that picture.");
-                  });
-              }}
+              type="text"
+              value={says}
+              aria-label={`${reveal.mask} says`}
+              placeholder={reveal.title}
+              onChange={(event) => onSays(event.target.value)}
+              className="h-10 rounded-xl border border-input bg-transparent px-3 text-sm font-bold"
             />
-            {image ? "Change picture" : "Add picture"}
           </label>
-          {image ? (
-            <button
-              type="button"
-              className="text-left text-xs font-bold text-muted-foreground underline"
-              onClick={() => {
-                onPick(null);
-                setError(null);
-              }}
-            >
-              Use the original
-            </button>
-          ) : null}
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="inline-flex h-9 cursor-pointer items-center rounded-xl border border-input px-3 text-sm font-bold">
+              <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                aria-label={`${caption} picture`}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  event.target.value = "";
+                  if (!file) return;
+                  void compressPrizeImage(file)
+                    .then((data) => {
+                      const saved = onImage(data);
+                      setError(saved ? null : "That picture is too big for this TV to keep.");
+                    })
+                    .catch((reason: unknown) => {
+                      setError(reason instanceof Error ? reason.message : "Could not read that picture.");
+                    });
+                }}
+              />
+              {image ? "Change picture" : "Upload picture"}
+            </label>
+            {image ? (
+              <button
+                type="button"
+                className="text-xs font-bold text-muted-foreground underline"
+                onClick={() => {
+                  onImage(null);
+                  setError(null);
+                }}
+              >
+                Use the original
+              </button>
+            ) : null}
+          </div>
         </div>
       </div>
+      <label className="grid gap-1">
+        <span className="text-xs font-bold">Prize line</span>
+        <input
+          type="text"
+          value={line}
+          aria-label={`${reveal.mask} prize line`}
+          placeholder={reveal.prize}
+          onChange={(event) => onLine(event.target.value)}
+          className="h-10 rounded-xl border border-input bg-transparent px-3 text-sm font-bold"
+        />
+      </label>
       {error ? <p className="text-xs font-bold text-[#8d1f1f]">{error}</p> : null}
     </div>
   );

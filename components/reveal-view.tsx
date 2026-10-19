@@ -10,11 +10,13 @@ export function RevealView({
   revealAt,
   prize,
   image,
+  label,
 }: {
   reveal: RevealDef;
   revealAt: number | null;
   prize: string;
   image: string | null;
+  label: string;
 }) {
   const [now, setNow] = useState(() => Date.now());
   const due = revealAt != null && now >= revealAt;
@@ -38,7 +40,8 @@ export function RevealView({
   const remain = revealAt == null ? null : revealAt - now;
   const count = remain == null || remain <= 0 ? null : remainParts(remain);
   const line = prize.trim();
-  const name = due ? reveal.title : reveal.mask;
+  const spoken = label.trim() || reveal.title;
+  const name = due ? spoken : reveal.mask;
 
   return (
     <div className="flex h-full min-h-0 flex-col items-center justify-center gap-6 lg:flex-row lg:gap-10">
@@ -62,7 +65,7 @@ export function RevealView({
         ) : due ? (
           <>
             <p className="mt-2 text-[11px] font-bold tracking-[0.22em] text-ink-gold uppercase">It is time</p>
-            <h2 className="mt-2 font-display text-4xl leading-tight sm:text-6xl">{reveal.title}</h2>
+            <h2 className="mt-2 font-display text-4xl leading-tight sm:text-6xl">{spoken}</h2>
             {flipped && line ? (
               <p className="mt-4 max-w-3xl text-2xl leading-snug font-extrabold sm:text-4xl">{line}</p>
             ) : null}
@@ -74,7 +77,7 @@ export function RevealView({
           </>
         )}
       </div>
-      <FlipCard reveal={reveal} flipped={flipped} prize={line} image={image} />
+      <FlipCard reveal={reveal} flipped={flipped} prize={line} image={image} spoken={spoken} />
     </div>
   );
 }
@@ -84,11 +87,13 @@ function FlipCard({
   flipped,
   prize,
   image,
+  spoken,
 }: {
   reveal: RevealDef;
   flipped: boolean;
   prize: string;
   image: string | null;
+  spoken: string;
 }) {
   return (
     <div
@@ -116,7 +121,7 @@ function FlipCard({
         >
           <PrizeArt
             src={image || reveal.image}
-            title={flipped ? reveal.title : ""}
+            title={flipped ? spoken : ""}
             prize={flipped ? prize : ""}
           />
         </div>

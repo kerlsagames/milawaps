@@ -55,7 +55,7 @@ const now = Date.parse("2026-10-19T12:00:00+11:00");
 const todayAt = (minute: number) => Date.parse("2026-10-19T08:00:00+11:00") + minute * 60_000;
 
 let spots = emptyScores(1);
-for (let index = 0; index < 10; index += 1) {
+for (let index = 0; index < 15; index += 1) {
   spots = applyAction(spots, "spot", "f1", "jess", todayAt(index)).state;
 }
 const latest = todayFeed(spots, now);
@@ -75,7 +75,7 @@ assert.equal(todayOnly[0]?.kind, "strike");
 assert.match(todayOnly[0]?.text ?? "", /Mr C · 2\/3\/4 −1 point/);
 
 const surged = applyAction(
-  { ...emptyScores(1), units: { f1: 8, "234": 0, "56": 0 } },
+  { ...emptyScores(1), units: { f1: 13, "234": 0, "56": 0 } },
   "teamwork",
   undefined,
   "tiff",

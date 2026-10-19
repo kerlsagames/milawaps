@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { CLASS_MILESTONES, VIEWS } from "@/lib/game";
+import { VIEWS } from "@/lib/game";
 import {
   DEFAULT_SHOWN,
   REVEALS,
@@ -13,7 +13,7 @@ import {
 import { staffFromToken } from "@/lib/who";
 
 function revealDefaultLabel(reveal: (typeof REVEALS)[number]) {
-  return CLASS_MILESTONES.find((item) => item.points === reveal.points)?.short ?? reveal.title;
+  return reveal.title;
 }
 
 const TOKEN_KEY = "ott-token";
@@ -54,8 +54,6 @@ export const DEFAULT_DWELLS: DwellMap = {
   "reveal-1": 12,
   "reveal-laser": 12,
   "reveal-2": 12,
-  "reveal-ice": 12,
-  "reveal-3": 12,
   cricket: 16,
 };
 
