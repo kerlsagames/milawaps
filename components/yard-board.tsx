@@ -313,11 +313,12 @@ export function YardBoard() {
         })}
       </div>
 
-      <div className="flex min-h-0 flex-1">
+      <div className={cn("flex min-h-0 flex-1", kiosk ? "flex-row" : "flex-col lg:flex-row")}>
       <main
         className={cn(
           "relative mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col overflow-y-auto px-3 py-2 lg:overflow-hidden lg:px-4",
           (view === "prizes" || view === "board") && "max-w-none",
+          !kiosk && view === "board" && "order-2 lg:order-1",
           kiosk && (prefs.timer === "blocks" ? "pt-16 pb-16" : "pt-16 pb-28"),
         )}
       >
@@ -374,7 +375,9 @@ export function YardBoard() {
           {data?.lastAction ? actionLabel(data.lastAction) : "Waiting for the first tick."}
         </p>
       </main>
-      {kiosk ? <TodayColumn board={data} live={live} /> : null}
+      {kiosk || view === "board" ? (
+        <TodayColumn board={data} live={live} variant={kiosk ? "kiosk" : "board"} />
+      ) : null}
       </div>
 
       <PinDialog

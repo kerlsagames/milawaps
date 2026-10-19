@@ -34,9 +34,11 @@ function eventTime(at: number) {
 export function TodayColumn({
   board,
   live,
+  variant = "kiosk",
 }: {
   board: PublicBoard | undefined;
-  live: "loading" | "live" | "offline";
+  live?: "loading" | "live" | "offline";
+  variant?: "kiosk" | "board";
 }) {
   const prefs = useDeskPrefs();
   const [now, setNow] = useState(() => Date.now());
@@ -54,13 +56,18 @@ export function TodayColumn({
     <aside
       aria-label="Today"
       className={cn(
-        "flex min-h-0 w-[min(19rem,40vw)] shrink-0 flex-col gap-2 border-l-4 border-[#e2a01a] bg-[#fffdf8] px-3 pt-4",
-        prefs.timer === "blocks" ? "pb-16" : "pb-28",
+        "flex min-h-0 flex-col gap-2 bg-[#fffdf8] px-3",
+        variant === "kiosk"
+          ? cn(
+              "w-[min(19rem,40vw)] shrink-0 border-l-4 border-[#e2a01a] pt-4",
+              prefs.timer === "blocks" ? "pb-16" : "pb-28",
+            )
+          : "order-1 max-h-56 w-full overflow-hidden border-b-4 border-[#e2a01a] py-3 lg:order-2 lg:max-h-none lg:w-[19rem] lg:shrink-0 lg:border-b-0 lg:border-l-4 lg:py-4",
       )}
     >
       <div className="flex items-end justify-between gap-2">
         <h2 className="font-display text-4xl leading-none">Today</h2>
-        <KioskStatus live={live} />
+        {variant === "kiosk" && live ? <KioskStatus live={live} /> : null}
       </div>
       {items.length === 0 ? (
         <p className="rounded-2xl bg-white px-3 py-3 text-sm font-bold text-muted-foreground">
