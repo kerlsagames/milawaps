@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const OFFER_MS = 4_000;
+const OFFER_MS = 6_000;
 
 export function ReasonPrompt({
   id,
@@ -38,7 +38,9 @@ export function ReasonPrompt({
   return (
     <div
       className={cn(
-        "fixed right-3 bottom-3 z-[70] w-[min(18rem,calc(100%-1.5rem))] rounded-2xl border-2 border-[#2a1c04] bg-[#fffdf8] p-2.5 shadow-[0_6px_0_#2a1c04] transition-opacity duration-300 sm:right-5 sm:bottom-5",
+        // Stay on the right so Undo (bottom-left) keeps its own lane on phones.
+        "fixed right-3 bottom-3 z-[70] max-w-[min(18rem,calc(100%-11rem))] rounded-2xl border-2 border-[#2a1c04] bg-[#fffdf8] p-2.5 shadow-[0_6px_0_#2a1c04] transition-opacity duration-300 sm:right-5 sm:bottom-5 sm:max-w-[18rem]",
+        open ? "w-[min(18rem,calc(100%-11rem))] sm:w-[18rem]" : "w-auto",
         fading && !open && "pointer-events-none opacity-0",
       )}
     >
@@ -87,13 +89,13 @@ export function ReasonPrompt({
       ) : (
         <button
           type="button"
-          className="flex w-full items-center justify-between gap-2 text-left"
+          className="flex max-w-full items-center justify-end gap-2 text-left"
           onClick={() => {
             setFading(false);
             setOpen(true);
           }}
         >
-          <span className="min-w-0 truncate text-xs font-extrabold">{line}</span>
+          <span className="hidden min-w-0 truncate text-xs font-extrabold sm:inline">{line}</span>
           <span className="shrink-0 rounded-lg bg-[#2a1c04] px-2.5 py-1.5 text-[11px] font-extrabold text-[#ffe08a]">
             Reason?
           </span>

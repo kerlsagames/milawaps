@@ -87,7 +87,11 @@ export function UnitCard({
       <div
         className={cn(
           "flex min-h-0 flex-1 flex-col",
-          compact ? "p-1.5 pt-1.5 lg:p-3 lg:pt-2" : "p-2 pt-2 lg:p-3 lg:pt-2",
+          compact
+            ? onScore || onHighlight
+              ? "px-1.5 pt-1 pb-1 lg:p-3 lg:pt-2"
+              : "p-1.5 pt-1 lg:p-3 lg:pt-2"
+            : "p-2 pt-2 lg:p-3 lg:pt-2",
         )}
       >
         <div className={cn("overflow-hidden rounded-full bg-black/10", compact ? "h-1 lg:h-2" : "h-1.5 lg:h-2")}>
@@ -100,7 +104,7 @@ export function UnitCard({
           />
         </div>
 
-        <div className="mt-2 hidden flex-col gap-2 lg:flex">
+        <div className="mt-2 hidden shrink-0 flex-col gap-2 lg:flex">
           <BlockMatrix score={score} color={unit.color} ink={unit.ink} label={unit.code} />
           <StrikeMatrix count={crosses} label={unit.code} />
         </div>
@@ -111,62 +115,67 @@ export function UnitCard({
           </p>
         ) : null}
 
-        {onScore ? (
-          <div className={cn("mt-auto grid grid-cols-3", compact ? "mt-1.5 gap-1 lg:mt-2 lg:gap-1.5" : "mt-2 gap-1.5")}>
-            <Button
-              type="button"
-              className={cn(
-                "rounded-xl",
-                compact ? "h-10 text-base lg:h-12 lg:text-base" : "h-14 text-lg lg:h-12 lg:text-base",
-              )}
-              style={{ background: unit.color, color: unit.ink }}
-              disabled={score >= UNIT_MAX}
-              onClick={() => onScore("spot", unit.id)}
-            >
-              +1
-            </Button>
-            <Button
-              type="button"
-              className={cn(
-                "rounded-xl",
-                compact ? "h-10 text-base lg:h-12 lg:text-base" : "h-14 text-lg lg:h-12 lg:text-base",
-              )}
-              style={{ background: unit.deep, color: "#fff7ea" }}
-              disabled={score >= UNIT_MAX}
-              onClick={() => onScore("surge", unit.id)}
-            >
-              +2
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className={cn(
-                "rounded-xl border-[#c23b3b]/40 bg-[#c23b3b]/10 text-[#8d1f1f]",
-                compact ? "h-10 text-base lg:h-12 lg:text-base" : "h-14 text-lg lg:h-12 lg:text-base",
-              )}
-              disabled={score <= 0}
-              onClick={() => onScore("strike", unit.id)}
-            >
-              −1
-            </Button>
-          </div>
-        ) : null}
+        {/* Absorb equal-height card slack above the actions so nothing sits under Student highlight. */}
+        {(onScore || onHighlight) ? <div className="min-h-0 flex-1" aria-hidden="true" /> : null}
 
-        {onHighlight ? (
-          <Button
-            type="button"
-            variant="outline"
-            className={cn(
-              "w-full rounded-xl border-[#e2a01a] bg-[#fff8df] font-extrabold",
-              compact
-                ? "mt-1 h-8 text-xs lg:mt-2 lg:h-11 lg:text-sm"
-                : "mt-2 h-12 text-sm lg:h-11",
-            )}
-            onClick={() => onHighlight(unit.id)}
-          >
-            <Sparkles className={cn(compact ? "size-3.5 lg:size-4" : "size-4")} aria-hidden="true" />
-            Student highlight
-          </Button>
+        {(onScore || onHighlight) ? (
+          <div className={cn("flex shrink-0 flex-col", compact ? "gap-1 lg:gap-1.5" : "gap-1.5")}>
+            {onScore ? (
+              <div className={cn("grid grid-cols-3", compact ? "gap-1 lg:gap-1.5" : "gap-1.5")}>
+                <Button
+                  type="button"
+                  className={cn(
+                    "rounded-xl",
+                    compact ? "h-10 text-base lg:h-12 lg:text-base" : "h-14 text-lg lg:h-12 lg:text-base",
+                  )}
+                  style={{ background: unit.color, color: unit.ink }}
+                  disabled={score >= UNIT_MAX}
+                  onClick={() => onScore("spot", unit.id)}
+                >
+                  +1
+                </Button>
+                <Button
+                  type="button"
+                  className={cn(
+                    "rounded-xl",
+                    compact ? "h-10 text-base lg:h-12 lg:text-base" : "h-14 text-lg lg:h-12 lg:text-base",
+                  )}
+                  style={{ background: unit.deep, color: "#fff7ea" }}
+                  disabled={score >= UNIT_MAX}
+                  onClick={() => onScore("surge", unit.id)}
+                >
+                  +2
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    "rounded-xl border-[#c23b3b]/40 bg-[#c23b3b]/10 text-[#8d1f1f]",
+                    compact ? "h-10 text-base lg:h-12 lg:text-base" : "h-14 text-lg lg:h-12 lg:text-base",
+                  )}
+                  disabled={score <= 0}
+                  onClick={() => onScore("strike", unit.id)}
+                >
+                  −1
+                </Button>
+              </div>
+            ) : null}
+
+            {onHighlight ? (
+              <Button
+                type="button"
+                variant="outline"
+                className={cn(
+                  "w-full rounded-xl border-[#e2a01a] bg-[#fff8df] font-extrabold",
+                  compact ? "h-8 text-xs lg:h-11 lg:text-sm" : "h-12 text-sm lg:h-11",
+                )}
+                onClick={() => onHighlight(unit.id)}
+              >
+                <Sparkles className={cn(compact ? "size-3.5 lg:size-4" : "size-4")} aria-hidden="true" />
+                Student highlight
+              </Button>
+            ) : null}
+          </div>
         ) : null}
       </div>
     </motion.article>

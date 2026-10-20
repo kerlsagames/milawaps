@@ -17,7 +17,7 @@ import { HighlightDialog } from "@/components/highlight-dialog";
 import { StaffHud } from "@/components/staff-hud";
 import { TodayColumn } from "@/components/today-column";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { Undo2, X } from "lucide-react";
 import { clearToken, hydrateDisplay, saveToken, setKioskPref, useDeskPrefs } from "@/lib/desk-prefs";
 import { kioskKeyDelta } from "@/lib/kiosk-keys";
 import { emptyNews } from "@/lib/news";
@@ -97,14 +97,19 @@ export function YardBoard() {
     hydrateDisplay(data.shown, data.cricketCode);
   }, [displaySyncKey, data]);
 
+  // Desk (not kiosk): always browse News/Stars. TV show flags only gate the kiosk loop.
+  const deskBrowse = !kiosk;
+  // Unlocked yard-duty teacher extras on the board itself.
+  const deskTeacher = Boolean(token) && !kiosk;
+
   useEffect(() => {
     if (view === "cricket" && (!cricketCode || !shown.cricket)) setView("board");
-    if (view === "news" && !shown.news) setView("board");
-    if (view === "highlight" && !shown.highlight) setView("board");
+    if (view === "news" && !shown.news && !deskBrowse) setView("board");
+    if (view === "highlight" && !shown.highlight && !deskBrowse) setView("board");
     const highlightId = parseHighlightScreen(view);
-    if (highlightId && !shown.highlight) setView("board");
+    if (highlightId && !shown.highlight && !deskBrowse) setView("board");
     if (highlightId && !liveHighlights.some((entry) => entry.id === highlightId)) setView("board");
-  }, [view, cricketCode, shown.cricket, shown.news, shown.highlight, liveHighlights]);
+  }, [view, cricketCode, shown.cricket, shown.news, shown.highlight, liveHighlights, deskBrowse]);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const startedRef = useRef(0);
@@ -283,9 +288,9 @@ export function YardBoard() {
 
   const chooseView = useCallback(
     (next: ScreenId) => {
-      if (next === "news" && !shown.news) return;
+      if (next === "news" && !shown.news && !deskBrowse) return;
       if (next === "highlight") {
-        if (!shown.highlight) return;
+        if (!shown.highlight && !deskBrowse) return;
         // Tapping the Highlights tab again moves to the next live star.
         if (parseHighlightScreen(viewRef.current) && liveHighlights.length > 1) {
           stepHighlight(1);
@@ -294,10 +299,10 @@ export function YardBoard() {
         const first = liveHighlights[0];
         next = first ? highlightScreenId(first.id) : "highlight";
       }
-      if (parseHighlightScreen(next) && !shown.highlight) return;
+      if (parseHighlightScreen(next) && !shown.highlight && !deskBrowse) return;
       goToScreen(next);
     },
-    [shown.news, shown.highlight, liveHighlights, goToScreen, stepHighlight],
+    [shown.news, shown.highlight, deskBrowse, liveHighlights, goToScreen, stepHighlight],
   );
 
   // Arrow keys cycle highlights whenever a highlight page is open.
@@ -398,12 +403,17 @@ export function YardBoard() {
           view={view}
           tabs={[
             ...VIEWS.map((item) => ({ id: item.id as ScreenId, label: item.label, short: item.short })),
-            { id: "news" as const, label: "Daily News", short: "News", open: shown.news },
+            {
+              id: "news" as const,
+              label: "Daily News",
+              short: "News",
+              open: deskBrowse || shown.news,
+            },
             {
               id: "highlight" as const,
               label: "Student Highlights",
               short: "Stars",
-              open: shown.highlight,
+              open: deskBrowse || shown.highlight,
             },
             ...(cricketCode && shown.cricket
               ? [{ id: "cricket" as const, label: "Cricket", short: "Cricket" }]
@@ -611,15 +621,8 @@ export function YardBoard() {
                       error={deskError}
                       onScore={scoreOrUnlock}
                       showScores={!kiosk}
-                      teacherMode={Boolean(token) && !kiosk}
-                      canUndo={Boolean(
-                        data.log?.length &&
-                          data.log[0] &&
-                          data.log[0].action !== "reset" &&
-                          data.log[0].action !== "undo",
-                      )}
+                      teacherMode={deskTeacher}
                       onHighlight={(unitId) => setHighlightUnit(unitId)}
-                      onUndo={() => scoreOrUnlock("undo")}
                     />
                   ) : null}
                   {view === "prizes" && <PrizesView board={data} />}
@@ -702,6 +705,24 @@ export function YardBoard() {
             setHighlightUnit(null);
           }}
         />
+      ) : null}
+      {deskTeacher && view === "board" ? (
+        <Button
+          type="button"
+          variant="outline"
+          aria-label="Undo last click"
+          disabled={
+            !data?.log?.length ||
+            !data.log[0] ||
+            data.log[0].action === "reset" ||
+            data.log[0].action === "undo"
+          }
+          onClick={() => scoreOrUnlock("undo")}
+          className="fixed bottom-3 left-3 z-[70] h-11 rounded-2xl border-2 border-[#2a1c04] bg-[#fffdf8] px-3.5 text-sm font-extrabold shadow-[0_6px_0_#2a1c04] sm:bottom-5 sm:left-5 sm:h-12 sm:px-4 sm:text-base"
+        >
+          <Undo2 className="size-4" aria-hidden="true" />
+          Undo last click
+        </Button>
       ) : null}
       {reasonPrompt && token ? (
         <ReasonPrompt
