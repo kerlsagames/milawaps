@@ -62,7 +62,9 @@ export function TodayColumn({
               "w-[min(19rem,40vw)] shrink-0 border-l-4 border-[#e2a01a] pt-4",
               prefs.timer === "blocks" ? "pb-16" : "pb-28",
             )
-          : "order-1 max-h-56 w-full overflow-hidden border-b-4 border-[#e2a01a] py-3 lg:order-2 lg:max-h-none lg:w-[19rem] lg:shrink-0 lg:border-b-0 lg:border-l-4 lg:py-4",
+          : // Phones: hide Today so the leaderboard and yard desk get the full screen.
+            // TV / desktop (lg+): keep the sidebar beside the board.
+            "hidden lg:flex lg:w-[19rem] lg:shrink-0 lg:border-l-4 lg:border-[#e2a01a] lg:py-4",
       )}
     >
       <div className="flex items-end justify-between gap-2">

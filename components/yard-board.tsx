@@ -365,7 +365,6 @@ export function YardBoard() {
         className={cn(
           "relative mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col overflow-y-auto px-3 py-2 lg:overflow-hidden lg:px-4",
           (view === "prizes" || view === "board") && "max-w-none",
-          !kiosk && view === "board" && "order-2 lg:order-1",
           kiosk && (prefs.timer === "blocks" ? "pt-16 pb-16" : "pt-16 pb-28"),
         )}
       >
