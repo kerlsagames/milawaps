@@ -24,13 +24,16 @@ assert.ok(STUDENTS.some((student) => student.name === "Riley"));
 const news = sanitizeNews({
   headline: "Sports day",
   blurb: "Bring a hat",
+  challenge: "Find the hidden duck — 2+ points",
   reminders: [{ id: "1", text: "Hats on" }],
   upcoming: [{ id: "2", when: "Fri", text: "Assembly" }],
   picture: "/milawa-yard.jpg",
 });
 assert.equal(news.headline, "Sports day");
+assert.equal(news.challenge, "Find the hidden duck — 2+ points");
 assert.equal(news.reminders[0]?.text, "Hats on");
 assert.equal(emptyNews().reminders.length, 0);
+assert.equal(emptyNews().challenge, "");
 
 const first = createHighlight(
   [

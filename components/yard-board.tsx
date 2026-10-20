@@ -81,9 +81,11 @@ export function YardBoard() {
   useEffect(() => {
     if (view === "cricket" && !prefs.cricketCode) setView("board");
     if (view === "news" && !shown.news) setView("board");
+    if (view === "highlight" && !shown.highlight) setView("board");
     const highlightId = parseHighlightScreen(view);
+    if (highlightId && !shown.highlight) setView("board");
     if (highlightId && !liveHighlights.some((entry) => entry.id === highlightId)) setView("board");
-  }, [view, prefs.cricketCode, shown.news, liveHighlights]);
+  }, [view, prefs.cricketCode, shown.news, shown.highlight, liveHighlights]);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const startedRef = useRef(0);
@@ -200,12 +202,22 @@ export function YardBoard() {
     return () => window.clearTimeout(id);
   }, [toasts]);
 
-  const chooseView = useCallback((next: ScreenId) => {
-    const time = Date.now();
-    startedRef.current = time;
-    setStartedAt(time);
-    setView(next);
-  }, []);
+  const chooseView = useCallback(
+    (next: ScreenId) => {
+      if (next === "news" && !shown.news) return;
+      if (next === "highlight") {
+        if (!shown.highlight) return;
+        const first = liveHighlights[0];
+        next = first ? (`highlight:${first.id}` as ScreenId) : "highlight";
+      }
+      if (parseHighlightScreen(next) && !shown.highlight) return;
+      const time = Date.now();
+      startedRef.current = time;
+      setStartedAt(time);
+      setView(next);
+    },
+    [shown.news, shown.highlight, liveHighlights],
+  );
 
   const score = useCallback(
     (action: ActionId, unitId?: UnitId) => {
@@ -280,21 +292,20 @@ export function YardBoard() {
         <SiteHeader
           view={view}
           tabs={[
-            ...VIEWS.map((item) => ({ id: item.id, label: item.label, short: item.short })),
-            ...(shown.news || view === "news"
-              ? [{ id: "news" as const, label: "Daily News", short: "News" }]
-              : []),
+            ...VIEWS.map((item) => ({ id: item.id as ScreenId, label: item.label, short: item.short })),
+            { id: "news" as const, label: "Daily News", short: "News", open: shown.news },
+            {
+              id: "highlight" as const,
+              label: "Student Highlights",
+              short: "Stars",
+              open: shown.highlight,
+            },
             ...(prefs.cricketCode
               ? [{ id: "cricket" as const, label: "Cricket", short: "Cricket" }]
               : []),
-            ...liveHighlights.map((entry, index) => ({
-              id: `highlight:${entry.id}` as ScreenId,
-              label: liveHighlights.length === 1 ? "Highlight" : `Highlight ${index + 1}`,
-              short: liveHighlights.length === 1 ? "Star" : `Star ${index + 1}`,
-            })),
             ...REVEALS.filter((item) => shown[item.id] || view === item.id).map((item) => {
               const label = revealLabel(item, prefs.reveals[item.id]?.at);
-              return { id: item.id, label, short: label };
+              return { id: item.id as ScreenId, label, short: label };
             }),
           ]}
           onView={chooseView}
@@ -395,6 +406,17 @@ export function YardBoard() {
                 {view === "yard" && <YardRulesView />}
                 {view === "news" ? <NewsView news={data.news ?? emptyNews()} /> : null}
                 {view === "cricket" && <CricketView code={prefs.cricketCode} />}
+                {view === "highlight" && !activeHighlight ? (
+                  <div className="flex h-full min-h-0 flex-col items-center justify-center gap-3 rounded-[32px] border-4 border-[#5a3208] bg-[radial-gradient(circle_at_center,#ffe08a_0%,#f5b942_42%,#8a3b12_100%)] p-6 text-center">
+                    <p className="text-[11px] font-extrabold tracking-[0.28em] text-[#5a3208] uppercase">
+                      Student Highlights
+                    </p>
+                    <h2 className="font-display text-4xl text-[#2a1c04] sm:text-5xl">Waiting for stars</h2>
+                    <p className="max-w-md text-base font-bold text-[#5a3208]">
+                      No student highlights are live right now. Teachers can add one from the yard desk.
+                    </p>
+                  </div>
+                ) : null}
                 {activeHighlight ? <HighlightView entry={activeHighlight} /> : null}
                 {activeReveal && (
                   <RevealView

@@ -92,6 +92,13 @@ export function NewsView({ news }: { news: DailyNews }) {
               </ul>
             )}
           </Panel>
+          {news.challenge ? (
+            <Panel title="Yard challenge" tone="#7b4bff">
+              <p className="rounded-2xl bg-white/90 px-3 py-3 text-base font-extrabold text-[#2a1c04] shadow-[0_3px_0_rgba(42,28,4,0.12)]">
+                {news.challenge}
+              </p>
+            </Panel>
+          ) : null}
         </section>
         <section className="relative min-h-[14rem] overflow-hidden rounded-[28px] border-4 border-[#16384a] bg-[#fffdf8] shadow-[0_10px_0_#0d2430]">
           {news.picture ? (
