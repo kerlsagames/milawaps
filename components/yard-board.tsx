@@ -17,7 +17,7 @@ import { HighlightDialog } from "@/components/highlight-dialog";
 import { StaffHud } from "@/components/staff-hud";
 import { TodayColumn } from "@/components/today-column";
 import { Button } from "@/components/ui/button";
-import { Undo2, X } from "lucide-react";
+import { X } from "lucide-react";
 import { clearToken, hydrateDisplay, saveToken, setKioskPref, useDeskPrefs } from "@/lib/desk-prefs";
 import { kioskKeyDelta } from "@/lib/kiosk-keys";
 import { emptyNews } from "@/lib/news";
@@ -625,7 +625,48 @@ export function YardBoard() {
                       onScore={scoreOrUnlock}
                       showScores={!kiosk}
                       teacherMode={deskTeacher}
+                      canUndo={Boolean(
+                        data.log?.length &&
+                          data.log[0] &&
+                          data.log[0].action !== "reset" &&
+                          data.log[0].action !== "undo",
+                      )}
                       onHighlight={(unitId) => setHighlightUnit(unitId)}
+                      onUndo={deskTeacher ? () => scoreOrUnlock("undo") : undefined}
+                      reasonSlot={
+                        reasonPrompt && token ? (
+                          <ReasonPrompt
+                            key={reasonPrompt.id}
+                            id={reasonPrompt.id}
+                            line={reasonPrompt.line}
+                            placement="inline"
+                            onDismiss={() => setReasonPrompt(null)}
+                            onSave={async (reason) => {
+                              const response = await fetch("/api/score/reason", {
+                                method: "POST",
+                                headers: {
+                                  "Content-Type": "application/json",
+                                  Authorization: `Bearer ${token}`,
+                                },
+                                body: JSON.stringify({ id: reasonPrompt.id, reason }),
+                              });
+                              const body = (await response.json().catch(() => ({}))) as PublicBoard & {
+                                error?: string;
+                              };
+                              if (response.status === 401) {
+                                clearToken();
+                                setReasonPrompt(null);
+                                setPinOpen(true);
+                                return "The desk locked itself. Enter the PIN again.";
+                              }
+                              if (!response.ok) return body.error ?? "The reason did not save.";
+                              await mutate(body, { revalidate: false });
+                              setReasonPrompt(null);
+                              return null;
+                            }}
+                          />
+                        ) : null
+                      }
                     />
                   ) : null}
                   {view === "prizes" && <PrizesView board={data} />}
@@ -706,54 +747,6 @@ export function YardBoard() {
           onSaved={(board) => {
             void mutate(board, { revalidate: false });
             setHighlightUnit(null);
-          }}
-        />
-      ) : null}
-      {deskTeacher && view === "board" ? (
-        <Button
-          type="button"
-          variant="outline"
-          aria-label="Undo last click"
-          disabled={
-            !data?.log?.length ||
-            !data.log[0] ||
-            data.log[0].action === "reset" ||
-            data.log[0].action === "undo"
-          }
-          onClick={() => scoreOrUnlock("undo")}
-          className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-3 z-[100] h-12 rounded-2xl border-2 border-[#2a1c04] bg-[#fffdf8] px-3.5 text-sm font-extrabold shadow-[0_6px_0_#2a1c04] sm:bottom-5 sm:left-5 sm:h-12 sm:px-4 sm:text-base"
-        >
-          <Undo2 className="size-4" aria-hidden="true" />
-          <span className="sm:hidden">Undo</span>
-          <span className="hidden sm:inline">Undo last click</span>
-        </Button>
-      ) : null}
-      {reasonPrompt && token ? (
-        <ReasonPrompt
-          key={reasonPrompt.id}
-          id={reasonPrompt.id}
-          line={reasonPrompt.line}
-          onDismiss={() => setReasonPrompt(null)}
-          onSave={async (reason) => {
-            const response = await fetch("/api/score/reason", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify({ id: reasonPrompt.id, reason }),
-            });
-            const body = (await response.json().catch(() => ({}))) as PublicBoard & { error?: string };
-            if (response.status === 401) {
-              clearToken();
-              setReasonPrompt(null);
-              setPinOpen(true);
-              return "The desk locked itself. Enter the PIN again.";
-            }
-            if (!response.ok) return body.error ?? "The reason did not save.";
-            await mutate(body, { revalidate: false });
-            setReasonPrompt(null);
-            return null;
           }}
         />
       ) : null}

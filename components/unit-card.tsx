@@ -26,6 +26,7 @@ export function UnitCard({
   onHighlight?: (unitId: UnitId) => void;
 }) {
   const percent = Math.max(0, Math.min(100, (score / UNIT_MAX) * 100));
+  const fillActions = Boolean(compact && (onScore || onHighlight));
 
   return (
     <motion.article
@@ -43,7 +44,7 @@ export function UnitCard({
     >
       <div
         className={cn(
-          "flex items-center justify-between gap-2",
+          "flex shrink-0 items-center justify-between gap-2",
           compact ? "px-2 py-1.5 lg:px-4 lg:py-4" : "px-3 py-2.5 lg:px-4 lg:py-4",
         )}
         style={{ background: unit.color, color: unit.ink }}
@@ -89,12 +90,12 @@ export function UnitCard({
           "flex min-h-0 flex-1 flex-col",
           compact
             ? onScore || onHighlight
-              ? "px-1.5 pt-1 pb-1 lg:p-3 lg:pt-2"
+              ? "px-1.5 pt-1 pb-1.5 lg:p-3 lg:pt-2"
               : "p-1.5 pt-1 lg:p-3 lg:pt-2"
             : "p-2 pt-2 lg:p-3 lg:pt-2",
         )}
       >
-        <div className={cn("overflow-hidden rounded-full bg-black/10", compact ? "h-1 lg:h-2" : "h-1.5 lg:h-2")}>
+        <div className={cn("shrink-0 overflow-hidden rounded-full bg-black/10", compact ? "h-1 lg:h-2" : "h-1.5 lg:h-2")}>
           <motion.div
             className="h-full rounded-full"
             style={{ backgroundColor: unit.color }}
@@ -104,29 +105,40 @@ export function UnitCard({
           />
         </div>
 
-        <div className="mt-2 hidden shrink-0 flex-col gap-2 lg:flex">
+        <div className="mt-2 hidden min-h-0 flex-1 flex-col gap-2 lg:flex">
           <BlockMatrix score={score} color={unit.color} ink={unit.ink} label={unit.code} />
           <StrikeMatrix count={crosses} label={unit.code} />
         </div>
 
         {crosses > 0 ? (
-          <p className={cn("truncate text-muted-foreground lg:hidden", compact ? "mt-0.5 text-[10px]" : "mt-1.5 text-xs")}>
+          <p className={cn("shrink-0 truncate text-muted-foreground lg:hidden", compact ? "mt-0.5 text-[10px]" : "mt-1.5 text-xs")}>
             {crosses} strike{crosses === 1 ? "" : "s"}
           </p>
         ) : null}
 
-        {/* Absorb equal-height card slack above the actions so nothing sits under Student highlight. */}
-        {(onScore || onHighlight) ? <div className="min-h-0 flex-1" aria-hidden="true" /> : null}
-
         {(onScore || onHighlight) ? (
-          <div className={cn("flex shrink-0 flex-col", compact ? "gap-1 lg:gap-1.5" : "gap-1.5")}>
+          <div
+            className={cn(
+              "flex flex-col",
+              fillActions
+                ? "mt-1 min-h-0 flex-1 gap-1 lg:mt-2 lg:flex-none lg:gap-1.5"
+                : "mt-auto gap-1.5",
+            )}
+          >
             {onScore ? (
-              <div className={cn("grid grid-cols-3", compact ? "gap-1 lg:gap-1.5" : "gap-1.5")}>
+              <div
+                className={cn(
+                  "grid grid-cols-3",
+                  fillActions ? "min-h-0 flex-[3] gap-1 lg:flex-none lg:gap-1.5" : "gap-1.5",
+                )}
+              >
                 <Button
                   type="button"
                   className={cn(
                     "rounded-xl",
-                    compact ? "h-10 text-base lg:h-12 lg:text-base" : "h-14 text-lg lg:h-12 lg:text-base",
+                    fillActions
+                      ? "h-full min-h-0 text-lg lg:h-12 lg:text-base"
+                      : "h-14 text-lg lg:h-12 lg:text-base",
                   )}
                   style={{ background: unit.color, color: unit.ink }}
                   disabled={score >= UNIT_MAX}
@@ -138,7 +150,9 @@ export function UnitCard({
                   type="button"
                   className={cn(
                     "rounded-xl",
-                    compact ? "h-10 text-base lg:h-12 lg:text-base" : "h-14 text-lg lg:h-12 lg:text-base",
+                    fillActions
+                      ? "h-full min-h-0 text-lg lg:h-12 lg:text-base"
+                      : "h-14 text-lg lg:h-12 lg:text-base",
                   )}
                   style={{ background: unit.deep, color: "#fff7ea" }}
                   disabled={score >= UNIT_MAX}
@@ -151,7 +165,9 @@ export function UnitCard({
                   variant="outline"
                   className={cn(
                     "rounded-xl border-[#c23b3b]/40 bg-[#c23b3b]/10 text-[#8d1f1f]",
-                    compact ? "h-10 text-base lg:h-12 lg:text-base" : "h-14 text-lg lg:h-12 lg:text-base",
+                    fillActions
+                      ? "h-full min-h-0 text-lg lg:h-12 lg:text-base"
+                      : "h-14 text-lg lg:h-12 lg:text-base",
                   )}
                   disabled={score <= 0}
                   onClick={() => onScore("strike", unit.id)}
@@ -167,7 +183,9 @@ export function UnitCard({
                 variant="outline"
                 className={cn(
                   "w-full rounded-xl border-[#e2a01a] bg-[#fff8df] font-extrabold",
-                  compact ? "h-8 text-xs lg:h-11 lg:text-sm" : "h-12 text-sm lg:h-11",
+                  fillActions
+                    ? "h-auto min-h-0 flex-[1.15] text-xs lg:h-11 lg:flex-none lg:text-sm"
+                    : "h-12 text-sm lg:h-11",
                 )}
                 onClick={() => onHighlight(unit.id)}
               >
