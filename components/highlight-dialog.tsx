@@ -104,8 +104,8 @@ export function HighlightDialog({
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">Student highlight</DialogTitle>
           <DialogDescription>
-            Pick one or more classes, tap who shone, and write why. You can mix classes — picks stay when
-            you switch. The spotlight page stays on the TV for two days.
+            Pick one or more classes, tap who shone, and write why. Each class in the highlight also gets
+            +1. Picks stay when you switch classes. The spotlight page stays on the TV for two days.
           </DialogDescription>
         </DialogHeader>
 

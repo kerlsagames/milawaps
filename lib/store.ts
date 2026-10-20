@@ -339,14 +339,33 @@ export function commitHighlight(
   students: HighlightStudent[],
   reason: string,
   staffId: StaffId,
-): Promise<PublicBoard> {
+): Promise<{ board: PublicBoard; events: ReturnType<typeof applyAction>["events"] }> {
   return serialized(async () => {
     const blob = await readBlob();
     const entry = createHighlight(students, reason, staffId);
     const highlights = sanitizeHighlights([entry, ...blob.highlights]);
-    const next = { ...blob, highlights };
+    // One +1 (spot) for each class that has someone in this highlight.
+    const unitIds = [...new Set(entry.students.map((student) => student.unitId))];
+    let scores = blob.scores;
+    const events: ReturnType<typeof applyAction>["events"] = [];
+    let tick = Date.now();
+    for (const unitId of unitIds) {
+      const result = applyAction(scores, "spot", unitId, staffId, tick);
+      scores = result.state;
+      events.push(...result.events);
+      const logId = scores.log[0]?.id;
+      if (logId) {
+        try {
+          scores = attachReason(scores, logId, staffId, reason, tick);
+        } catch {
+          // Highlight reason may be longer than a tick reason; points still land.
+        }
+      }
+      tick += 1;
+    }
+    const next = { ...blob, highlights, scores };
     await writeBlob(next);
-    return toPublic(next);
+    return { board: toPublic(next), events };
   });
 }
 

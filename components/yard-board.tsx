@@ -747,6 +747,8 @@ export function YardBoard() {
           onSaved={(board) => {
             void mutate(board, { revalidate: false });
             setHighlightUnit(null);
+            const newest = board.highlights?.[0];
+            if (newest) goToScreen(highlightScreenId(newest.id));
           }}
         />
       ) : null}

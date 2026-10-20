@@ -6,6 +6,8 @@ import {
   sanitizeHighlights,
 } from "../lib/highlights";
 import { emptyNews, sanitizeNews } from "../lib/news";
+import { emptyScores } from "../lib/game";
+import { applyAction } from "../lib/scoring";
 import { STUDENTS } from "../lib/students";
 import { kioskScreens, DEFAULT_SHOWN } from "../lib/reveals";
 
@@ -68,6 +70,15 @@ assert.deepEqual(
 );
 assert.equal(mixed.students.find((student) => student.id === "234-tjmara")?.unitId, "234");
 assert.equal(mixed.students.find((student) => student.id === "56-keshy")?.unitId, "56");
+
+// Highlight save awards +1 (spot) to each class represented.
+let scores = emptyScores(5_000);
+for (const unitId of [...new Set(mixed.students.map((student) => student.unitId))]) {
+  scores = applyAction(scores, "spot", unitId, "jess", 5_000).state;
+}
+assert.equal(scores.units["234"], 1);
+assert.equal(scores.units["56"], 1);
+assert.equal(scores.units.f1, 0);
 
 const wrongClassDropped = sanitizeHighlights(
   [

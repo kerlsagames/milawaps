@@ -4,7 +4,7 @@ export const NEWS_LAYOUTS = [
   {
     id: "split",
     label: "Split",
-    blurb: "Reminders on the left, photo on the right.",
+    blurb: "Photo on the left, tilted sticky boards on the right.",
   },
   {
     id: "stack",
