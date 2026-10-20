@@ -60,6 +60,22 @@ function highlightLine(entry: HighlightEntry): string {
   return reason ? `${base} · ${reason}` : base;
 }
 
+/** Spot ticks created with a highlight — Today only needs the highlight line. */
+function isHighlightCompanionSpot(entry: ScoreLogEntry, highlights: HighlightEntry[]): boolean {
+  if (entry.action !== "spot" || !isUnitId(entry.unitId)) return false;
+  const reason = entry.reason?.trim() ?? "";
+  for (const highlight of highlights) {
+    if (highlight.staffId !== entry.staffId) continue;
+    const inClass = highlight.students.some((student) => student.unitId === entry.unitId);
+    if (!inClass) continue;
+    const highlightReason = highlight.reason.trim();
+    if (reason && highlightReason && reason === highlightReason) return true;
+    // Same teacher, class, and moment (highlight save awards the +1 in the same second).
+    if (Math.abs(entry.at - highlight.at) <= 3_000) return true;
+  }
+  return false;
+}
+
 function undoAction(
   after: Record<UnitId, number>,
   crosses: Record<UnitId, number>,
@@ -102,6 +118,9 @@ export function todayFeed(
     "56": board.crosses?.["56"] ?? 0,
   };
   const items: TodayItem[] = [];
+  const todaysHighlights = activeHighlights(board.highlights ?? [], now).filter(
+    (entry) => melbourneDateKey(entry.at) === today,
+  );
 
   for (const entry of board.log ?? []) {
     if (entry.action === "reset") break;
@@ -118,21 +137,23 @@ export function todayFeed(
         text: `${unitById(event.unitId).code} unlocked ${prizeName(event.points, event.title)}`,
       });
     }
-    const line = columnLine(entry);
-    if (line) {
-      items.push({
-        id: entry.id,
-        at: entry.at,
-        kind: entry.action === "strike" ? "strike" : "tick",
-        text: line,
-      });
+    // Highlight already covers the story — skip the companion +1 tick line.
+    if (!isHighlightCompanionSpot(entry, todaysHighlights)) {
+      const line = columnLine(entry);
+      if (line) {
+        items.push({
+          id: entry.id,
+          at: entry.at,
+          kind: entry.action === "strike" ? "strike" : "tick",
+          text: line,
+        });
+      }
     }
     units = undone.units;
     crosses = undone.crosses;
   }
 
-  for (const entry of activeHighlights(board.highlights ?? [], now)) {
-    if (melbourneDateKey(entry.at) !== today) continue;
+  for (const entry of todaysHighlights) {
     items.push({
       id: `highlight:${entry.id}`,
       at: entry.at,

@@ -121,6 +121,7 @@ assert.equal(unlocked[0]?.text, "F/1 unlocked Game with Mr K");
 assert.equal(unlocked[1]?.kind, "tick");
 assert.match(unlocked[1]?.text ?? "", /Mrs Stirling · all classes \+3 points/);
 
+const spotlightAt = Date.parse("2026-10-19T11:30:00+11:00");
 const spotlight = createHighlight(
   [
     { id: "234-tjmara", unitId: "234" },
@@ -128,10 +129,22 @@ const spotlight = createHighlight(
   ],
   "Helped pack the sports shed",
   "ash",
-  Date.parse("2026-10-19T11:30:00+11:00"),
+  spotlightAt,
 );
+// Companion +1 ticks from the highlight save should not also appear in Today.
+let afterSpotlight = emptyScores(1);
+afterSpotlight = applyAction(afterSpotlight, "spot", "234", "ash", spotlightAt).state;
+afterSpotlight = applyAction(afterSpotlight, "spot", "56", "ash", spotlightAt + 1).state;
+afterSpotlight = {
+  ...afterSpotlight,
+  log: afterSpotlight.log.map((entry) =>
+    entry.staffId === "ash" && entry.action === "spot"
+      ? { ...entry, reason: "Helped pack the sports shed" }
+      : entry,
+  ),
+};
 const withHighlight = todayFeed(
-  { ...emptyScores(1), highlights: [spotlight] },
+  { ...afterSpotlight, highlights: [spotlight] },
   now,
 );
 assert.equal(withHighlight.length, 1);
@@ -140,5 +153,15 @@ assert.match(
   withHighlight[0]?.text ?? "",
   /Mr C · highlighted Tjmara & Keshy · Helped pack the sports shed/,
 );
+assert.equal(
+  withHighlight.some((item) => item.kind === "tick"),
+  false,
+);
+
+// A normal +2 with no highlight still shows as a tick.
+const surgeOnly = applyAction(emptyScores(1), "surge", "234", "ash", todayAt(90));
+const surgeFeed = todayFeed({ ...surgeOnly.state, highlights: [spotlight] }, now);
+assert.ok(surgeFeed.some((item) => item.kind === "tick" && /Mr C · 2\/3\/4 \+2 points/.test(item.text)));
+assert.ok(surgeFeed.some((item) => item.kind === "highlight"));
 
 console.log("today and cricket checks passed");
