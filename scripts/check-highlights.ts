@@ -52,6 +52,44 @@ const first = createHighlight(
 assert.equal(first.students.length, 2);
 assert.equal(first.expiresAt, 1_000 + 2 * 24 * 60 * 60 * 1000);
 
+const mixed = createHighlight(
+  [
+    { id: "234-tjmara", unitId: "234" },
+    { id: "56-keshy", unitId: "56" },
+  ],
+  "Helped on the court",
+  "jess",
+  3_000,
+);
+assert.equal(mixed.students.length, 2);
+assert.deepEqual(
+  mixed.students.map((student) => student.id).sort(),
+  ["234-tjmara", "56-keshy"],
+);
+assert.equal(mixed.students.find((student) => student.id === "234-tjmara")?.unitId, "234");
+assert.equal(mixed.students.find((student) => student.id === "56-keshy")?.unitId, "56");
+
+const wrongClassDropped = sanitizeHighlights(
+  [
+    {
+      id: "bad-unit",
+      at: 4_000,
+      expiresAt: 4_000 + 2 * 24 * 60 * 60 * 1000,
+      staffId: "jess",
+      reason: "Cross class bug",
+      students: [
+        { id: "234-tjmara", unitId: "234" },
+        // Wrong unitId must be dropped — this used to wipe Keshy when switching classes.
+        { id: "56-keshy", unitId: "234" },
+      ],
+    },
+  ],
+  4_000,
+);
+assert.equal(wrongClassDropped.length, 1);
+assert.equal(wrongClassDropped[0]?.students.length, 1);
+assert.equal(wrongClassDropped[0]?.students[0]?.id, "234-tjmara");
+
 const second = createHighlight([{ id: "f1-will", unitId: "f1" }], "Led the line", "craig", 2_000);
 const kept = sanitizeHighlights([first, second, { ...first, expiresAt: 500 }], 1_500);
 assert.equal(kept.length, 2);

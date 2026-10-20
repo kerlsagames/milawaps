@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { UNITS, type PublicBoard, type UnitId } from "@/lib/game";
-import { studentsForUnit } from "@/lib/students";
+import type { HighlightStudent } from "@/lib/highlights";
+import { studentById, studentsForUnit } from "@/lib/students";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -26,12 +27,19 @@ export function HighlightDialog({
   initialUnitId?: UnitId | null;
 }) {
   const [unitId, setUnitId] = useState<UnitId | null>(null);
-  const [picked, setPicked] = useState<string[]>([]);
+  const [picked, setPicked] = useState<HighlightStudent[]>([]);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
   const students = useMemo(() => (unitId ? studentsForUnit(unitId) : []), [unitId]);
+  const pickedDetails = useMemo(
+    () =>
+      picked
+        .map((item) => studentById(item.id))
+        .filter((student): student is NonNullable<typeof student> => Boolean(student)),
+    [picked],
+  );
 
   function reset(nextUnit: UnitId | null = null) {
     setUnitId(nextUnit);
@@ -45,8 +53,16 @@ export function HighlightDialog({
     if (open) reset(initialUnitId);
   }, [open, initialUnitId]);
 
+  function toggleStudent(student: { id: string; unitId: UnitId }) {
+    setPicked((current) => {
+      const on = current.some((item) => item.id === student.id);
+      if (on) return current.filter((item) => item.id !== student.id);
+      return [...current, { id: student.id, unitId: student.unitId }];
+    });
+  }
+
   async function submit() {
-    if (!unitId || picked.length === 0 || reason.trim().length === 0) return;
+    if (picked.length === 0 || reason.trim().length === 0) return;
     setBusy(true);
     setMessage("");
     try {
@@ -58,7 +74,7 @@ export function HighlightDialog({
         },
         body: JSON.stringify({
           reason,
-          students: picked.map((id) => ({ id, unitId })),
+          students: picked,
         }),
       });
       const body = (await response.json().catch(() => ({}))) as PublicBoard & { error?: string };
@@ -88,34 +104,66 @@ export function HighlightDialog({
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">Student highlight</DialogTitle>
           <DialogDescription>
-            Pick a class, tap who shone, and write why. The spotlight page stays on the TV for two days.
+            Pick one or more classes, tap who shone, and write why. You can mix classes — picks stay when
+            you switch. The spotlight page stays on the TV for two days.
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-2">
           <p className="text-sm font-bold">Class</p>
           <div className="grid grid-cols-3 gap-2">
-            {UNITS.map((unit) => (
-              <button
-                key={unit.id}
-                type="button"
-                aria-pressed={unitId === unit.id}
-                onClick={() => {
-                  setUnitId(unit.id);
-                  setPicked([]);
-                }}
-                className="h-12 rounded-xl text-sm font-extrabold"
-                style={{
-                  background: unitId === unit.id ? unit.color : "#fff",
-                  color: unitId === unit.id ? unit.ink : "#2a1c04",
-                  border: `2px solid ${unit.color}`,
-                }}
-              >
-                {unit.code}
-              </button>
-            ))}
+            {UNITS.map((unit) => {
+              const count = picked.filter((item) => item.unitId === unit.id).length;
+              return (
+                <button
+                  key={unit.id}
+                  type="button"
+                  aria-pressed={unitId === unit.id}
+                  onClick={() => setUnitId(unit.id)}
+                  className="relative h-12 rounded-xl text-sm font-extrabold"
+                  style={{
+                    background: unitId === unit.id ? unit.color : "#fff",
+                    color: unitId === unit.id ? unit.ink : "#2a1c04",
+                    border: `2px solid ${unit.color}`,
+                  }}
+                >
+                  {unit.code}
+                  {count > 0 ? (
+                    <span className="absolute -top-1.5 -right-1.5 grid size-5 place-items-center rounded-full bg-[#2a1c04] text-[10px] font-black text-[#ffe08a]">
+                      {count}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
           </div>
         </div>
+
+        {pickedDetails.length > 0 ? (
+          <div className="grid gap-1.5">
+            <p className="text-sm font-bold">Selected ({pickedDetails.length})</p>
+            <div className="flex flex-wrap gap-1.5">
+              {pickedDetails.map((student) => {
+                const unit = UNITS.find((item) => item.id === student.unitId);
+                return (
+                  <button
+                    key={student.id}
+                    type="button"
+                    onClick={() => toggleStudent(student)}
+                    className="rounded-full border-2 border-[#2a1c04] bg-[#fff8df] px-2.5 py-1 text-xs font-extrabold text-[#2a1c04]"
+                    title="Tap to remove"
+                  >
+                    {student.name}
+                    <span className="ml-1 opacity-60">{unit?.code}</span>
+                    <span className="ml-1" aria-hidden="true">
+                      ×
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
 
         {unitId ? (
           <div className="grid gap-2">
@@ -127,17 +175,13 @@ export function HighlightDialog({
             ) : (
               <div className="grid max-h-56 grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3">
                 {students.map((student) => {
-                  const on = picked.includes(student.id);
+                  const on = picked.some((item) => item.id === student.id);
                   return (
                     <button
                       key={student.id}
                       type="button"
                       aria-pressed={on}
-                      onClick={() =>
-                        setPicked((current) =>
-                          on ? current.filter((id) => id !== student.id) : [...current, student.id],
-                        )
-                      }
+                      onClick={() => toggleStudent(student)}
                       className={
                         on
                           ? "rounded-xl bg-[#2a1c04] px-2 py-2 text-left text-sm font-bold text-[#ffe08a]"
@@ -174,7 +218,7 @@ export function HighlightDialog({
         <Button
           type="button"
           className="h-12 rounded-xl"
-          disabled={busy || !unitId || picked.length === 0 || reason.trim().length === 0}
+          disabled={busy || picked.length === 0 || reason.trim().length === 0}
           onClick={() => void submit()}
         >
           Put them on the spotlight
