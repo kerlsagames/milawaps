@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { type CSSProperties } from "react";
 import { Sparkles, Undo2 } from "lucide-react";
 import {
   ACTION_COPY,
@@ -11,7 +11,6 @@ import {
   type StorageMode,
   type UnitId,
 } from "@/lib/game";
-import { HighlightDialog } from "@/components/highlight-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -36,7 +35,8 @@ export function StaffHud({
   token,
   error,
   onScore,
-  onBoard,
+  onHighlight,
+  onBoard: _onBoard,
   onLogout,
 }: {
   open: boolean;
@@ -46,10 +46,10 @@ export function StaffHud({
   token: string | null;
   error: string | null;
   onScore: (action: ActionId, unitId?: UnitId) => void;
+  onHighlight: (unitId: UnitId) => void;
   onBoard: (board: PublicBoard) => void;
   onLogout: () => void;
 }) {
-  const [highlightUnit, setHighlightUnit] = useState<UnitId | null>(null);
   const allFull = board
     ? UNITS.every((unit) => board.units[unit.id] >= UNIT_MAX)
     : false;
@@ -125,7 +125,7 @@ export function StaffHud({
                     variant="outline"
                     className="mt-2 h-11 w-full rounded-xl border-[#e2a01a] bg-[#fff8df] text-sm font-extrabold"
                     disabled={!token}
-                    onClick={() => setHighlightUnit(unit.id)}
+                    onClick={() => onHighlight(unit.id)}
                   >
                     <Sparkles className="size-4" aria-hidden="true" />
                     Student highlight
@@ -173,20 +173,6 @@ export function StaffHud({
           </div>
         </SheetFooter>
       </SheetContent>
-      {token ? (
-        <HighlightDialog
-          open={highlightUnit !== null}
-          onOpenChange={(next) => {
-            if (!next) setHighlightUnit(null);
-          }}
-          token={token}
-          initialUnitId={highlightUnit}
-          onSaved={(next) => {
-            onBoard(next);
-            setHighlightUnit(null);
-          }}
-        />
-      ) : null}
     </Sheet>
   );
 }

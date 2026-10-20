@@ -14,6 +14,7 @@ import { PrizesView } from "@/components/prizes-view";
 import { ReasonPrompt } from "@/components/reason-prompt";
 import { RevealView } from "@/components/reveal-view";
 import { SiteHeader } from "@/components/site-header";
+import { HighlightDialog } from "@/components/highlight-dialog";
 import { StaffHud } from "@/components/staff-hud";
 import { TodayColumn } from "@/components/today-column";
 import { Button } from "@/components/ui/button";
@@ -75,6 +76,7 @@ export function YardBoard() {
   const [exitVisible, setExitVisible] = useState(false);
   const [pinOpen, setPinOpen] = useState(false);
   const [hudOpen, setHudOpen] = useState(false);
+  const [highlightUnit, setHighlightUnit] = useState<UnitId | null>(null);
   const [deskError, setDeskError] = useState<string | null>(null);
   const [reasonPrompt, setReasonPrompt] = useState<{ id: string; line: string } | null>(null);
 
@@ -410,6 +412,15 @@ export function YardBoard() {
                     error={deskError}
                     onScore={scoreOrUnlock}
                     showScores={!kiosk}
+                    teacherMode={Boolean(token) && !kiosk}
+                    canUndo={Boolean(
+                      data.log?.length &&
+                        data.log[0] &&
+                        data.log[0].action !== "reset" &&
+                        data.log[0].action !== "undo",
+                    )}
+                    onHighlight={(unitId) => setHighlightUnit(unitId)}
+                    onUndo={() => scoreOrUnlock("undo")}
                   />
                 ) : null}
                 {view === "prizes" && <PrizesView board={data} />}
@@ -469,6 +480,10 @@ export function YardBoard() {
         token={token}
         error={deskError}
         onScore={score}
+        onHighlight={(unitId) => {
+          setHudOpen(false);
+          setHighlightUnit(unitId);
+        }}
         onBoard={(board) => {
           void mutate(board, { revalidate: false });
         }}
@@ -477,6 +492,20 @@ export function YardBoard() {
           setHudOpen(false);
         }}
       />
+      {token ? (
+        <HighlightDialog
+          open={highlightUnit !== null}
+          onOpenChange={(next) => {
+            if (!next) setHighlightUnit(null);
+          }}
+          token={token}
+          initialUnitId={highlightUnit}
+          onSaved={(board) => {
+            void mutate(board, { revalidate: false });
+            setHighlightUnit(null);
+          }}
+        />
+      ) : null}
       {reasonPrompt && token ? (
         <ReasonPrompt
           key={reasonPrompt.id}

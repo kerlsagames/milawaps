@@ -1,7 +1,13 @@
 "use client";
 
 import useSWR from "swr";
-import type { CricketSnapshot } from "@/lib/cricket";
+import {
+  cricketMatchTitle,
+  type CricketFixture,
+  type CricketLeader,
+  type CricketLeaders,
+  type CricketSnapshot,
+} from "@/lib/cricket";
 
 function fixtureMeta(when: string, ground: string) {
   if (!ground) return when;
@@ -15,6 +21,13 @@ const fetcher = async (url: string) => {
   if (!response.ok) throw new Error(body.error || "The cricket board is out of reach.");
   return body;
 };
+
+const LEADER_BOXES: { key: keyof CricketLeaders; title: string; tone: string }[] = [
+  { key: "runs", title: "Most runs", tone: "#2ec9a0" },
+  { key: "wickets", title: "Most wickets", tone: "#ff7a59" },
+  { key: "catches", title: "Most catches", tone: "#5ec8ff" },
+  { key: "highest", title: "Highest score", tone: "#e2a01a" },
+];
 
 export function CricketView({ code }: { code: string }) {
   const { data, error, isLoading } = useSWR<CricketSnapshot>(
@@ -54,75 +67,111 @@ export function CricketView({ code }: { code: string }) {
     );
   }
 
+  const hasLeaders = LEADER_BOXES.some(({ key }) => data.leaders[key].length > 0);
+
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex min-h-0 flex-col gap-3 lg:gap-4">
       <header className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <p className="text-[11px] font-bold tracking-[0.22em] text-ink-gold uppercase">School cricket</p>
-          <h2 className="font-display text-4xl leading-none sm:text-5xl">{data.title}</h2>
+          <p className="text-xs font-bold tracking-[0.22em] text-ink-gold uppercase sm:text-sm">
+            School cricket
+          </p>
+          <h2 className="font-display text-5xl leading-none sm:text-6xl lg:text-7xl">{data.title}</h2>
         </div>
         {data.preview ? (
-          <p className="text-sm font-extrabold text-[#8a5a00]">Sample page, not a live ladder.</p>
+          <p className="text-base font-extrabold text-[#8a5a00]">Sample page, not a live ladder.</p>
         ) : null}
       </header>
-      {data.stats.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
-          {data.stats.map((stat) => (
-            <div
-              key={stat.label}
-              className="rounded-2xl border border-[#e2a01a]/40 bg-[#fff8df] px-3 py-2 text-center"
-            >
-              <p className="font-display text-2xl leading-none sm:text-3xl">{stat.value}</p>
-              <p className="mt-1 text-xs font-extrabold tracking-wide text-[#8a5a00] uppercase">{stat.label}</p>
-            </div>
+
+      <div className="grid gap-3 lg:grid-cols-2">
+        <GameCard
+          eyebrow="Last game"
+          tone="#0d7a64"
+          game={data.lastGame}
+          empty="No finished game yet."
+          resultFirst
+        />
+        <GameCard
+          eyebrow="Next game"
+          tone="#5146b8"
+          game={data.nextGame}
+          empty="No game coming up."
+          resultFirst={false}
+        />
+      </div>
+
+      {hasLeaders ? (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {LEADER_BOXES.map(({ key, title, tone }) => (
+            <LeaderCard key={key} title={title} tone={tone} rows={data.leaders[key]} />
           ))}
         </div>
-      )}
-      <div className="grid gap-3 lg:grid-cols-2">
-        <section className="rounded-[28px] border-4 border-[#2ec9a0] bg-card p-3">
-          <h3 className="font-display text-2xl">Ladder</h3>
+      ) : null}
+
+      <div className="grid min-h-0 gap-3 lg:grid-cols-2 lg:gap-4">
+        <section className="rounded-[28px] border-4 border-[#2ec9a0] bg-card p-4 lg:p-5">
+          <h3 className="font-display text-4xl leading-none sm:text-5xl">Ladder</h3>
           {data.ladder.length === 0 ? (
-            <p className="mt-2 text-sm font-bold text-muted-foreground">No ladder yet.</p>
+            <p className="mt-3 text-lg font-bold text-muted-foreground">No ladder yet.</p>
           ) : (
-            <table className="mt-2 w-full text-left text-sm">
+            <table className="mt-3 w-full text-left">
               <thead>
-                <tr className="text-xs font-extrabold tracking-wide text-muted-foreground uppercase">
-                  <th className="py-1">Team</th>
-                  <th className="py-1 text-right">P</th>
-                  <th className="py-1 text-right">W</th>
-                  <th className="py-1 text-right">L</th>
-                  <th className="py-1 text-right">Pts</th>
+                <tr className="text-sm font-extrabold tracking-wide text-muted-foreground uppercase sm:text-base">
+                  <th className="py-2 pr-2">#</th>
+                  <th className="py-2">Team</th>
+                  <th className="py-2 text-right">P</th>
+                  <th className="py-2 text-right">W</th>
+                  <th className="py-2 text-right">L</th>
+                  <th className="py-2 text-right">Pts</th>
                 </tr>
               </thead>
               <tbody>
                 {data.ladder.map((row, index) => (
-                  <tr key={`${row.team}-${index}`} className="border-t border-black/5 font-bold">
-                    <td className="py-1.5">{row.team}</td>
-                    <td className="py-1.5 text-right tabular-nums">{row.played}</td>
-                    <td className="py-1.5 text-right tabular-nums">{row.won}</td>
-                    <td className="py-1.5 text-right tabular-nums">{row.lost}</td>
-                    <td className="py-1.5 text-right font-display text-lg tabular-nums">{row.points}</td>
+                  <tr key={`${row.team}-${index}`} className="border-t border-black/10">
+                    <td className="py-2.5 pr-2 font-display text-2xl tabular-nums sm:text-3xl">
+                      {index + 1}
+                    </td>
+                    <td className="py-2.5 font-display text-2xl leading-tight sm:text-3xl lg:text-4xl">
+                      {row.team}
+                    </td>
+                    <td className="py-2.5 text-right text-xl font-extrabold tabular-nums sm:text-2xl">
+                      {row.played}
+                    </td>
+                    <td className="py-2.5 text-right text-xl font-extrabold tabular-nums sm:text-2xl">
+                      {row.won}
+                    </td>
+                    <td className="py-2.5 text-right text-xl font-extrabold tabular-nums sm:text-2xl">
+                      {row.lost}
+                    </td>
+                    <td className="py-2.5 text-right font-display text-3xl tabular-nums sm:text-4xl">
+                      {row.points}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           )}
         </section>
-        <section className="rounded-[28px] border-4 border-[#8b7cf7] bg-card p-3">
-          <h3 className="font-display text-2xl">Draw</h3>
+        <section className="rounded-[28px] border-4 border-[#8b7cf7] bg-card p-4 lg:p-5">
+          <h3 className="font-display text-4xl leading-none sm:text-5xl">Draw</h3>
           {data.draw.length === 0 ? (
-            <p className="mt-2 text-sm font-bold text-muted-foreground">No games on the draw yet.</p>
+            <p className="mt-3 text-lg font-bold text-muted-foreground">No games on the draw yet.</p>
           ) : (
-            <ul className="mt-2 flex flex-col gap-2">
+            <ul className="mt-3 flex flex-col gap-3">
               {data.draw.map((game, index) => (
-                <li key={`${game.home}-${game.away}-${index}`} className="rounded-2xl bg-[#f6f3ff] px-3 py-2">
-                  <p className="text-xs font-extrabold tracking-wide text-[#5146b8] uppercase">
+                <li
+                  key={`${game.home}-${game.away}-${index}`}
+                  className="rounded-2xl bg-[#f6f3ff] px-4 py-3"
+                >
+                  <p className="text-sm font-extrabold tracking-wide text-[#5146b8] uppercase sm:text-base">
                     {fixtureMeta(game.when, game.ground)}
                   </p>
-                  <p className="font-display text-xl leading-tight">
-                    {game.away ? `${game.home} vs ${game.away}` : game.home}
+                  <p className="font-display text-2xl leading-tight sm:text-3xl">
+                    {cricketMatchTitle(game)}
                   </p>
-                  {game.result ? <p className="text-sm font-bold">{game.result}</p> : null}
+                  {game.result ? (
+                    <p className="mt-1 text-lg font-bold sm:text-xl">{game.result}</p>
+                  ) : null}
                 </li>
               ))}
             </ul>
@@ -130,5 +179,98 @@ export function CricketView({ code }: { code: string }) {
         </section>
       </div>
     </div>
+  );
+}
+
+function GameCard({
+  eyebrow,
+  tone,
+  game,
+  empty,
+  resultFirst,
+}: {
+  eyebrow: string;
+  tone: string;
+  game: CricketFixture | null;
+  empty: string;
+  resultFirst: boolean;
+}) {
+  return (
+    <section
+      className="rounded-[28px] border-4 bg-card p-4 shadow-[0_8px_0_rgba(42,28,4,0.12)] lg:p-5"
+      style={{ borderColor: tone }}
+    >
+      <p
+        className="text-sm font-extrabold tracking-[0.2em] uppercase sm:text-base"
+        style={{ color: tone }}
+      >
+        {eyebrow}
+      </p>
+      {!game ? (
+        <p className="mt-2 text-xl font-bold text-muted-foreground sm:text-2xl">{empty}</p>
+      ) : (
+        <>
+          <p className="mt-1 text-base font-extrabold text-muted-foreground sm:text-lg">
+            {fixtureMeta(game.when, game.ground)}
+          </p>
+          <p className="mt-1 font-display text-3xl leading-none sm:text-4xl lg:text-5xl">
+            {cricketMatchTitle(game)}
+          </p>
+          {game.result ? (
+            <p
+              className={`mt-2 text-xl font-extrabold sm:text-2xl ${resultFirst ? "" : "text-[#5146b8]"}`}
+              style={resultFirst ? { color: tone } : undefined}
+            >
+              {game.result}
+            </p>
+          ) : (
+            <p className="mt-2 text-xl font-extrabold text-[#5146b8] sm:text-2xl">Still to play</p>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
+function LeaderCard({
+  title,
+  tone,
+  rows,
+}: {
+  title: string;
+  tone: string;
+  rows: CricketLeader[];
+}) {
+  return (
+    <section
+      className="rounded-[28px] border-4 bg-card p-3 lg:p-4"
+      style={{ borderColor: tone }}
+    >
+      <p className="text-sm font-extrabold tracking-[0.18em] uppercase" style={{ color: tone }}>
+        {title}
+      </p>
+      {rows.length === 0 ? (
+        <p className="mt-2 text-base font-bold text-muted-foreground">Waiting for scores.</p>
+      ) : (
+        <ol className="mt-2 flex flex-col gap-1.5">
+          {rows.map((row, index) => (
+            <li
+              key={`${row.name}-${index}`}
+              className="flex items-baseline justify-between gap-2 border-b border-black/5 pb-1 last:border-b-0"
+            >
+              <span className="min-w-0 truncate font-display text-xl leading-none sm:text-2xl">
+                <span className="mr-1.5 text-base text-muted-foreground tabular-nums">{index + 1}.</span>
+                {row.name}
+              </span>
+              {row.value ? (
+                <span className="shrink-0 font-display text-2xl tabular-nums sm:text-3xl">
+                  {row.value}
+                </span>
+              ) : null}
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
   );
 }

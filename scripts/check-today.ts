@@ -50,6 +50,39 @@ assert.equal(parsed?.stats[5]?.value, "Stormy Cockatoos · 2 pts");
 assert.equal(parsed?.draw.length, 2);
 assert.equal(parsed?.draw[1]?.home, "Grand final · 1st v 2nd after the rounds");
 assert.equal(parsed?.draw[1]?.away, "");
+assert.equal(parsed?.leaders.runs[0]?.name, "Ryan");
+assert.equal(parsed?.leaders.runs[0]?.value, "34");
+assert.equal(parsed?.leaders.wickets[0]?.name, "Riley");
+assert.equal(parsed?.leaders.wickets[0]?.value, "6");
+assert.equal(parsed?.lastGame, null);
+assert.equal(parsed?.nextGame?.home, "Blazing Sixers");
+assert.equal(parsed?.nextGame?.result, "Under way");
+
+const withResult = parseCricketSnapshot({
+  title: "Done game",
+  ladder: [{ team: "A", played: 1, won: 1, lost: 0, points: 2 }],
+  draw: [
+    {
+      when: "Fri",
+      home: "A",
+      away: "B",
+      ground: "Oval",
+      result: "A won by 10 runs",
+    },
+    {
+      when: "Mon",
+      home: "B",
+      away: "C",
+      ground: "Oval",
+      result: "",
+    },
+  ],
+  stats: [{ label: "Highest score", value: "Poppy 48" }],
+});
+assert.equal(withResult?.lastGame?.result, "A won by 10 runs");
+assert.equal(withResult?.nextGame?.home, "B");
+assert.equal(withResult?.leaders.highest[0]?.name, "Poppy");
+assert.equal(withResult?.leaders.highest[0]?.value, "48");
 
 const now = Date.parse("2026-10-19T12:00:00+11:00");
 const todayAt = (minute: number) => Date.parse("2026-10-19T08:00:00+11:00") + minute * 60_000;

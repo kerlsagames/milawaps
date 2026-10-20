@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { Sparkles } from "lucide-react";
 import { UNIT_MAX, type ScoreAction, type UnitId, type UnitTheme } from "@/lib/game";
 import { BlockMatrix, StrikeMatrix } from "@/components/block-matrix";
 import { Button } from "@/components/ui/button";
@@ -11,12 +12,14 @@ export function UnitCard({
   crosses,
   index,
   onScore,
+  onHighlight,
 }: {
   unit: UnitTheme;
   score: number;
   crosses: number;
   index: number;
   onScore?: (action: ScoreAction, unitId: UnitId) => void;
+  onHighlight?: (unitId: UnitId) => void;
 }) {
   const percent = Math.max(0, Math.min(100, (score / UNIT_MAX) * 100));
 
@@ -55,58 +58,70 @@ export function UnitCard({
       </div>
 
       <div className="flex flex-col p-2 pt-2 lg:p-3 lg:pt-2">
-      <div className="h-1.5 overflow-hidden rounded-full bg-black/10 lg:h-2">
-        <motion.div
-          className="h-full rounded-full"
-          style={{ backgroundColor: unit.color }}
-          initial={false}
-          animate={{ width: `${percent}%` }}
-          transition={{ type: "spring", stiffness: 110, damping: 18 }}
-        />
-      </div>
+        <div className="h-1.5 overflow-hidden rounded-full bg-black/10 lg:h-2">
+          <motion.div
+            className="h-full rounded-full"
+            style={{ backgroundColor: unit.color }}
+            initial={false}
+            animate={{ width: `${percent}%` }}
+            transition={{ type: "spring", stiffness: 110, damping: 18 }}
+          />
+        </div>
 
-      <div className="mt-2 hidden flex-col gap-2 lg:flex">
-        <BlockMatrix score={score} color={unit.color} ink={unit.ink} label={unit.code} />
-        <StrikeMatrix count={crosses} label={unit.code} />
-      </div>
+        <div className="mt-2 hidden flex-col gap-2 lg:flex">
+          <BlockMatrix score={score} color={unit.color} ink={unit.ink} label={unit.code} />
+          <StrikeMatrix count={crosses} label={unit.code} />
+        </div>
 
-      {crosses > 0 ? (
-        <p className="mt-1.5 truncate text-xs text-muted-foreground lg:hidden">
-          {crosses} strike{crosses === 1 ? "" : "s"}
-        </p>
-      ) : null}
+        {crosses > 0 ? (
+          <p className="mt-1.5 truncate text-xs text-muted-foreground lg:hidden">
+            {crosses} strike{crosses === 1 ? "" : "s"}
+          </p>
+        ) : null}
 
-      {onScore ? (
-        <div className="mt-2 grid grid-cols-3 gap-1.5">
-          <Button
-            type="button"
-            className="h-14 rounded-xl text-lg lg:h-12 lg:text-base"
-            style={{ background: unit.color, color: unit.ink }}
-            disabled={score >= UNIT_MAX}
-            onClick={() => onScore("spot", unit.id)}
-          >
-            +1
-          </Button>
-          <Button
-            type="button"
-            className="h-14 rounded-xl text-lg lg:h-12 lg:text-base"
-            style={{ background: unit.deep, color: "#fff7ea" }}
-            disabled={score >= UNIT_MAX}
-            onClick={() => onScore("surge", unit.id)}
-          >
-            +2
-          </Button>
+        {onScore ? (
+          <div className="mt-2 grid grid-cols-3 gap-1.5">
+            <Button
+              type="button"
+              className="h-14 rounded-xl text-lg lg:h-12 lg:text-base"
+              style={{ background: unit.color, color: unit.ink }}
+              disabled={score >= UNIT_MAX}
+              onClick={() => onScore("spot", unit.id)}
+            >
+              +1
+            </Button>
+            <Button
+              type="button"
+              className="h-14 rounded-xl text-lg lg:h-12 lg:text-base"
+              style={{ background: unit.deep, color: "#fff7ea" }}
+              disabled={score >= UNIT_MAX}
+              onClick={() => onScore("surge", unit.id)}
+            >
+              +2
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-14 rounded-xl border-[#c23b3b]/40 bg-[#c23b3b]/10 text-lg text-[#8d1f1f] lg:h-12 lg:text-base"
+              disabled={score <= 0}
+              onClick={() => onScore("strike", unit.id)}
+            >
+              −1
+            </Button>
+          </div>
+        ) : null}
+
+        {onHighlight ? (
           <Button
             type="button"
             variant="outline"
-            className="h-14 rounded-xl border-[#c23b3b]/40 bg-[#c23b3b]/10 text-lg text-[#8d1f1f] lg:h-12 lg:text-base"
-            disabled={score <= 0}
-            onClick={() => onScore("strike", unit.id)}
+            className="mt-2 h-12 w-full rounded-xl border-[#e2a01a] bg-[#fff8df] text-sm font-extrabold lg:h-11"
+            onClick={() => onHighlight(unit.id)}
           >
-            −1
+            <Sparkles className="size-4" aria-hidden="true" />
+            Student highlight
           </Button>
-        </div>
-      ) : null}
+        ) : null}
       </div>
     </motion.article>
   );
