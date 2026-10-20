@@ -70,7 +70,7 @@ export function LeaderboardView({
         ))}
       </div>
       {showBar ? (
-        <div className="flex shrink-0 items-stretch justify-between gap-2 pb-[max(0.25rem,env(safe-area-inset-bottom))]">
+        <div className="mt-0.5 flex shrink-0 items-stretch justify-between gap-2 border-t border-black/10 pt-2 pb-[max(0.35rem,env(safe-area-inset-bottom))]">
           <Button
             type="button"
             variant="outline"

@@ -90,12 +90,19 @@ export function UnitCard({
           "flex min-h-0 flex-1 flex-col",
           compact
             ? onScore || onHighlight
-              ? "px-1.5 pt-1 pb-1.5 lg:p-3 lg:pt-2"
+              ? "relative px-1.5 pt-1 pb-1.5 lg:p-3 lg:pt-2"
               : "p-1.5 pt-1 lg:p-3 lg:pt-2"
             : "p-2 pt-2 lg:p-3 lg:pt-2",
         )}
       >
-        <div className={cn("shrink-0 overflow-hidden rounded-full bg-black/10", compact ? "h-1 lg:h-2" : "h-1.5 lg:h-2")}>
+        {/* Phone desk: skip the thin bar so +1/+2/−1 can fill the class rectangle. */}
+        <div
+          className={cn(
+            "shrink-0 overflow-hidden rounded-full bg-black/10",
+            compact ? "hidden h-2 lg:block" : "h-1.5 lg:h-2",
+            !compact && "mt-0",
+          )}
+        >
           <motion.div
             className="h-full rounded-full"
             style={{ backgroundColor: unit.color }}
@@ -111,7 +118,7 @@ export function UnitCard({
         </div>
 
         {crosses > 0 ? (
-          <p className={cn("shrink-0 truncate text-muted-foreground lg:hidden", compact ? "mt-0.5 text-[10px]" : "mt-1.5 text-xs")}>
+          <p className={cn("shrink-0 truncate text-muted-foreground lg:hidden", compact ? "absolute top-1 right-1 rounded bg-white/90 px-1 text-[10px]" : "mt-1.5 text-xs")}>
             {crosses} strike{crosses === 1 ? "" : "s"}
           </p>
         ) : null}
@@ -121,7 +128,7 @@ export function UnitCard({
             className={cn(
               "flex flex-col",
               fillActions
-                ? "mt-1 min-h-0 flex-1 gap-1 lg:mt-2 lg:flex-none lg:gap-1.5"
+                ? "min-h-0 flex-1 gap-1 lg:mt-2 lg:flex-none lg:gap-1.5"
                 : "mt-auto gap-1.5",
             )}
           >
