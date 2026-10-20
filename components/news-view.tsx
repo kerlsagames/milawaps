@@ -97,7 +97,7 @@ function BoardsLayout({ news }: { news: DailyNews }) {
   );
 }
 
-/** Split-view right column: tilted sticky boards with loud headers. */
+/** Split-view right column: bright sticky boards with loud headers (kept square so corners stay visible). */
 function ScatterBoard({ news }: { news: DailyNews }) {
   return (
     <div className="relative min-h-0 overflow-hidden rounded-[22px] bg-[linear-gradient(160deg,rgba(255,255,255,0.35)_0%,rgba(255,224,138,0.25)_45%,rgba(143,223,255,0.28)_100%)] p-2 sm:p-3">
@@ -113,7 +113,7 @@ function ScatterBoard({ news }: { news: DailyNews }) {
           title="Reminders"
           headerFrom="#ff5a3c"
           headerTo="#ff9a3c"
-          rotate="-2.8deg"
+          rotate="0deg"
           z={3}
           bodyClass="bg-[#fff3e8]"
         >
@@ -141,7 +141,7 @@ function ScatterBoard({ news }: { news: DailyNews }) {
           title="Coming up"
           headerFrom="#00b894"
           headerTo="#55efc4"
-          rotate="2.4deg"
+          rotate="0deg"
           z={2}
           bodyClass="bg-[#e8fff6]"
         >
@@ -176,7 +176,7 @@ function ScatterBoard({ news }: { news: DailyNews }) {
             title="Yard challenge"
             headerFrom="#6c5ce7"
             headerTo="#a29bfe"
-            rotate="-1.6deg"
+            rotate="0deg"
             z={4}
             grow={false}
             bodyClass="bg-[#f3eeff]"

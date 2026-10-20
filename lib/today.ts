@@ -10,10 +10,12 @@ import {
   type UnitId,
   clampScore,
 } from "@/lib/game";
+import { activeHighlights, type HighlightEntry } from "@/lib/highlights";
 import { milestonesBetween } from "@/lib/scoring";
+import { studentById } from "@/lib/students";
 import { melbourneDateKey } from "@/lib/ticker";
 
-export type TodayKind = "tick" | "strike" | "unlock";
+export type TodayKind = "tick" | "strike" | "unlock" | "highlight";
 
 export type TodayItem = {
   id: string;
@@ -37,6 +39,24 @@ function columnLine(entry: ScoreLogEntry): string | null {
   const where = entry.unitId === "all" ? "all classes" : unitById(entry.unitId).code;
   const reason = entry.reason?.trim();
   const base = `${who} · ${where} ${phrase}`;
+  return reason ? `${base} · ${reason}` : base;
+}
+
+function nameList(entry: HighlightEntry): string {
+  const names = entry.students
+    .map((student) => studentById(student.id)?.name)
+    .filter((name): name is string => Boolean(name));
+  if (names.length === 0) return "students";
+  if (names.length === 1) return names[0]!;
+  if (names.length === 2) return `${names[0]} & ${names[1]}`;
+  return `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`;
+}
+
+function highlightLine(entry: HighlightEntry): string {
+  const who = kidName(entry.staffId);
+  const names = nameList(entry);
+  const reason = entry.reason.trim();
+  const base = `${who} · highlighted ${names}`;
   return reason ? `${base} · ${reason}` : base;
 }
 
@@ -69,7 +89,7 @@ function undoAction(
 }
 
 export function todayFeed(
-  board: Pick<PublicBoard, "units" | "crosses" | "log">,
+  board: Pick<PublicBoard, "units" | "crosses" | "log" | "highlights">,
   now = Date.now(),
   prizeName: (points: number, title: string) => string = (_points, title) => title,
 ): TodayItem[] {
@@ -108,8 +128,30 @@ export function todayFeed(
     }
     units = undone.units;
     crosses = undone.crosses;
-    if (items.length >= TODAY_LIMIT) break;
   }
 
-  return items.slice(0, TODAY_LIMIT);
+  for (const entry of activeHighlights(board.highlights ?? [], now)) {
+    if (melbourneDateKey(entry.at) !== today) continue;
+    items.push({
+      id: `highlight:${entry.id}`,
+      at: entry.at,
+      kind: "highlight",
+      text: highlightLine(entry),
+    });
+  }
+
+  const kindRank: Record<TodayKind, number> = {
+    unlock: 0,
+    highlight: 1,
+    tick: 2,
+    strike: 3,
+  };
+  return items
+    .sort((left, right) => {
+      if (right.at !== left.at) return right.at - left.at;
+      const rank = kindRank[left.kind] - kindRank[right.kind];
+      if (rank !== 0) return rank;
+      return left.id.localeCompare(right.id);
+    })
+    .slice(0, TODAY_LIMIT);
 }

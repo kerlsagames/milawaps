@@ -32,6 +32,7 @@ const F1: Student[] = [
 const YEAR_234: Student[] = [
   { id: "234-alexis", unitId: "234", name: "Alexis", image: "/students/234-alexis.jpg" },
   { id: "234-alison", unitId: "234", name: "Alison", image: "/students/234-alison.jpg" },
+  { id: "234-archie", unitId: "234", name: "Archie", image: "/students/234-archie.jpg" },
   { id: "234-arthur", unitId: "234", name: "Arthur", image: "/students/234-arthur.jpg" },
   { id: "234-austin", unitId: "234", name: "Austin", image: "/students/234-austin.jpg" },
   { id: "234-bella", unitId: "234", name: "Bella", image: "/students/234-bella.jpg" },
