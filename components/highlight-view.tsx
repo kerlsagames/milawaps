@@ -25,59 +25,68 @@ export function HighlightView({ entry }: { entry: HighlightEntry }) {
             "repeating-conic-gradient(from 12deg at 50% 50%, rgba(255,255,255,0.14) 0deg 12deg, transparent 12deg 24deg)",
         }}
       />
-      <header className="relative z-10 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-[11px] font-extrabold tracking-[0.28em] text-[#5a3208] uppercase">
+
+      <div className="relative z-10 grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-stretch lg:gap-6">
+        <div
+          className="grid min-h-0 content-center items-center justify-items-center gap-3 overflow-y-auto py-1"
+          style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+        >
+          {students.map((student, index) => {
+            const unit = unitById(student.unitId);
+            const angle = ANGLES[index % ANGLES.length] ?? 0;
+            const width =
+              count === 1
+                ? "w-[min(100%,24rem)]"
+                : count === 2
+                  ? "w-[min(100%,17rem)]"
+                  : "w-[min(100%,13.5rem)]";
+            return (
+              <motion.article
+                key={student.id}
+                initial={{ opacity: 0, y: 18, rotate: angle - 8 }}
+                animate={{ opacity: 1, y: 0, rotate: angle }}
+                transition={{ delay: index * 0.08, type: "spring", stiffness: 120, damping: 14 }}
+                className={width}
+              >
+                <div
+                  className="overflow-hidden rounded-[28px] border-4 border-[#fff8df] bg-[#fff8df] p-2"
+                  style={{ boxShadow: `0 14px 0 rgba(42,28,4,0.28), 0 0 0 6px ${unit.color}` }}
+                >
+                  <StudentPhoto name={student.name} image={student.image} color={unit.color} />
+                  <div className="px-2 pt-2 pb-1 text-center">
+                    <p className="font-display text-xl leading-none text-[#2a1c04] sm:text-3xl">
+                      {student.name}
+                    </p>
+                    <p
+                      className="mt-1 text-xs font-extrabold tracking-[0.16em] uppercase"
+                      style={{ color: unit.deep }}
+                    >
+                      {unit.code}
+                    </p>
+                  </div>
+                </div>
+              </motion.article>
+            );
+          })}
+        </div>
+
+        <div className="flex min-h-0 flex-col items-center justify-center rounded-[28px] border-4 border-[#2a1c04] bg-[#fff8df]/92 px-5 py-6 text-center shadow-[0_10px_0_#6b5844] lg:px-8 lg:py-8">
+          <p className="text-sm font-extrabold tracking-[0.28em] text-[#8a5a00] uppercase sm:text-base">
             Student spotlight
           </p>
-          <h2 className="font-display text-4xl leading-none text-[#2a1c04] sm:text-6xl">
+          <h2 className="mt-2 font-display text-5xl leading-none text-[#2a1c04] sm:text-6xl lg:text-7xl">
             Highlighted!
           </h2>
-          <p className="mt-1 text-sm font-extrabold text-[#5a3208] sm:text-lg">Spotted by {who}</p>
+          <p className="mt-3 text-base font-extrabold text-[#5a3208] sm:text-xl">Spotted by {who}</p>
+          <div className="mt-6 w-full max-w-xl">
+            <p className="text-sm font-extrabold tracking-[0.2em] text-[#8a5a00] uppercase sm:text-base">
+              Why they shone
+            </p>
+            <p className="mt-2 font-display text-3xl leading-tight text-[#2a1c04] sm:text-4xl lg:text-5xl xl:text-6xl">
+              {entry.reason}
+            </p>
+          </div>
         </div>
-        <div className="max-w-xl rounded-[24px] border-4 border-[#2a1c04] bg-[#fff8df] px-4 py-3 shadow-[0_8px_0_#6b5844]">
-          <p className="text-[10px] font-extrabold tracking-[0.2em] text-[#8a5a00] uppercase">
-            Why they shone
-          </p>
-          <p className="font-display text-2xl leading-tight text-[#2a1c04] sm:text-3xl">{entry.reason}</p>
-        </div>
-      </header>
-
-      <div
-        className="relative z-10 mt-3 grid min-h-0 flex-1 content-center items-center justify-items-center gap-4"
-        style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
-      >
-        {students.map((student, index) => {
-          const unit = unitById(student.unitId);
-          const angle = ANGLES[index % ANGLES.length] ?? 0;
-          const width =
-            count === 1 ? "w-[min(100%,22rem)]" : count === 2 ? "w-[min(100%,16rem)]" : "w-[min(100%,13rem)]";
-          return (
-            <motion.article
-              key={student.id}
-              initial={{ opacity: 0, y: 18, rotate: angle - 8 }}
-              animate={{ opacity: 1, y: 0, rotate: angle }}
-              transition={{ delay: index * 0.08, type: "spring", stiffness: 120, damping: 14 }}
-              className={width}
-            >
-              <div
-                className="overflow-hidden rounded-[28px] border-4 border-[#fff8df] bg-[#fff8df] p-2"
-                style={{ boxShadow: `0 14px 0 rgba(42,28,4,0.28), 0 0 0 6px ${unit.color}` }}
-              >
-                <StudentPhoto name={student.name} image={student.image} color={unit.color} />
-                <div className="px-2 pt-2 pb-1 text-center">
-                  <p className="font-display text-xl leading-none text-[#2a1c04] sm:text-3xl">{student.name}</p>
-                  <p
-                    className="mt-1 text-xs font-extrabold tracking-[0.16em] uppercase"
-                    style={{ color: unit.deep }}
-                  >
-                    {unit.code}
-                  </p>
-                </div>
-              </div>
-            </motion.article>
-          );
-        })}
       </div>
     </div>
   );
