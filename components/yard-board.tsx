@@ -17,7 +17,7 @@ import { HighlightDialog } from "@/components/highlight-dialog";
 import { StaffHud } from "@/components/staff-hud";
 import { TodayColumn } from "@/components/today-column";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { X } from "lucide-react";
 import { clearToken, hydrateDisplay, saveToken, setKioskPref, useDeskPrefs } from "@/lib/desk-prefs";
 import { kioskKeyDelta } from "@/lib/kiosk-keys";
 import { emptyNews } from "@/lib/news";
@@ -260,22 +260,13 @@ export function YardBoard() {
     return () => window.clearTimeout(id);
   }, [toasts]);
 
-  const chooseView = useCallback(
-    (next: ScreenId) => {
-      if (next === "news" && !shown.news) return;
-      if (next === "highlight") {
-        if (!shown.highlight) return;
-        const first = liveHighlights[0];
-        next = first ? highlightScreenId(first.id) : "highlight";
-      }
-      if (parseHighlightScreen(next) && !shown.highlight) return;
-      const time = Date.now();
-      startedRef.current = time;
-      setStartedAt(time);
-      setView(next);
-    },
-    [shown.news, shown.highlight, liveHighlights],
-  );
+  const goToScreen = useCallback((next: ScreenId) => {
+    const time = Date.now();
+    startedRef.current = time;
+    viewRef.current = next;
+    setStartedAt(time);
+    setView(next);
+  }, []);
 
   const stepHighlight = useCallback(
     (delta: 1 | -1) => {
@@ -285,15 +276,34 @@ export function YardBoard() {
       const from = index < 0 ? 0 : index;
       const next = liveHighlights[(from + delta + liveHighlights.length) % liveHighlights.length];
       if (!next) return;
-      chooseView(highlightScreenId(next.id));
+      goToScreen(highlightScreenId(next.id));
     },
-    [liveHighlights, chooseView],
+    [liveHighlights, goToScreen],
   );
 
-  // Desktop: arrow keys cycle highlights when several are live.
+  const chooseView = useCallback(
+    (next: ScreenId) => {
+      if (next === "news" && !shown.news) return;
+      if (next === "highlight") {
+        if (!shown.highlight) return;
+        // Tapping the Highlights tab again moves to the next live star.
+        if (parseHighlightScreen(viewRef.current) && liveHighlights.length > 1) {
+          stepHighlight(1);
+          return;
+        }
+        const first = liveHighlights[0];
+        next = first ? highlightScreenId(first.id) : "highlight";
+      }
+      if (parseHighlightScreen(next) && !shown.highlight) return;
+      goToScreen(next);
+    },
+    [shown.news, shown.highlight, liveHighlights, goToScreen, stepHighlight],
+  );
+
+  // Arrow keys cycle highlights whenever a highlight page is open.
   useEffect(() => {
     if (kiosk) return;
-    if (!shown.highlight || liveHighlights.length < 2) return;
+    if (liveHighlights.length < 2) return;
     if (!parseHighlightScreen(view) && view !== "highlight") return;
     const onKey = (event: KeyboardEvent) => {
       const delta = kioskKeyDelta(event);
@@ -308,7 +318,7 @@ export function YardBoard() {
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [kiosk, shown.highlight, liveHighlights.length, view, stepHighlight]);
+  }, [kiosk, liveHighlights.length, view, stepHighlight]);
 
   const score = useCallback(
     (action: ActionId, unitId?: UnitId) => {
@@ -482,7 +492,11 @@ export function YardBoard() {
       <main
         className={cn(
           "relative mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col overflow-y-auto px-3 py-2 lg:overflow-hidden lg:px-4",
-          (view === "prizes" || view === "board" || view === "cricket" || Boolean(activeHighlightId)) &&
+          (view === "prizes" ||
+            view === "board" ||
+            view === "cricket" ||
+            view === "news" ||
+            Boolean(activeHighlightId)) &&
             "max-w-none",
           kiosk && (prefs.timer === "blocks" ? "pt-16 pb-16" : "pt-16 pb-28"),
         )}
@@ -524,6 +538,61 @@ export function YardBoard() {
             >
               {view === "cricket" ? (
                 <CricketView code={cricketCode} fill />
+              ) : view === "news" ? (
+                <NewsView news={data.news ?? emptyNews()} />
+              ) : activeHighlight ? (
+                <HighlightView
+                  entry={activeHighlight}
+                  index={Math.max(
+                    0,
+                    liveHighlights.findIndex((entry) => entry.id === activeHighlight.id),
+                  )}
+                  total={liveHighlights.length}
+                  onPrev={liveHighlights.length > 1 ? () => stepHighlight(-1) : undefined}
+                  onNext={liveHighlights.length > 1 ? () => stepHighlight(1) : undefined}
+                  canRemove={Boolean(token) && !kiosk}
+                  removing={removingHighlight}
+                  onRemove={() => {
+                    if (!token || removingHighlight) return;
+                    setRemovingHighlight(true);
+                    setDeskError(null);
+                    void fetch("/api/highlight", {
+                      method: "DELETE",
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                      },
+                      body: JSON.stringify({ id: activeHighlight.id }),
+                    })
+                      .then(async (response) => {
+                        const body = (await response.json().catch(() => ({}))) as PublicBoard & {
+                          error?: string;
+                        };
+                        if (response.status === 401) {
+                          clearToken();
+                          setPinOpen(true);
+                          setDeskError("The desk locked itself. Enter the PIN again.");
+                          return;
+                        }
+                        if (!response.ok) {
+                          setDeskError(body.error ?? "That highlight did not remove.");
+                          return;
+                        }
+                        await mutate(body, { revalidate: false });
+                        const remaining = activeHighlights(body.highlights ?? []).filter(
+                          (entry) => entry.id !== activeHighlight.id,
+                        );
+                        if (remaining[0]) goToScreen(highlightScreenId(remaining[0].id));
+                        else goToScreen("board");
+                      })
+                      .catch(() => {
+                        setDeskError("That highlight did not remove. Try again.");
+                      })
+                      .finally(() => {
+                        setRemovingHighlight(false);
+                      });
+                  }}
+                />
               ) : (
                 <TvFit>
                   {view === "board" ? (
@@ -545,7 +614,6 @@ export function YardBoard() {
                   ) : null}
                   {view === "prizes" && <PrizesView board={data} />}
                   {view === "yard" && <YardRulesView />}
-                  {view === "news" ? <NewsView news={data.news ?? emptyNews()} /> : null}
                   {view === "highlight" && !activeHighlight ? (
                     <div className="flex h-full min-h-0 flex-col items-center justify-center gap-3 rounded-[32px] border-4 border-[#5a3208] bg-[radial-gradient(circle_at_center,#ffe08a_0%,#f5b942_42%,#8a3b12_100%)] p-6 text-center">
                       <p className="text-[11px] font-extrabold tracking-[0.28em] text-[#5a3208] uppercase">
@@ -556,53 +624,6 @@ export function YardBoard() {
                         No student highlights are live right now. Teachers can add one from the yard desk.
                       </p>
                     </div>
-                  ) : null}
-                  {activeHighlight ? (
-                    <HighlightView
-                      entry={activeHighlight}
-                      canRemove={Boolean(token) && !kiosk}
-                      removing={removingHighlight}
-                      onRemove={() => {
-                        if (!token || removingHighlight) return;
-                        setRemovingHighlight(true);
-                        setDeskError(null);
-                        void fetch("/api/highlight", {
-                          method: "DELETE",
-                          headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${token}`,
-                          },
-                          body: JSON.stringify({ id: activeHighlight.id }),
-                        })
-                          .then(async (response) => {
-                            const body = (await response.json().catch(() => ({}))) as PublicBoard & {
-                              error?: string;
-                            };
-                            if (response.status === 401) {
-                              clearToken();
-                              setPinOpen(true);
-                              setDeskError("The desk locked itself. Enter the PIN again.");
-                              return;
-                            }
-                            if (!response.ok) {
-                              setDeskError(body.error ?? "That highlight did not remove.");
-                              return;
-                            }
-                            await mutate(body, { revalidate: false });
-                            const remaining = activeHighlights(body.highlights ?? []).filter(
-                              (entry) => entry.id !== activeHighlight.id,
-                            );
-                            if (remaining[0]) setView(highlightScreenId(remaining[0].id));
-                            else setView("board");
-                          })
-                          .catch(() => {
-                            setDeskError("That highlight did not remove. Try again.");
-                          })
-                          .finally(() => {
-                            setRemovingHighlight(false);
-                          });
-                      }}
-                    />
                   ) : null}
                   {activeReveal && (
                     <RevealView
@@ -615,31 +636,6 @@ export function YardBoard() {
                   )}
                 </TvFit>
               )}
-
-              {!kiosk && activeHighlight && liveHighlights.length > 1 ? (
-                <div className="pointer-events-none absolute inset-y-0 right-0 left-0 z-20 flex items-center justify-between px-1 sm:px-2">
-                  <button
-                    type="button"
-                    aria-label="Previous highlight"
-                    className="pointer-events-auto grid size-12 place-items-center rounded-full border-2 border-[#5a3208] bg-[#fff8df]/95 text-[#2a1c04] shadow-[0_4px_0_#6b5844] sm:size-14"
-                    onClick={() => stepHighlight(-1)}
-                  >
-                    <ChevronLeft className="size-7" />
-                  </button>
-                  <p className="pointer-events-none rounded-full bg-[#2a1c04]/80 px-3 py-1 text-xs font-extrabold tracking-[0.18em] text-[#ffe08a] uppercase">
-                    {Math.max(1, liveHighlights.findIndex((entry) => entry.id === activeHighlight.id) + 1)} /{" "}
-                    {liveHighlights.length}
-                  </p>
-                  <button
-                    type="button"
-                    aria-label="Next highlight"
-                    className="pointer-events-auto grid size-12 place-items-center rounded-full border-2 border-[#5a3208] bg-[#fff8df]/95 text-[#2a1c04] shadow-[0_4px_0_#6b5844] sm:size-14"
-                    onClick={() => stepHighlight(1)}
-                  >
-                    <ChevronRight className="size-7" />
-                  </button>
-                </div>
-              ) : null}
             </motion.div>
           </AnimatePresence>
         )}

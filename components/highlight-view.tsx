@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { kidName, unitById } from "@/lib/game";
 import type { HighlightEntry } from "@/lib/highlights";
@@ -14,11 +15,19 @@ export function HighlightView({
   canRemove = false,
   removing = false,
   onRemove,
+  index = 0,
+  total = 1,
+  onPrev,
+  onNext,
 }: {
   entry: HighlightEntry;
   canRemove?: boolean;
   removing?: boolean;
   onRemove?: () => void;
+  index?: number;
+  total?: number;
+  onPrev?: () => void;
+  onNext?: () => void;
 }) {
   const [confirm, setConfirm] = useState(false);
   const students = entry.students
@@ -27,6 +36,7 @@ export function HighlightView({
   const count = Math.max(1, students.length);
   const who = kidName(entry.staffId);
   const columns = count === 1 ? 1 : count === 2 ? 2 : count <= 4 ? 2 : 3;
+  const canCycle = total > 1 && Boolean(onPrev && onNext);
 
   return (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-[32px] border-4 border-[#5a3208] bg-[radial-gradient(circle_at_center,#ffe08a_0%,#f5b942_42%,#8a3b12_100%)] p-3 lg:p-5">
@@ -38,14 +48,43 @@ export function HighlightView({
         }}
       />
 
+      {canCycle ? (
+        <div className="relative z-20 mb-2 flex shrink-0 items-center justify-center gap-3">
+          <button
+            type="button"
+            aria-label="Previous highlight"
+            onClick={onPrev}
+            className="grid size-12 place-items-center rounded-full border-2 border-[#5a3208] bg-[#fff8df] text-[#2a1c04] shadow-[0_4px_0_#6b5844] sm:size-14"
+          >
+            <ChevronLeft className="size-7" />
+          </button>
+          <div className="min-w-[7rem] rounded-full bg-[#2a1c04] px-4 py-2 text-center">
+            <p className="text-[10px] font-extrabold tracking-[0.2em] text-[#ffe08a] uppercase">
+              Highlight
+            </p>
+            <p className="font-display text-xl leading-none text-[#fff8df] tabular-nums sm:text-2xl">
+              {index + 1} / {total}
+            </p>
+          </div>
+          <button
+            type="button"
+            aria-label="Next highlight"
+            onClick={onNext}
+            className="grid size-12 place-items-center rounded-full border-2 border-[#5a3208] bg-[#fff8df] text-[#2a1c04] shadow-[0_4px_0_#6b5844] sm:size-14"
+          >
+            <ChevronRight className="size-7" />
+          </button>
+        </div>
+      ) : null}
+
       <div className="relative z-10 grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-stretch lg:gap-6">
         <div
           className="grid min-h-0 content-center items-center justify-items-center gap-3 overflow-y-auto py-1"
           style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
         >
-          {students.map((student, index) => {
+          {students.map((student, studentIndex) => {
             const unit = unitById(student.unitId);
-            const angle = ANGLES[index % ANGLES.length] ?? 0;
+            const angle = ANGLES[studentIndex % ANGLES.length] ?? 0;
             const width =
               count === 1
                 ? "w-[min(100%,24rem)]"
@@ -57,7 +96,7 @@ export function HighlightView({
                 key={student.id}
                 initial={{ opacity: 0, y: 18, rotate: angle - 8 }}
                 animate={{ opacity: 1, y: 0, rotate: angle }}
-                transition={{ delay: index * 0.08, type: "spring", stiffness: 120, damping: 14 }}
+                transition={{ delay: studentIndex * 0.08, type: "spring", stiffness: 120, damping: 14 }}
                 className={width}
               >
                 <div
