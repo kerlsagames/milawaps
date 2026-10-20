@@ -7,7 +7,7 @@ export type Student = {
   image: string;
 };
 
-/** F/1 photos from the shared Drive folder. Add 2/3/4 and 5/6 the same way when ready. */
+/** F/1 photos from the shared Drive folder. */
 const F1: Student[] = [
   { id: "f1-abbey", unitId: "f1", name: "Abbey", image: "/students/f1-abbey.jpg" },
   { id: "f1-ada", unitId: "f1", name: "Ada", image: "/students/f1-ada.jpg" },
@@ -28,7 +28,15 @@ const F1: Student[] = [
   { id: "f1-will", unitId: "f1", name: "Will", image: "/students/f1-will.jpg" },
 ];
 
-const YEAR_234: Student[] = [];
+/** Grade 2/3/4 portraits — cartoonified Milawa campus backgrounds from Drive. */
+const YEAR_234: Student[] = [
+  { id: "234-leo", unitId: "234", name: "Leo", image: "/students/234-leo.jpg" },
+  { id: "234-zaylee", unitId: "234", name: "Zaylee", image: "/students/234-zaylee.jpg" },
+  { id: "234-hugh", unitId: "234", name: "Hugh", image: "/students/234-hugh.jpg" },
+  { id: "234-harry", unitId: "234", name: "Harry", image: "/students/234-harry.jpg" },
+  { id: "234-isla", unitId: "234", name: "Isla", image: "/students/234-isla.jpg" },
+];
+
 const YEAR_56: Student[] = [];
 
 export const STUDENTS: Student[] = [...F1, ...YEAR_234, ...YEAR_56];
