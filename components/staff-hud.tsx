@@ -3,12 +3,8 @@
 import { useState, type CSSProperties } from "react";
 import {
   ACTION_COPY,
-  STAFF_MYSTERY_IDEAS,
   UNIT_MAX,
   UNITS,
-  kidName,
-  scoreLogLabel,
-  unitById,
   type ActionId,
   type PublicBoard,
   type StorageMode,
@@ -35,7 +31,6 @@ export function StaffHud({
   onOpenChange,
   board,
   dutyName,
-  staffId,
   token,
   error,
   onScore,
@@ -46,7 +41,6 @@ export function StaffHud({
   onOpenChange: (open: boolean) => void;
   board: PublicBoard | undefined;
   dutyName: string | null;
-  staffId: string | null;
   token: string | null;
   error: string | null;
   onScore: (action: ActionId, unitId?: UnitId) => void;
@@ -54,10 +48,16 @@ export function StaffHud({
   onLogout: () => void;
 }) {
   const [confirmReset, setConfirmReset] = useState(false);
-  const [highlightOpen, setHighlightOpen] = useState(false);
+  const [highlightUnit, setHighlightUnit] = useState<UnitId | null>(null);
   const allFull = board
     ? UNITS.every((unit) => board.units[unit.id] >= UNIT_MAX)
     : false;
+  const canUndo = Boolean(
+    board?.log?.length &&
+      board.log[0] &&
+      board.log[0].action !== "reset" &&
+      board.log[0].action !== "undo",
+  );
 
   return (
     <Sheet
@@ -75,9 +75,7 @@ export function StaffHud({
           <SheetTitle className="font-display text-2xl">
             {dutyName ? `${dutyName} on duty` : "Yard duty desk"}
           </SheetTitle>
-          <SheetDescription>
-            Ticks are saved under your name. The window TV picks them up on the next refresh.
-          </SheetDescription>
+          <SheetDescription>Tap a class to add points. Keep it quick.</SheetDescription>
         </SheetHeader>
         <div className="flex flex-col gap-3 overflow-y-auto px-4 py-4">
           {UNITS.map((unit) => {
@@ -88,17 +86,28 @@ export function StaffHud({
                 className="rounded-2xl border p-3"
                 style={{ borderColor: `${unit.color}88`, background: unit.soft }}
               >
-                <div className="flex items-end justify-between gap-3">
-                  <div>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
                     <p className="font-display text-2xl leading-none" style={{ color: unit.color }}>
                       {unit.code}
                     </p>
-                    <p className="mt-1 text-xs leading-snug text-muted-foreground">{unit.zoneLine}</p>
+                    <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{unit.zoneLine}</p>
                   </div>
-                  <p className="font-display text-3xl leading-none tabular-nums">
-                    {score}
-                    <span className="text-base text-muted-foreground">/{UNIT_MAX}</span>
-                  </p>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-9 rounded-xl border-[#e2a01a] bg-[#fff8df] px-2.5 text-xs font-extrabold"
+                      disabled={!token}
+                      onClick={() => setHighlightUnit(unit.id)}
+                    >
+                      Student highlight
+                    </Button>
+                    <p className="font-display text-3xl leading-none tabular-nums">
+                      {score}
+                      <span className="text-base text-muted-foreground">/{UNIT_MAX}</span>
+                    </p>
+                  </div>
                 </div>
                 <div className="mt-3 grid grid-cols-3 gap-2">
                   <ScoreButton
@@ -128,7 +137,7 @@ export function StaffHud({
           })}
 
           <Button
-            className="h-16 rounded-2xl text-base"
+            className="h-14 rounded-2xl text-base"
             disabled={allFull}
             onClick={() => onScore("teamwork")}
           >
@@ -139,69 +148,18 @@ export function StaffHud({
           <Button
             type="button"
             variant="outline"
-            className="h-14 rounded-2xl border-[#e2a01a] bg-[#fff8df] text-base font-extrabold"
-            disabled={!token}
-            onClick={() => setHighlightOpen(true)}
+            className="h-12 rounded-2xl text-base font-extrabold"
+            disabled={!canUndo}
+            onClick={() => onScore("undo")}
           >
-            Student highlight
+            Undo last tick
           </Button>
-
-          <section className="rounded-2xl border border-black/10 bg-white/70 px-3 py-2">
-            <p className="text-[11px] font-extrabold tracking-wide text-ink-gold uppercase">
-              Who gave points
-            </p>
-            {board?.log?.length ? (
-              <ul className="mt-2 flex flex-col gap-1">
-                {board.log.slice(0, 8).map((entry) => (
-                  <li key={`${entry.at}-${entry.staffId}-${entry.action}`} className="text-sm font-semibold">
-                    {scoreLogLabel(entry)}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-1 text-sm text-muted-foreground">No named ticks yet.</p>
-            )}
-          </section>
-
-          {staffId === "craig" && (
-            <section className="rounded-2xl border border-black/10 bg-white/70 px-3 py-2">
-              <p className="text-[11px] font-extrabold tracking-wide text-ink-gold uppercase">
-                Reason record
-              </p>
-              {board?.reasons?.length ? (
-                <ul className="mt-2 flex max-h-48 flex-col gap-1 overflow-y-auto">
-                  {board.reasons.map((entry) => (
-                    <li key={entry.id} className="text-sm font-semibold">
-                      {reasonStamp(entry.at)} · {entry.unitId === "all" ? "All" : unitById(entry.unitId).code}{" "}
-                      {ACTION_COPY[entry.action].short} · {kidName(entry.staffId)} · {entry.reason}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="mt-1 text-sm text-muted-foreground">No reasons saved yet.</p>
-              )}
-            </section>
-          )}
 
           {error && (
             <p className="rounded-xl bg-[#c23b3b]/10 px-3 py-2 text-sm font-semibold text-[#8d1f1f]" role="status">
               {error}
             </p>
           )}
-
-          <details className="rounded-2xl border border-dashed border-[#c48a16]/50 bg-[#fff8df] px-3 py-2">
-            <summary className="cursor-pointer text-sm font-extrabold text-[#8a5a00]">
-              Mystery ideas · staff only
-            </summary>
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-[#5c4630]">
-              {STAFF_MYSTERY_IDEAS.map((idea) => (
-                <li key={idea}>{idea}</li>
-              ))}
-            </ul>
-            <p className="mt-2 text-xs font-semibold text-[#8a5a00]">
-              Keep these off the TV until that takedown’s reveal date. Kids see a silhouette before then.
-            </p>
-          </details>
 
           <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
             <span>{board ? storageCopy[board.storage] : "Waiting for the board"}</span>
@@ -235,27 +193,20 @@ export function StaffHud({
       </SheetContent>
       {token ? (
         <HighlightDialog
-          open={highlightOpen}
-          onOpenChange={setHighlightOpen}
+          open={highlightUnit !== null}
+          onOpenChange={(next) => {
+            if (!next) setHighlightUnit(null);
+          }}
           token={token}
+          initialUnitId={highlightUnit}
           onSaved={(next) => {
             onBoard(next);
-            setHighlightOpen(false);
+            setHighlightUnit(null);
           }}
         />
       ) : null}
     </Sheet>
   );
-}
-
-function reasonStamp(at: number) {
-  return new Intl.DateTimeFormat("en-AU", {
-    timeZone: "Australia/Melbourne",
-    day: "numeric",
-    month: "short",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(at));
 }
 
 function ScoreButton({

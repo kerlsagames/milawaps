@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { UNITS, type PublicBoard, type UnitId } from "@/lib/game";
 import { studentsForUnit } from "@/lib/students";
 import { Button } from "@/components/ui/button";
@@ -17,11 +17,13 @@ export function HighlightDialog({
   onOpenChange,
   token,
   onSaved,
+  initialUnitId = null,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   token: string;
   onSaved: (board: PublicBoard) => void;
+  initialUnitId?: UnitId | null;
 }) {
   const [unitId, setUnitId] = useState<UnitId | null>(null);
   const [picked, setPicked] = useState<string[]>([]);
@@ -31,13 +33,17 @@ export function HighlightDialog({
 
   const students = useMemo(() => (unitId ? studentsForUnit(unitId) : []), [unitId]);
 
-  function reset() {
-    setUnitId(null);
+  function reset(nextUnit: UnitId | null = null) {
+    setUnitId(nextUnit);
     setPicked([]);
     setReason("");
     setMessage("");
     setBusy(false);
   }
+
+  useEffect(() => {
+    if (open) reset(initialUnitId);
+  }, [open, initialUnitId]);
 
   async function submit() {
     if (!unitId || picked.length === 0 || reason.trim().length === 0) return;

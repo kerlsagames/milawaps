@@ -2,6 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+const OFFER_MS = 4_000;
 
 export function ReasonPrompt({
   id,
@@ -18,16 +21,27 @@ export function ReasonPrompt({
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [fading, setFading] = useState(false);
   const dismissRef = useRef(onDismiss);
   dismissRef.current = onDismiss;
 
   useEffect(() => {
-    const timer = window.setTimeout(() => dismissRef.current(), 25_000);
-    return () => window.clearTimeout(timer);
-  }, [id]);
+    if (open) return;
+    const fadeAt = window.setTimeout(() => setFading(true), OFFER_MS - 400);
+    const goneAt = window.setTimeout(() => dismissRef.current(), OFFER_MS);
+    return () => {
+      window.clearTimeout(fadeAt);
+      window.clearTimeout(goneAt);
+    };
+  }, [id, open]);
 
   return (
-    <div className="fixed top-20 left-1/2 z-[70] w-[min(26rem,calc(100%-1.5rem))] -translate-x-1/2 rounded-2xl border-2 border-[#2a1c04] bg-[#fffdf8] p-3 shadow-[0_6px_0_#2a1c04]">
+    <div
+      className={cn(
+        "fixed right-3 bottom-3 z-[70] w-[min(18rem,calc(100%-1.5rem))] rounded-2xl border-2 border-[#2a1c04] bg-[#fffdf8] p-2.5 shadow-[0_6px_0_#2a1c04] transition-opacity duration-300 sm:right-5 sm:bottom-5",
+        fading && !open && "pointer-events-none opacity-0",
+      )}
+    >
       {open ? (
         <form
           className="grid gap-2"
@@ -42,7 +56,9 @@ export function ReasonPrompt({
           }}
         >
           <label className="grid gap-1">
-            <span className="text-xs font-extrabold tracking-wide text-ink-gold uppercase">Reason</span>
+            <span className="text-[10px] font-extrabold tracking-wide text-ink-gold uppercase">
+              Reason
+            </span>
             <input
               autoFocus
               maxLength={80}
@@ -50,27 +66,38 @@ export function ReasonPrompt({
               placeholder="keeping the toilets so clean"
               aria-label="Reason for the points"
               onChange={(event) => setReason(event.target.value)}
-              className="h-11 rounded-xl border border-input bg-transparent px-3 text-base font-bold"
+              className="h-10 rounded-xl border border-input bg-transparent px-3 text-sm font-bold"
             />
           </label>
-          <p className="text-xs font-bold text-muted-foreground">{line}</p>
+          <p className="truncate text-[11px] font-bold text-muted-foreground">{line}</p>
           {error ? <p className="text-xs font-bold text-[#8d1f1f]">{error}</p> : null}
           <div className="grid grid-cols-2 gap-2">
-            <Button type="button" variant="outline" className="h-10 rounded-xl" onClick={onDismiss}>
-              No reason
+            <Button type="button" variant="outline" className="h-9 rounded-xl text-sm" onClick={onDismiss}>
+              Skip
             </Button>
-            <Button type="submit" className="h-10 rounded-xl" disabled={saving || reason.trim().length === 0}>
+            <Button
+              type="submit"
+              className="h-9 rounded-xl text-sm"
+              disabled={saving || reason.trim().length === 0}
+            >
               Save
             </Button>
           </div>
         </form>
       ) : (
-        <div className="flex items-center justify-between gap-3">
-          <p className="min-w-0 truncate text-sm font-extrabold">{line}</p>
-          <Button type="button" className="h-10 shrink-0 rounded-xl" onClick={() => setOpen(true)}>
-            Give reason
-          </Button>
-        </div>
+        <button
+          type="button"
+          className="flex w-full items-center justify-between gap-2 text-left"
+          onClick={() => {
+            setFading(false);
+            setOpen(true);
+          }}
+        >
+          <span className="min-w-0 truncate text-xs font-extrabold">{line}</span>
+          <span className="shrink-0 rounded-lg bg-[#2a1c04] px-2.5 py-1.5 text-[11px] font-extrabold text-[#ffe08a]">
+            Reason?
+          </span>
+        </button>
       )}
     </div>
   );
