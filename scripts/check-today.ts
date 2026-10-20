@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { emptyScores } from "../lib/game";
+import { createHighlight } from "../lib/highlights";
 import { applyAction } from "../lib/scoring";
 import { JIMMY_CRICKET_BOARD, parseCricketSnapshot, shareUrlForCode } from "../lib/cricket";
 import { todayFeed } from "../lib/today";
@@ -88,7 +89,7 @@ const now = Date.parse("2026-10-19T12:00:00+11:00");
 const todayAt = (minute: number) => Date.parse("2026-10-19T08:00:00+11:00") + minute * 60_000;
 
 let spots = emptyScores(1);
-for (let index = 0; index < 15; index += 1) {
+for (let index = 0; index < 20; index += 1) {
   spots = applyAction(spots, "spot", "f1", "jess", todayAt(index)).state;
 }
 const latest = todayFeed(spots, now);
@@ -108,7 +109,7 @@ assert.equal(todayOnly[0]?.kind, "strike");
 assert.match(todayOnly[0]?.text ?? "", /Mr C · 2\/3\/4 −1 point/);
 
 const surged = applyAction(
-  { ...emptyScores(1), units: { f1: 13, "234": 0, "56": 0 } },
+  { ...emptyScores(1), units: { f1: 18, "234": 0, "56": 0 } },
   "teamwork",
   undefined,
   "tiff",
@@ -119,5 +120,25 @@ assert.equal(unlocked[0]?.kind, "unlock");
 assert.equal(unlocked[0]?.text, "F/1 unlocked Game with Mr K");
 assert.equal(unlocked[1]?.kind, "tick");
 assert.match(unlocked[1]?.text ?? "", /Mrs Stirling · all classes \+3 points/);
+
+const spotlight = createHighlight(
+  [
+    { id: "234-tjmara", unitId: "234" },
+    { id: "56-keshy", unitId: "56" },
+  ],
+  "Helped pack the sports shed",
+  "ash",
+  Date.parse("2026-10-19T11:30:00+11:00"),
+);
+const withHighlight = todayFeed(
+  { ...emptyScores(1), highlights: [spotlight] },
+  now,
+);
+assert.equal(withHighlight.length, 1);
+assert.equal(withHighlight[0]?.kind, "highlight");
+assert.match(
+  withHighlight[0]?.text ?? "",
+  /Mr C · highlighted Tjmara & Keshy · Helped pack the sports shed/,
+);
 
 console.log("today and cricket checks passed");

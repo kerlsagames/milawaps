@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Gift, X } from "lucide-react";
+import { Check, Gift, Sparkles, X } from "lucide-react";
 import { useDeskPrefs, type RevealMap } from "@/lib/desk-prefs";
 import type { PublicBoard } from "@/lib/game";
 import { prizeIsPublic, revealForPoints } from "@/lib/reveals";
@@ -46,6 +46,17 @@ function KindMark({ kind }: { kind: TodayKind }) {
         title="Strike"
       >
         <X className="size-4 stroke-[3]" aria-hidden="true" />
+      </span>
+    );
+  }
+  if (kind === "highlight") {
+    return (
+      <span
+        className="grid size-7 shrink-0 place-items-center rounded-full bg-[#7b4bff] text-white shadow-[0_2px_0_#4c2d9e]"
+        aria-label="Highlight"
+        title="Highlight"
+      >
+        <Sparkles className="size-3.5 stroke-[2.5]" aria-hidden="true" />
       </span>
     );
   }
@@ -102,7 +113,7 @@ export function TodayColumn({
       </div>
       {items.length === 0 ? (
         <p className="rounded-2xl bg-white px-3 py-3 text-sm font-bold text-muted-foreground">
-          No ticks, strikes, or prizes yet today.
+          No ticks, strikes, highlights, or prizes yet today.
         </p>
       ) : (
         <ol className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
