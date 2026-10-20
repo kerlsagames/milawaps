@@ -157,7 +157,26 @@ export function YardBoard() {
     window.addEventListener("pointermove", show);
     window.addEventListener("pointerdown", show);
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") leaveKiosk();
+      if (event.key === "Escape") {
+        leaveKiosk();
+        return;
+      }
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      const screens = playlistRef.current;
+      if (screens.length < 2) return;
+      event.preventDefault();
+      const index = screens.indexOf(viewRef.current);
+      const from = index < 0 ? 0 : index;
+      const next =
+        event.key === "ArrowRight"
+          ? screens[(from + 1) % screens.length]
+          : screens[(from - 1 + screens.length) % screens.length];
+      const time = Date.now();
+      startedRef.current = time;
+      setStartedAt(time);
+      setNow(time);
+      setView(next);
+      revealExit();
     };
     const onFullscreen = () => {
       if (document.fullscreenElement) {
