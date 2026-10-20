@@ -37,6 +37,7 @@ export function HighlightView({
   const who = kidName(entry.staffId);
   const columns = count === 1 ? 1 : count === 2 ? 2 : count <= 4 ? 2 : 3;
   const canCycle = total > 1 && Boolean(onPrev && onNext);
+  const solo = count === 1;
 
   return (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-[32px] border-4 border-[#5a3208] bg-[radial-gradient(circle_at_center,#ffe08a_0%,#f5b942_42%,#8a3b12_100%)] p-3 lg:p-5">
@@ -77,20 +78,34 @@ export function HighlightView({
         </div>
       ) : null}
 
-      <div className="relative z-10 grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-stretch lg:gap-6">
+      <div
+        className={
+          solo
+            ? "relative z-10 grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)] lg:items-stretch lg:gap-6"
+            : "relative z-10 grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-stretch lg:gap-6"
+        }
+      >
         <div
-          className="grid min-h-0 content-center items-center justify-items-center gap-3 overflow-y-auto py-1"
+          className="grid min-h-0 content-center items-center justify-items-center gap-3 overflow-hidden py-1"
           style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
         >
           {students.map((student, studentIndex) => {
             const unit = unitById(student.unitId);
-            const angle = ANGLES[studentIndex % ANGLES.length] ?? 0;
+            const angle = solo ? -3 : (ANGLES[studentIndex % ANGLES.length] ?? 0);
             const width =
               count === 1
-                ? "w-[min(100%,24rem)]"
+                ? "flex h-full max-h-full w-[min(100%,40rem)] items-center justify-center"
                 : count === 2
-                  ? "w-[min(100%,17rem)]"
-                  : "w-[min(100%,13.5rem)]";
+                  ? "w-[min(100%,20rem)]"
+                  : count <= 4
+                    ? "w-[min(100%,15rem)]"
+                    : "w-[min(100%,12rem)]";
+            const nameClass =
+              count === 1
+                ? "text-3xl sm:text-5xl lg:text-6xl"
+                : count === 2
+                  ? "text-2xl sm:text-3xl"
+                  : "text-xl sm:text-2xl";
             return (
               <motion.article
                 key={student.id}
@@ -100,16 +115,25 @@ export function HighlightView({
                 className={width}
               >
                 <div
-                  className="overflow-hidden rounded-[28px] border-4 border-[#fff8df] bg-[#fff8df] p-2"
+                  className={
+                    solo
+                      ? "flex h-full max-h-full w-full flex-col overflow-hidden rounded-[28px] border-4 border-[#fff8df] bg-[#fff8df] p-2.5 sm:p-3"
+                      : "overflow-hidden rounded-[28px] border-4 border-[#fff8df] bg-[#fff8df] p-2"
+                  }
                   style={{ boxShadow: `0 14px 0 rgba(42,28,4,0.28), 0 0 0 6px ${unit.color}` }}
                 >
-                  <StudentPhoto name={student.name} image={student.image} color={unit.color} />
-                  <div className="px-2 pt-2 pb-1 text-center">
-                    <p className="font-display text-xl leading-none text-[#2a1c04] sm:text-3xl">
+                  <StudentPhoto
+                    name={student.name}
+                    image={student.image}
+                    color={unit.color}
+                    solo={solo}
+                  />
+                  <div className="shrink-0 px-2 pt-2 pb-1 text-center">
+                    <p className={`font-display leading-none text-[#2a1c04] ${nameClass}`}>
                       {student.name}
                     </p>
                     <p
-                      className="mt-1 text-xs font-extrabold tracking-[0.16em] uppercase"
+                      className={`mt-1 font-extrabold tracking-[0.16em] uppercase ${solo ? "text-sm sm:text-base" : "text-xs"}`}
                       style={{ color: unit.deep }}
                     >
                       {unit.code}
@@ -188,18 +212,31 @@ function StudentPhoto({
   name,
   image,
   color,
+  solo = false,
 }: {
   name: string;
   image: string;
   color: string;
+  solo?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
+  // Solo fills the spotlight column; groups stay a compact wide crop for the grid.
+  const frame = solo
+    ? "relative min-h-0 w-full flex-1 overflow-hidden rounded-[22px] bg-[#efe6d6]"
+    : "relative aspect-[4/3] overflow-hidden rounded-[22px] bg-[#efe6d6]";
 
   if (failed) {
     return (
-      <div className="grid aspect-[4/3] place-items-center p-4 text-center" style={{ background: color }}>
+      <div
+        className={`grid place-items-center p-4 text-center ${solo ? "min-h-0 w-full flex-1" : "aspect-[4/3]"}`}
+        style={{ background: color }}
+      >
         <div>
-          <p className="font-display text-3xl leading-none text-[#2a1c04] sm:text-4xl">{name}</p>
+          <p
+            className={`font-display leading-none text-[#2a1c04] ${solo ? "text-4xl sm:text-5xl" : "text-3xl sm:text-4xl"}`}
+          >
+            {name}
+          </p>
           <p className="mt-2 text-xs font-bold">Photo coming soon</p>
         </div>
       </div>
@@ -207,11 +244,11 @@ function StudentPhoto({
   }
 
   return (
-    <div className="relative aspect-[4/3] overflow-hidden rounded-[22px] bg-[#efe6d6]">
+    <div className={frame}>
       <img
         src={image}
         alt={name}
-        className="size-full object-cover"
+        className="size-full object-cover object-top"
         onError={() => setFailed(true)}
       />
     </div>
