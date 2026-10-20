@@ -504,7 +504,7 @@ export function YardBoard() {
       <div className={cn("flex min-h-0 flex-1", kiosk ? "flex-row" : "flex-col lg:flex-row")}>
       <main
         className={cn(
-          "relative mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-2 py-1 sm:px-3 sm:py-1.5 lg:px-4 lg:py-2",
+          "relative mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-2 py-1 sm:px-3 sm:py-1.5 lg:px-5 lg:py-3",
           view === "prizes" || view === "yard" || Boolean(activeReveal)
             ? "overflow-y-auto lg:overflow-hidden"
             : "overflow-hidden",
@@ -808,10 +808,14 @@ function TvFit({ children }: { children: ReactNode }) {
         setScale(1);
         return;
       }
-      const available = frameEl.clientHeight;
-      const needed = innerEl.scrollHeight;
-      if (available > 0 && needed > 0) {
-        const next = Math.min(1, available / needed);
+      // Keep a small safe band so MacBook → TV / overscan does not clip words.
+      const inset = 20;
+      const availableH = Math.max(0, frameEl.clientHeight - inset * 2);
+      const availableW = Math.max(0, frameEl.clientWidth - inset * 2);
+      const neededH = innerEl.scrollHeight;
+      const neededW = innerEl.scrollWidth;
+      if (availableH > 0 && neededH > 0 && availableW > 0 && neededW > 0) {
+        const next = Math.min(1, availableH / neededH, availableW / neededW);
         setScale((prev) => (Math.abs(prev - next) < 0.001 ? prev : next));
       }
     };
@@ -829,11 +833,11 @@ function TvFit({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <div ref={frame} className="h-full min-h-0 overflow-hidden">
+    <div ref={frame} className="box-border h-full min-h-0 overflow-hidden p-2 lg:p-3">
       <div
         ref={inner}
         className="h-full"
-        style={{ transform: `scale(${scale})`, transformOrigin: "top center" }}
+        style={{ transform: `scale(${scale})`, transformOrigin: "center center" }}
       >
         {children}
       </div>
