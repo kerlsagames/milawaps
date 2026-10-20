@@ -37,8 +37,8 @@ export function LeaderboardView({
   return (
     <div
       className={cn(
-        "flex min-h-0 flex-col",
-        compact ? "h-full gap-1.5 lg:gap-3" : "gap-2 lg:gap-3",
+        "flex min-h-0 flex-col overflow-hidden",
+        compact ? "h-full gap-0.5 lg:gap-3" : "gap-2 lg:gap-3",
       )}
     >
       <VaultMeter vault={board.vault} onTeamwork={showScores ? () => onScore("teamwork") : undefined} />
@@ -52,7 +52,7 @@ export function LeaderboardView({
       )}
       <div
         className={cn(
-          "grid min-h-0 gap-1.5 lg:grid-cols-3 lg:gap-3",
+          "grid min-h-0 gap-1 lg:grid-cols-3 lg:gap-3",
           compact && "flex-1 grid-rows-3 lg:grid-rows-1",
         )}
       >
@@ -70,14 +70,14 @@ export function LeaderboardView({
         ))}
       </div>
       {showBar ? (
-        <div className="mt-0.5 flex shrink-0 items-stretch justify-between gap-2 border-t border-black/10 pt-2 pb-[max(0.35rem,env(safe-area-inset-bottom))]">
+        <div className="flex shrink-0 items-stretch justify-between gap-2 border-t border-black/10 pt-1 pb-[max(0.2rem,env(safe-area-inset-bottom))] lg:pt-2 lg:pb-[max(0.35rem,env(safe-area-inset-bottom))]">
           <Button
             type="button"
             variant="outline"
             aria-label="Undo last click"
             disabled={!canUndo}
             onClick={onUndo}
-            className="h-11 rounded-2xl border-2 border-[#2a1c04] bg-[#fffdf8] px-3 text-sm font-extrabold shadow-[0_4px_0_#2a1c04] sm:h-12 sm:px-4 sm:text-base"
+            className="h-9 rounded-xl border-2 border-[#2a1c04] bg-[#fffdf8] px-2.5 text-xs font-extrabold shadow-[0_3px_0_#2a1c04] sm:h-12 sm:rounded-2xl sm:px-4 sm:text-base sm:shadow-[0_4px_0_#2a1c04]"
           >
             <Undo2 className="size-4" aria-hidden="true" />
             <span className="sm:hidden">Undo</span>

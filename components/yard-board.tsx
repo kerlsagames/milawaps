@@ -504,7 +504,7 @@ export function YardBoard() {
       <div className={cn("flex min-h-0 flex-1", kiosk ? "flex-row" : "flex-col lg:flex-row")}>
       <main
         className={cn(
-          "relative mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-2 py-1.5 sm:px-3 sm:py-2 lg:px-4",
+          "relative mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-2 py-1 sm:px-3 sm:py-1.5 lg:px-4 lg:py-2",
           view === "prizes" || view === "yard" || Boolean(activeReveal)
             ? "overflow-y-auto lg:overflow-hidden"
             : "overflow-hidden",

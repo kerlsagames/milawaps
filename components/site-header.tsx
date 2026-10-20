@@ -66,15 +66,15 @@ export function SiteHeader({
 
   return (
     <header className="z-30 shrink-0 border-b border-black/10 bg-[#fff8ec]/90 backdrop-blur-md">
-      <div className="flex items-center gap-2 px-3 py-1.5 sm:gap-3 sm:px-4">
-        <div className="grid size-9 shrink-0 place-items-center rounded-2xl bg-gold text-[#2a1c04] shadow-[0_3px_0_#c48a16]">
-          <PartyPopper className="size-5" />
+      <div className="flex items-center gap-2 px-3 py-1 sm:gap-3 sm:px-4 sm:py-1.5">
+        <div className="grid size-8 shrink-0 place-items-center rounded-2xl bg-gold text-[#2a1c04] shadow-[0_3px_0_#c48a16] sm:size-9">
+          <PartyPopper className="size-4 sm:size-5" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-extrabold tracking-[0.22em] text-ink-gold uppercase">
+          <p className="text-[9px] font-extrabold tracking-[0.22em] text-ink-gold uppercase sm:text-[10px]">
             Milawa Primary
           </p>
-          <h1 className="truncate font-display text-[15px] leading-tight sm:text-xl">
+          <h1 className="truncate font-display text-[14px] leading-tight sm:text-xl">
             Term 4 Challenge
           </h1>
         </div>
@@ -91,21 +91,21 @@ export function SiteHeader({
           {live === "live" ? "Live" : live === "loading" ? "Linking" : "Offline"}
         </span>
         <KioskSettings onPreview={onView} news={news} onBoard={onBoard} />
-        <Button type="button" className="h-10 rounded-xl px-2.5 text-sm sm:px-3" onClick={onStartKiosk}>
+        <Button type="button" className="h-9 rounded-xl px-2 text-sm sm:h-10 sm:px-3" onClick={onStartKiosk}>
           Start Kiosk
         </Button>
         <Button
           variant={authed ? "default" : "outline"}
           aria-label={dutyName ? `Open yard duty desk for ${dutyName}` : "Unlock yard duty desk"}
           onClick={onLockClick}
-          className="h-10 rounded-xl px-3"
+          className="h-9 rounded-xl px-2.5 sm:h-10 sm:px-3"
         >
           {authed ? <LockOpen /> : <Lock />}
           {dutyName && <span className="hidden sm:inline">{dutyName}</span>}
         </Button>
       </div>
 
-      <div className="flex gap-1 overflow-x-auto px-3 pb-2 sm:px-5" role="tablist" aria-label="Board views">
+      <div className="flex gap-1 overflow-x-auto px-3 pb-1.5 sm:px-5 sm:pb-2" role="tablist" aria-label="Board views">
         {tabs.map((item) => {
           const Icon = item.id in icons ? icons[item.id as keyof typeof icons] : Sparkles;
           const selected =

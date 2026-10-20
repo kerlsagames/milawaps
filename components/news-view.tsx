@@ -63,13 +63,9 @@ export function NewsView({
 
 function SplitLayout({ news }: { news: DailyNews }) {
   return (
-    <div className="relative mt-2 grid min-h-0 flex-1 gap-2 overflow-hidden lg:mt-3 lg:grid-cols-[1.25fr_0.75fr] lg:gap-3">
-      <section className="flex min-h-0 flex-col gap-2 overflow-hidden">
-        <RemindersPanel news={news} size="md" />
-        <UpcomingPanel news={news} size="md" />
-        {news.challenge ? <ChallengePanel text={news.challenge} size="md" /> : null}
-      </section>
-      <PhotoPanel news={news} className="hidden lg:block" />
+    <div className="relative mt-2 grid min-h-0 flex-1 gap-2 overflow-hidden lg:mt-3 lg:grid-cols-[1.15fr_0.85fr] lg:gap-3">
+      <PhotoPanel news={news} className="min-h-[28%] lg:min-h-0" />
+      <ScatterBoard news={news} />
     </div>
   );
 }
@@ -101,18 +97,185 @@ function BoardsLayout({ news }: { news: DailyNews }) {
   );
 }
 
+/** Split-view right column: tilted sticky boards with loud headers. */
+function ScatterBoard({ news }: { news: DailyNews }) {
+  return (
+    <div className="relative min-h-0 overflow-hidden rounded-[22px] bg-[linear-gradient(160deg,rgba(255,255,255,0.35)_0%,rgba(255,224,138,0.25)_45%,rgba(143,223,255,0.28)_100%)] p-2 sm:p-3">
+      <div
+        className="pointer-events-none absolute inset-0 opacity-40"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(-12deg, transparent 0 18px, rgba(31,111,139,0.06) 18px 19px)",
+        }}
+      />
+      <div className="relative flex h-full min-h-0 flex-col justify-evenly gap-2 overflow-hidden py-1 lg:gap-3">
+        <TiltCard
+          title="Reminders"
+          headerFrom="#ff5a3c"
+          headerTo="#ff9a3c"
+          rotate="-2.8deg"
+          z={3}
+          bodyClass="bg-[#fff3e8]"
+        >
+          {news.reminders.length === 0 ? (
+            <Empty line="No reminders on the board yet." />
+          ) : (
+            <ul className="flex min-h-0 flex-1 flex-col justify-evenly gap-1.5 overflow-hidden">
+              {news.reminders.map((item, index) => (
+                <li
+                  key={item.id}
+                  className={cn(
+                    "min-h-0 overflow-hidden rounded-lg border-2 border-[#2a1c04]/15 px-2.5 py-1.5 font-extrabold break-words text-[#2a1c04] shadow-[2px_2px_0_rgba(42,28,4,0.12)]",
+                    CHIP_TONES[index % CHIP_TONES.length],
+                    "text-[clamp(1rem,2.1vh,1.55rem)]",
+                  )}
+                >
+                  <span className={lineClampFor(news.reminders.length)}>{item.text}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </TiltCard>
+
+        <TiltCard
+          title="Coming up"
+          headerFrom="#00b894"
+          headerTo="#55efc4"
+          rotate="2.4deg"
+          z={2}
+          bodyClass="bg-[#e8fff6]"
+        >
+          {news.upcoming.length === 0 ? (
+            <Empty line="Nothing on the calendar yet." />
+          ) : (
+            <ul className="flex min-h-0 flex-1 flex-col justify-evenly gap-1.5 overflow-hidden">
+              {news.upcoming.map((item, index) => (
+                <li
+                  key={item.id}
+                  className={cn(
+                    "min-h-0 overflow-hidden rounded-lg border-2 border-[#0d7a64]/25 px-2.5 py-1.5 shadow-[2px_2px_0_rgba(13,122,100,0.14)]",
+                    UPCOMING_TONES[index % UPCOMING_TONES.length],
+                  )}
+                >
+                  {item.when ? (
+                    <p className="text-[clamp(0.65rem,1.2vh,0.85rem)] font-black tracking-[0.12em] text-[#0d5c4c] uppercase">
+                      {item.when}
+                    </p>
+                  ) : null}
+                  <p className="text-[clamp(1rem,2.1vh,1.55rem)] leading-snug font-extrabold break-words text-[#16384a]">
+                    <span className={lineClampFor(news.upcoming.length)}>{item.text}</span>
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </TiltCard>
+
+        {news.challenge ? (
+          <TiltCard
+            title="Yard challenge"
+            headerFrom="#6c5ce7"
+            headerTo="#a29bfe"
+            rotate="-1.6deg"
+            z={4}
+            grow={false}
+            bodyClass="bg-[#f3eeff]"
+          >
+            <p className="rounded-lg border-2 border-[#6c5ce7]/35 bg-[#ffe66d] px-2.5 py-2 text-[clamp(1.05rem,2.3vh,1.7rem)] leading-snug font-black break-words text-[#2a1c04] shadow-[3px_3px_0_rgba(108,92,231,0.25)]">
+              <span className="line-clamp-3">{news.challenge}</span>
+            </p>
+          </TiltCard>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+const CHIP_TONES = [
+  "bg-[#ffd6a5]",
+  "bg-[#fdffb6]",
+  "bg-[#caffbf]",
+  "bg-[#9bf6ff]",
+  "bg-[#bdb2ff]",
+  "bg-[#ffc6ff]",
+] as const;
+
+const UPCOMING_TONES = [
+  "bg-[#d8f3dc]",
+  "bg-[#b7e4c7]",
+  "bg-[#95d5b2]",
+  "bg-[#cce3de]",
+] as const;
+
+function TiltCard({
+  title,
+  headerFrom,
+  headerTo,
+  rotate,
+  z,
+  children,
+  grow = true,
+  bodyClass,
+}: {
+  title: string;
+  headerFrom: string;
+  headerTo: string;
+  rotate: string;
+  z: number;
+  children: ReactNode;
+  grow?: boolean;
+  bodyClass: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "relative flex min-h-0 flex-col overflow-hidden rounded-2xl border-[3px] border-[#2a1c04] shadow-[6px_6px_0_rgba(22,56,74,0.22)]",
+        grow ? "flex-1" : "shrink-0",
+        bodyClass,
+      )}
+      style={{
+        transform: `rotate(${rotate})`,
+        zIndex: z,
+      }}
+    >
+      <div
+        className="relative shrink-0 px-3 py-1.5 sm:py-2"
+        style={{
+          background: `linear-gradient(105deg, ${headerFrom} 0%, ${headerTo} 55%, ${headerFrom} 100%)`,
+        }}
+      >
+        <p
+          className="font-display text-[clamp(1.35rem,3.2vh,2.35rem)] leading-none tracking-tight text-white"
+          style={{ textShadow: "0 2px 0 rgba(0,0,0,0.28), 2px 2px 0 rgba(0,0,0,0.18)" }}
+        >
+          {title}
+        </p>
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-1 opacity-40"
+          style={{
+            background:
+              "repeating-linear-gradient(90deg, #fff 0 8px, transparent 8px 14px)",
+          }}
+        />
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-2 sm:p-2.5">{children}</div>
+    </div>
+  );
+}
+
 function RemindersPanel({ news, size }: { news: DailyNews; size: TextSize }) {
   return (
-    <Panel title="Reminders" tone="#ff7a59">
+    <Panel title="Reminders" from="#ff5a3c" to="#ff9a3c" body="#fff3e8">
       {news.reminders.length === 0 ? (
         <Empty line="No reminders on the board yet." />
       ) : (
         <ul className="flex min-h-0 flex-1 flex-col justify-evenly gap-1.5 overflow-hidden">
-          {news.reminders.map((item) => (
+          {news.reminders.map((item, index) => (
             <li
               key={item.id}
               className={cn(
-                "min-h-0 overflow-hidden rounded-xl bg-white/95 px-3 py-2 font-extrabold break-words text-[#2a1c04] shadow-[0_2px_0_rgba(42,28,4,0.12)]",
+                "min-h-0 overflow-hidden rounded-lg border-2 border-[#2a1c04]/15 px-3 py-2 font-extrabold break-words text-[#2a1c04] shadow-[2px_2px_0_rgba(42,28,4,0.12)]",
+                CHIP_TONES[index % CHIP_TONES.length],
                 textClass(size),
               )}
             >
@@ -127,22 +290,25 @@ function RemindersPanel({ news, size }: { news: DailyNews; size: TextSize }) {
 
 function UpcomingPanel({ news, size }: { news: DailyNews; size: TextSize }) {
   return (
-    <Panel title="Coming up" tone="#2ec9a0">
+    <Panel title="Coming up" from="#00b894" to="#55efc4" body="#e8fff6">
       {news.upcoming.length === 0 ? (
         <Empty line="Nothing on the calendar yet." />
       ) : (
         <ul className="flex min-h-0 flex-1 flex-col justify-evenly gap-1.5 overflow-hidden">
-          {news.upcoming.map((item) => (
+          {news.upcoming.map((item, index) => (
             <li
               key={item.id}
-              className="min-h-0 overflow-hidden rounded-xl bg-white/95 px-3 py-2 shadow-[0_2px_0_rgba(42,28,4,0.08)]"
+              className={cn(
+                "min-h-0 overflow-hidden rounded-lg border-2 border-[#0d7a64]/25 px-3 py-2 shadow-[2px_2px_0_rgba(13,122,100,0.14)]",
+                UPCOMING_TONES[index % UPCOMING_TONES.length],
+              )}
             >
               {item.when ? (
-                <p className="text-[clamp(0.7rem,1.3vh,0.9rem)] font-extrabold tracking-[0.14em] text-[#0d7a64] uppercase">
+                <p className="text-[clamp(0.7rem,1.3vh,0.9rem)] font-black tracking-[0.12em] text-[#0d5c4c] uppercase">
                   {item.when}
                 </p>
               ) : null}
-              <p className={cn("leading-snug font-extrabold break-words text-[#2a1c04]", textClass(size))}>
+              <p className={cn("leading-snug font-extrabold break-words text-[#16384a]", textClass(size))}>
                 <span className={lineClampFor(news.upcoming.length)}>{item.text}</span>
               </p>
             </li>
@@ -155,10 +321,10 @@ function UpcomingPanel({ news, size }: { news: DailyNews; size: TextSize }) {
 
 function ChallengePanel({ text, size }: { text: string; size: TextSize }) {
   return (
-    <Panel title="Yard challenge" tone="#7b4bff" grow={false}>
+    <Panel title="Yard challenge" from="#6c5ce7" to="#a29bfe" body="#f3eeff" grow={false}>
       <p
         className={cn(
-          "rounded-xl bg-white/95 px-3 py-2 leading-snug font-extrabold break-words text-[#2a1c04]",
+          "rounded-lg border-2 border-[#6c5ce7]/35 bg-[#ffe66d] px-3 py-2 leading-snug font-black break-words text-[#2a1c04] shadow-[3px_3px_0_rgba(108,92,231,0.25)]",
           textClass(size),
         )}
       >
@@ -208,30 +374,41 @@ function lineClampFor(count: number) {
 
 function Panel({
   title,
-  tone,
+  from,
+  to,
+  body,
   children,
   grow = true,
 }: {
   title: string;
-  tone: string;
+  from: string;
+  to: string;
+  body: string;
   children: ReactNode;
   grow?: boolean;
 }) {
   return (
     <div
       className={cn(
-        "flex min-h-0 flex-col overflow-hidden rounded-[22px] border-4 bg-[#fffdf8]/95 p-2.5 shadow-[0_6px_0_rgba(22,56,74,0.16)]",
+        "flex min-h-0 flex-col overflow-hidden rounded-[22px] border-[3px] border-[#2a1c04] shadow-[5px_5px_0_rgba(22,56,74,0.18)]",
         grow ? "flex-1" : "shrink-0",
       )}
-      style={{ borderColor: tone }}
+      style={{ background: body }}
     >
-      <p
-        className="mb-1.5 shrink-0 text-[clamp(0.7rem,1.3vh,0.9rem)] font-extrabold tracking-[0.2em] uppercase"
-        style={{ color: tone }}
+      <div
+        className="relative shrink-0 px-3 py-1.5 sm:py-2"
+        style={{
+          background: `linear-gradient(105deg, ${from} 0%, ${to} 55%, ${from} 100%)`,
+        }}
       >
-        {title}
-      </p>
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
+        <p
+          className="font-display text-[clamp(1.25rem,2.8vh,2.1rem)] leading-none tracking-tight text-white"
+          style={{ textShadow: "0 2px 0 rgba(0,0,0,0.28), 2px 2px 0 rgba(0,0,0,0.18)" }}
+        >
+          {title}
+        </p>
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-2.5">{children}</div>
     </div>
   );
 }
