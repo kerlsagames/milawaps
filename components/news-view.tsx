@@ -1,9 +1,24 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { memo, useEffect, useState, type ReactNode } from "react";
 import type { DailyNews } from "@/lib/news";
 
-export function NewsView({ news }: { news: DailyNews }) {
+const dateFmt = new Intl.DateTimeFormat("en-AU", {
+  timeZone: "Australia/Melbourne",
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+});
+
+const timeFmt = new Intl.DateTimeFormat("en-AU", {
+  timeZone: "Australia/Melbourne",
+  hour: "numeric",
+  minute: "2-digit",
+  second: "2-digit",
+});
+
+/** Own timer so the rest of Daily News does not re-render (or re-scale) every second. */
+const LiveClock = memo(function LiveClock() {
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -11,16 +26,18 @@ export function NewsView({ news }: { news: DailyNews }) {
     return () => window.clearInterval(id);
   }, []);
 
-  const clock = new Intl.DateTimeFormat("en-AU", {
-    timeZone: "Australia/Melbourne",
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-  }).format(now);
+  return (
+    <div className="rounded-[24px] border-4 border-[#16384a] bg-[#16384a] px-4 py-3 text-[#ffe08a] shadow-[0_8px_0_#0d2430]">
+      <p className="text-[10px] font-extrabold tracking-[0.22em] uppercase">Live clock</p>
+      <p className="font-display text-lg leading-none sm:text-2xl">{dateFmt.format(now)}</p>
+      <p className="mt-1 font-display text-2xl leading-none tabular-nums sm:text-4xl">
+        {timeFmt.format(now)}
+      </p>
+    </div>
+  );
+});
 
+export function NewsView({ news }: { news: DailyNews }) {
   return (
     <div className="relative flex h-full min-h-0 flex-col gap-3 overflow-hidden rounded-[32px] border-4 border-[#1f6f8b] bg-[radial-gradient(circle_at_top_left,#ffe08a_0%,#fff8df_38%,#d9f4ff_100%)] p-3 lg:gap-4 lg:p-5">
       <div
@@ -43,10 +60,7 @@ export function NewsView({ news }: { news: DailyNews }) {
             <p className="mt-2 max-w-3xl text-base font-bold text-[#3d5f70] sm:text-xl">{news.blurb}</p>
           ) : null}
         </div>
-        <div className="rounded-[24px] border-4 border-[#16384a] bg-[#16384a] px-4 py-3 text-[#ffe08a] shadow-[0_8px_0_#0d2430]">
-          <p className="text-[10px] font-extrabold tracking-[0.22em] uppercase">Live clock</p>
-          <p className="font-display text-2xl leading-none sm:text-4xl tabular-nums">{clock}</p>
-        </div>
+        <LiveClock />
       </header>
 
       <div className="relative grid min-h-0 flex-1 gap-3 lg:grid-cols-[1.1fr_0.9fr]">

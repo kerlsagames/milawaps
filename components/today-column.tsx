@@ -1,17 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Check, Gift, X } from "lucide-react";
 import { useDeskPrefs, type RevealMap } from "@/lib/desk-prefs";
 import type { PublicBoard } from "@/lib/game";
 import { prizeIsPublic, revealForPoints } from "@/lib/reveals";
 import { todayFeed, type TodayKind } from "@/lib/today";
 import { cn } from "@/lib/utils";
-
-const KIND_LABEL: Record<TodayKind, string> = {
-  tick: "Tick",
-  strike: "Strike",
-  unlock: "Prize",
-};
 
 function prizeName(points: number, title: string, reveals: RevealMap, now: number) {
   const reveal = revealForPoints(points);
@@ -29,6 +24,40 @@ function eventTime(at: number) {
     hour: "numeric",
     minute: "2-digit",
   }).format(at);
+}
+
+function KindMark({ kind }: { kind: TodayKind }) {
+  if (kind === "tick") {
+    return (
+      <span
+        className="grid size-7 shrink-0 place-items-center rounded-full bg-[#0d7a64] text-white shadow-[0_2px_0_#0a5a4a]"
+        aria-label="Tick"
+        title="Tick"
+      >
+        <Check className="size-4 stroke-[3]" aria-hidden="true" />
+      </span>
+    );
+  }
+  if (kind === "strike") {
+    return (
+      <span
+        className="grid size-7 shrink-0 place-items-center rounded-full border-2 border-[#c23b3b] bg-white text-[#c23b3b] shadow-[0_2px_0_#8d1f1f33]"
+        aria-label="Strike"
+        title="Strike"
+      >
+        <X className="size-4 stroke-[3]" aria-hidden="true" />
+      </span>
+    );
+  }
+  return (
+    <span
+      className="grid size-7 shrink-0 place-items-center rounded-full bg-[#e2a01a] text-[#2a1c04] shadow-[0_2px_0_#8a5a00]"
+      aria-label="Prize"
+      title="Prize"
+    >
+      <Gift className="size-3.5 stroke-[2.5]" aria-hidden="true" />
+    </span>
+  );
 }
 
 export function TodayColumn({
@@ -78,21 +107,19 @@ export function TodayColumn({
       ) : (
         <ol className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
           {items.map((item) => (
-            <li key={item.id} className="rounded-2xl border border-black/5 bg-white px-3 py-2">
-              <div className="flex items-center justify-between gap-2">
-                <p
-                  className={cn(
-                    "text-[10px] font-extrabold tracking-[0.16em] uppercase",
-                    item.kind === "tick" && "text-[#0d7a64]",
-                    item.kind === "strike" && "text-[#8d1f1f]",
-                    item.kind === "unlock" && "text-[#8a5a00]",
-                  )}
-                >
-                  {KIND_LABEL[item.kind]}
-                </p>
-                <p className="text-[10px] font-bold text-muted-foreground">{eventTime(item.at)}</p>
+            <li
+              key={item.id}
+              className="flex items-start gap-2.5 rounded-2xl border border-black/5 bg-white px-3 py-2"
+            >
+              <KindMark kind={item.kind} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm leading-snug font-bold">{item.text}</p>
+                  <p className="shrink-0 pt-0.5 text-[10px] font-bold text-muted-foreground">
+                    {eventTime(item.at)}
+                  </p>
+                </div>
               </div>
-              <p className="text-sm leading-snug font-bold">{item.text}</p>
             </li>
           ))}
         </ol>

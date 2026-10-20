@@ -564,7 +564,10 @@ function TvFit({ children }: { children: ReactNode }) {
       }
       const available = frameEl.clientHeight;
       const needed = innerEl.scrollHeight;
-      if (available > 0 && needed > 0) setScale(Math.min(1, available / needed));
+      if (available > 0 && needed > 0) {
+        const next = Math.min(1, available / needed);
+        setScale((prev) => (Math.abs(prev - next) < 0.001 ? prev : next));
+      }
     };
     fit();
     const observer = new ResizeObserver(fit);
@@ -575,7 +578,9 @@ function TvFit({ children }: { children: ReactNode }) {
       observer.disconnect();
       window.removeEventListener("resize", fit);
     };
-  }, [children]);
+    // ResizeObserver watches layout; do not re-bind when React children identity changes
+    // (e.g. the Daily News clock ticking every second).
+  }, []);
 
   return (
     <div ref={frame} className="min-h-0 lg:h-full lg:overflow-hidden">
