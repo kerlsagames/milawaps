@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Settings } from "lucide-react";
+import {
+  ArrowLeft,
+  Gift,
+  Map,
+  Newspaper,
+  Settings,
+  Sparkles,
+  Trophy,
+  Volleyball,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,18 +19,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { VIEWS, type PublicBoard } from "@/lib/game";
+import type { PublicBoard } from "@/lib/game";
 import {
   MAX_DWELL_SECONDS,
   MIN_DWELL_SECONDS,
   resetReveals,
   saveSiteDisplay,
-  setCricketCode,
+  setCricketPanelsLocal,
   setFinishAt,
+  setNewsLayoutLocal,
   setRevealAt,
   setRevealImage,
   setRevealLabel,
   setRevealPrize,
+  setScreenShown,
   setTimerStyle,
   setViewDwell,
   useDeskPrefs,
@@ -29,8 +40,40 @@ import {
 import { emptyNews, type DailyNews } from "@/lib/news";
 import { compressPrizeImage } from "@/lib/prize-image";
 import { REVEALS, type FixedScreenId, type ScreenId } from "@/lib/reveals";
+import {
+  NEWS_LAYOUTS,
+  type CricketPanels,
+  type NewsLayoutId,
+} from "@/lib/site-display";
+import { cn } from "@/lib/utils";
 
 const ADMIN_KEY = "ott-admin";
+
+type SettingsPage =
+  | "home"
+  | "board"
+  | "prizes"
+  | "yard"
+  | "news"
+  | "highlight"
+  | "cricket"
+  | "reveals";
+
+const PAGE_BUTTONS: {
+  id: SettingsPage;
+  label: string;
+  blurb: string;
+  icon: typeof Trophy;
+  tone: string;
+}[] = [
+  { id: "board", label: "Leaderboard", blurb: "Show time on the TV", icon: Trophy, tone: "#e2a01a" },
+  { id: "prizes", label: "Prizes", blurb: "Countdown page", icon: Gift, tone: "#ff7a59" },
+  { id: "yard", label: "Yard & Rules", blurb: "Yard duty rules", icon: Map, tone: "#2ec9a0" },
+  { id: "news", label: "Daily News", blurb: "Layout, copy, photo", icon: Newspaper, tone: "#1f6f8b" },
+  { id: "highlight", label: "Highlights", blurb: "Student star pages", icon: Sparkles, tone: "#7b4bff" },
+  { id: "cricket", label: "Cricket", blurb: "Code, show, panels", icon: Volleyball, tone: "#0d7a64" },
+  { id: "reveals", label: "Prize reveals", blurb: "Times, names, pictures", icon: Gift, tone: "#c48a16" },
+];
 
 export function KioskSettings({
   onPreview,
@@ -43,18 +86,22 @@ export function KioskSettings({
 }) {
   const prefs = useDeskPrefs();
   const [open, setOpen] = useState(false);
+  const [page, setPage] = useState<SettingsPage>("home");
   const [admin, setAdmin] = useState(false);
   const [asking, setAsking] = useState(false);
   const [code, setCode] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
-  const [resetNote, setResetNote] = useState("");
+  const [note, setNote] = useState("");
   const [draftNews, setDraftNews] = useState<DailyNews>(news ?? emptyNews());
   const [draftCricket, setDraftCricket] = useState(prefs.cricketCode);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setPage("home");
+      return;
+    }
     setDraftNews(news ?? emptyNews());
   }, [open, news]);
 
@@ -90,57 +137,81 @@ export function KioskSettings({
     setMessage("");
   }
 
+  async function patchDisplay(
+    patch: {
+      shown?: Partial<Record<FixedScreenId, boolean>>;
+      cricketCode?: string;
+      newsLayout?: NewsLayoutId;
+      cricketPanels?: Partial<CricketPanels>;
+    },
+    okNote: string,
+  ) {
+    const token = window.sessionStorage.getItem(ADMIN_KEY);
+    if (!token) return;
+    setNote("");
+    const result = await saveSiteDisplay(patch, token);
+    if (!result.ok) {
+      setNote(result.error);
+      return false;
+    }
+    onBoard?.(result.board);
+    setNote(okNote);
+    return true;
+  }
+
+  /** Flip the checkbox straight away, then save in the background. */
   async function saveShown(id: FixedScreenId, next: boolean) {
     const token = window.sessionStorage.getItem(ADMIN_KEY);
     if (!token) return;
-    setBusy(true);
-    setResetNote("");
+    if (id === "cricket" && next && !prefs.cricketCode.trim()) {
+      setNote("Paste a cricket code first, then turn Cricket on.");
+      return;
+    }
+    const previous = prefs.shown[id];
+    setScreenShown(id, next);
+    setNote("");
     const result = await saveSiteDisplay({ shown: { [id]: next } }, token);
     if (!result.ok) {
-      setResetNote(result.error);
-      setBusy(false);
+      setScreenShown(id, previous);
+      setNote(result.error);
       return;
     }
     onBoard?.(result.board);
-    setResetNote("TV pages updated for everyone.");
-    setBusy(false);
+    setNote("TV pages updated for everyone.");
   }
 
-  async function saveCricket(code: string) {
+  async function saveCricket(codeValue: string) {
     const token = window.sessionStorage.getItem(ADMIN_KEY);
     if (!token) return;
-    setBusy(true);
-    setResetNote("");
-    const result = await saveSiteDisplay({ cricketCode: code }, token);
+    setNote("");
+    const result = await saveSiteDisplay({ cricketCode: codeValue }, token);
     if (!result.ok) {
-      setResetNote(result.error);
-      setBusy(false);
+      setNote(result.error);
       return;
     }
     onBoard?.(result.board);
-    setResetNote(code.trim() ? "Cricket code saved for everyone." : "Cricket page cleared for everyone.");
-    setBusy(false);
+    setNote(codeValue.trim() ? "Cricket code saved for everyone." : "Cricket page cleared for everyone.");
   }
 
   async function resetBoard() {
     const token = window.sessionStorage.getItem(ADMIN_KEY);
     if (!token) return;
     setBusy(true);
-    setResetNote("");
+    setNote("");
     try {
       const response = await fetch("/api/admin/reset", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) {
-        setResetNote("The scores did not reset.");
+        setNote("The scores did not reset.");
         return;
       }
       resetReveals();
       setConfirmReset(false);
-      setResetNote("Scores and reveals are cleared.");
+      setNote("Scores and reveals are cleared.");
     } catch {
-      setResetNote("The scores did not reset.");
+      setNote("The scores did not reset.");
     } finally {
       setBusy(false);
     }
@@ -170,6 +241,13 @@ export function KioskSettings({
     }
   }
 
+  const title =
+    page === "home"
+      ? "Settings"
+      : page === "reveals"
+        ? "Prize reveals"
+        : PAGE_BUTTONS.find((item) => item.id === page)?.label ?? "Settings";
+
   return (
     <>
       <Button
@@ -182,294 +260,691 @@ export function KioskSettings({
       >
         <Settings />
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (!next) setPage("home");
+        }}
+      >
         <DialogContent className="max-h-[85dvh] overflow-y-auto sm:!max-w-xl">
           <DialogHeader>
             <div className="flex items-center justify-between gap-3 pr-8">
-              <DialogTitle className="font-display text-2xl">Settings</DialogTitle>
+              <div className="flex min-w-0 items-center gap-2">
+                {page !== "home" ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label="Back to settings"
+                    className="size-9 shrink-0 rounded-xl"
+                    onClick={() => setPage("home")}
+                  >
+                    <ArrowLeft className="size-4" />
+                  </Button>
+                ) : null}
+                <DialogTitle className="truncate font-display text-2xl">{title}</DialogTitle>
+              </div>
               {admin ? (
-                <Button type="button" variant="outline" className="h-9 rounded-xl" onClick={lockAdmin}>
+                <Button type="button" variant="outline" className="h-9 shrink-0 rounded-xl" onClick={lockAdmin}>
                   Lock admin
                 </Button>
               ) : (
-                <Button type="button" className="h-9 rounded-xl" onClick={() => setAsking(true)}>
+                <Button type="button" className="h-9 shrink-0 rounded-xl" onClick={() => setAsking(true)}>
                   Admin
                 </Button>
               )}
             </div>
             <DialogDescription>
-              {admin
-                ? "Tick a page to put it on the TV, set the prize reveals, or reset the board."
-                : "Set how long the leaderboard, prizes, and yard pages stay on the TV."}
+              {page === "home"
+                ? admin
+                  ? "Open a page to show or hide it on every TV, and tweak that page."
+                  : "Open a page to set how long it stays on the TV."
+                : "Changes here apply to every milawaps screen once an admin saves them."}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-2">
-            <p className="text-sm font-bold">Bottom timer</p>
-            <div className="grid grid-cols-2 gap-2" role="group" aria-label="Bottom timer">
-              {(
-                [
-                  ["blocks", "Coloured rectangles"],
-                  ["race", "Running race"],
-                ] as const
-              ).map(([id, label]) => (
-                <button
-                  key={id}
-                  type="button"
-                  aria-pressed={prefs.timer === id}
-                  onClick={() => setTimerStyle(id)}
-                  className={
-                    prefs.timer === id
-                      ? "h-11 rounded-xl bg-[#2a1c04] text-sm font-extrabold text-[#ffe08a] shadow-[0_3px_0_#6b5844]"
-                      : "h-11 rounded-xl border border-black/10 bg-white text-sm font-extrabold"
+
+          {page === "home" ? (
+            <HomePanel
+              admin={admin}
+              asking={asking}
+              busy={busy}
+              code={code}
+              message={message}
+              note={note}
+              confirmReset={confirmReset}
+              prefsTimer={prefs.timer}
+              prefsFinishAt={prefs.finishAt}
+              onCode={(value) => {
+                setCode(value);
+                setMessage("");
+                if (value.length === 4) void submitCode(value);
+              }}
+              onSubmitCode={() => {
+                if (code.length === 4) void submitCode(code);
+              }}
+              onOpenPage={setPage}
+              onTimer={setTimerStyle}
+              onFinish={setFinishAt}
+              onConfirmReset={setConfirmReset}
+              onReset={() => void resetBoard()}
+            />
+          ) : null}
+
+          {page === "board" || page === "prizes" || page === "yard" || page === "highlight" ? (
+            <BasicPagePanel
+              id={page}
+              label={title}
+              seconds={prefs.dwells[page]}
+              shown={prefs.shown[page]}
+              admin={admin}
+              onShown={(next) => void saveShown(page, next)}
+              onPreview={() => {
+                setOpen(false);
+                onPreview(page);
+              }}
+            />
+          ) : null}
+
+          {page === "news" ? (
+            <NewsPagePanel
+              admin={admin}
+              shown={prefs.shown.news}
+              seconds={prefs.dwells.news}
+              layout={prefs.newsLayout}
+              news={draftNews}
+              busy={busy}
+              onShown={(next) => void saveShown("news", next)}
+              onLayout={(layout) => {
+                const previous = prefs.newsLayout;
+                setNewsLayoutLocal(layout);
+                void patchDisplay({ newsLayout: layout }, "Daily News layout saved for everyone.").then(
+                  (ok) => {
+                    if (ok === false) setNewsLayoutLocal(previous);
+                  },
+                );
+              }}
+              onChange={setDraftNews}
+              onPreview={() => {
+                setOpen(false);
+                onPreview("news");
+              }}
+              onSave={async () => {
+                const token = window.sessionStorage.getItem(ADMIN_KEY);
+                if (!token) return;
+                setBusy(true);
+                setNote("");
+                try {
+                  const response = await fetch("/api/news", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify(draftNews),
+                  });
+                  const body = (await response.json().catch(() => ({}))) as PublicBoard & {
+                    error?: string;
+                  };
+                  if (!response.ok) {
+                    setNote(body.error ?? "The news page did not save.");
+                    return;
                   }
+                  onBoard?.(body);
+                  setDraftNews(body.news);
+                  setNote("Daily News saved.");
+                } catch {
+                  setNote("The news page did not save.");
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            />
+          ) : null}
+
+          {page === "cricket" ? (
+            <CricketPagePanel
+              admin={admin}
+              shown={prefs.shown.cricket}
+              seconds={prefs.dwells.cricket}
+              draftCode={admin ? draftCricket : prefs.cricketCode}
+              panels={prefs.cricketPanels}
+              onShown={(next) => void saveShown("cricket", next)}
+              onDraftCode={setDraftCricket}
+              onSaveCode={() => {
+                if (!admin) return;
+                void saveCricket(draftCricket);
+              }}
+              onPanel={(key, value) => {
+                const previous = prefs.cricketPanels;
+                const next = { ...previous, [key]: value };
+                setCricketPanelsLocal(next);
+                void patchDisplay(
+                  { cricketPanels: { [key]: value } },
+                  "Cricket panels updated for everyone.",
+                ).then((ok) => {
+                  if (ok === false) setCricketPanelsLocal(previous);
+                });
+              }}
+              onPreview={() => {
+                setOpen(false);
+                onPreview("cricket");
+              }}
+            />
+          ) : null}
+
+          {page === "reveals" && admin ? (
+            <RevealsPanel
+              prefs={prefs}
+              onShown={(id, next) => void saveShown(id, next)}
+              onPreview={(id) => {
+                setOpen(false);
+                onPreview(id);
+              }}
+            />
+          ) : null}
+
+          {page === "reveals" && !admin ? (
+            <p className="text-sm font-semibold text-muted-foreground">
+              Unlock Admin to edit prize reveal times, names, and pictures.
+            </p>
+          ) : null}
+
+          {note && page !== "home" ? (
+            <p className="text-sm font-semibold" role="status">
+              {note}
+            </p>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function HomePanel({
+  admin,
+  asking,
+  busy,
+  code,
+  message,
+  note,
+  confirmReset,
+  prefsTimer,
+  prefsFinishAt,
+  onCode,
+  onSubmitCode,
+  onOpenPage,
+  onTimer,
+  onFinish,
+  onConfirmReset,
+  onReset,
+}: {
+  admin: boolean;
+  asking: boolean;
+  busy: boolean;
+  code: string;
+  message: string;
+  note: string;
+  confirmReset: boolean;
+  prefsTimer: "race" | "blocks";
+  prefsFinishAt: number | null;
+  onCode: (value: string) => void;
+  onSubmitCode: () => void;
+  onOpenPage: (page: SettingsPage) => void;
+  onTimer: (timer: "race" | "blocks") => void;
+  onFinish: (at: number | null) => void;
+  onConfirmReset: (value: boolean) => void;
+  onReset: () => void;
+}) {
+  return (
+    <div className="grid gap-4">
+      <div className="grid gap-2">
+        <p className="text-sm font-bold">Pages</p>
+        <div className="grid grid-cols-2 gap-2">
+          {PAGE_BUTTONS.map((item) => {
+            const Icon = item.icon;
+            if (item.id === "reveals" && !admin) return null;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onOpenPage(item.id)}
+                className="flex items-start gap-2 rounded-2xl border border-black/10 bg-white p-3 text-left shadow-[0_3px_0_rgba(42,28,4,0.08)] transition hover:-translate-y-0.5"
+              >
+                <span
+                  className="grid size-9 shrink-0 place-items-center rounded-xl text-[#2a1c04]"
+                  style={{ background: item.tone }}
                 >
-                  {label}
+                  <Icon className="size-4" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-extrabold">{item.label}</span>
+                  <span className="block text-[11px] font-semibold text-muted-foreground">
+                    {item.blurb}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="grid gap-2">
+        <p className="text-sm font-bold">Bottom timer</p>
+        <div className="grid grid-cols-2 gap-2" role="group" aria-label="Bottom timer">
+          {(
+            [
+              ["blocks", "Coloured rectangles"],
+              ["race", "Running race"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={prefsTimer === id}
+              onClick={() => onTimer(id)}
+              className={
+                prefsTimer === id
+                  ? "h-11 rounded-xl bg-[#2a1c04] text-sm font-extrabold text-[#ffe08a] shadow-[0_3px_0_#6b5844]"
+                  : "h-11 rounded-xl border border-black/10 bg-white text-sm font-extrabold"
+              }
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {admin ? (
+        <div className="grid gap-1.5">
+          <span className="text-sm font-bold">Finish date and time</span>
+          <MomentFields
+            at={prefsFinishAt}
+            saveLabel="Save finish time"
+            dateLabel="Finish date"
+            timeLabel="Finish time"
+            onSave={onFinish}
+          />
+        </div>
+      ) : null}
+
+      {!admin && asking ? (
+        <form
+          className="grid gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onSubmitCode();
+          }}
+        >
+          <label className="grid gap-1">
+            <span className="text-sm font-bold">Admin code</span>
+            <input
+              type="password"
+              inputMode="numeric"
+              autoComplete="off"
+              maxLength={4}
+              value={code}
+              aria-label="Admin code"
+              disabled={busy}
+              onChange={(event) => {
+                onCode(event.target.value.replace(/\D/g, "").slice(0, 4));
+              }}
+              className="h-12 rounded-xl border border-input bg-transparent px-3 text-center font-display text-2xl tracking-[0.4em]"
+            />
+          </label>
+          {message ? (
+            <p className="text-sm font-semibold text-[#8d1f1f]" role="status">
+              {message}
+            </p>
+          ) : null}
+        </form>
+      ) : null}
+
+      {admin ? (
+        confirmReset ? (
+          <div className="grid gap-2 rounded-2xl border border-[#c23b3b]/40 bg-[#fff1f1] p-3">
+            <p className="text-sm font-bold text-[#8d1f1f]">
+              This clears every class score and every prize reveal on this TV.
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <Button type="button" variant="outline" className="h-10 rounded-xl" onClick={() => onConfirmReset(false)}>
+                Keep them
+              </Button>
+              <Button
+                type="button"
+                className="h-10 rounded-xl bg-[#8d1f1f] text-white"
+                disabled={busy}
+                onClick={onReset}
+              >
+                Reset now
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Button type="button" variant="outline" className="h-10 rounded-xl" onClick={() => onConfirmReset(true)}>
+            Reset scores and reveals
+          </Button>
+        )
+      ) : null}
+
+      {note ? (
+        <p className="text-sm font-semibold" role="status">
+          {note}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function BasicPagePanel({
+  id,
+  label,
+  seconds,
+  shown,
+  admin,
+  onShown,
+  onPreview,
+}: {
+  id: FixedScreenId;
+  label: string;
+  seconds: number;
+  shown: boolean;
+  admin: boolean;
+  onShown: (next: boolean) => void;
+  onPreview: () => void;
+}) {
+  return (
+    <div className="grid gap-3">
+      {admin ? (
+        <ShowToggle
+          label={`Show ${label} on every TV`}
+          checked={shown}
+          onChange={onShown}
+        />
+      ) : (
+        <p className="text-xs font-semibold text-muted-foreground">
+          An admin turns this page on or off for the whole school.
+        </p>
+      )}
+      <DwellSlider id={id} label={label} seconds={seconds} />
+      <Button type="button" variant="outline" className="h-10 rounded-xl" onClick={onPreview}>
+        Preview {label}
+      </Button>
+    </div>
+  );
+}
+
+function NewsPagePanel({
+  admin,
+  shown,
+  seconds,
+  layout,
+  news,
+  busy,
+  onShown,
+  onLayout,
+  onChange,
+  onPreview,
+  onSave,
+}: {
+  admin: boolean;
+  shown: boolean;
+  seconds: number;
+  layout: NewsLayoutId;
+  news: DailyNews;
+  busy: boolean;
+  onShown: (next: boolean) => void;
+  onLayout: (layout: NewsLayoutId) => void;
+  onChange: (news: DailyNews) => void;
+  onPreview: () => void;
+  onSave: () => Promise<void>;
+}) {
+  return (
+    <div className="grid gap-3">
+      {admin ? (
+        <ShowToggle label="Show Daily News on every TV" checked={shown} onChange={onShown} />
+      ) : null}
+      <DwellSlider id="news" label="Daily News" seconds={seconds} />
+      {admin ? (
+        <>
+          <div className="grid gap-2">
+            <p className="text-sm font-bold">Layout</p>
+            <div className="grid gap-2">
+              {NEWS_LAYOUTS.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  aria-pressed={layout === item.id}
+                  onClick={() => onLayout(item.id)}
+                  className={cn(
+                    "rounded-2xl border p-3 text-left",
+                    layout === item.id
+                      ? "border-[#1f6f8b] bg-[#eef9ff] shadow-[0_3px_0_#1f6f8b66]"
+                      : "border-black/10 bg-white",
+                  )}
+                >
+                  <span className="block text-sm font-extrabold">{item.label}</span>
+                  <span className="block text-xs font-semibold text-muted-foreground">{item.blurb}</span>
                 </button>
               ))}
             </div>
           </div>
-          <div className="grid gap-3">
-            {VIEWS.map((view) => (
-              <ScreenRow
-                key={view.id}
-                id={view.id}
-                label={view.label}
-                seconds={prefs.dwells[view.id]}
-                shown={admin ? prefs.shown[view.id] : undefined}
-                onShownChange={
-                  admin
-                    ? (next) => void saveShown(view.id, next)
-                    : undefined
-                }
+          <NewsEditor news={news} busy={busy} onChange={onChange} onSave={onSave} />
+        </>
+      ) : (
+        <p className="text-xs font-semibold text-muted-foreground">
+          Unlock Admin to edit the Daily News layout and writing.
+        </p>
+      )}
+      <Button type="button" variant="outline" className="h-10 rounded-xl" onClick={onPreview}>
+        Preview Daily News
+      </Button>
+    </div>
+  );
+}
+
+function CricketPagePanel({
+  admin,
+  shown,
+  seconds,
+  draftCode,
+  panels,
+  onShown,
+  onDraftCode,
+  onSaveCode,
+  onPanel,
+  onPreview,
+}: {
+  admin: boolean;
+  shown: boolean;
+  seconds: number;
+  draftCode: string;
+  panels: CricketPanels;
+  onShown: (next: boolean) => void;
+  onDraftCode: (value: string) => void;
+  onSaveCode: () => void;
+  onPanel: (key: keyof CricketPanels, value: boolean) => void;
+  onPreview: () => void;
+}) {
+  return (
+    <div className="grid gap-3">
+      {admin ? (
+        <ShowToggle
+          label="Show Cricket on every TV"
+          checked={shown}
+          onChange={onShown}
+          hint={!draftCode.trim() ? "Paste a Jimmy cricket code below before turning this on." : undefined}
+        />
+      ) : (
+        <p className="text-xs font-semibold text-muted-foreground">
+          {draftCode
+            ? shown
+              ? "Cricket is on for the whole school."
+              : "Cricket code is saved, but the page is hidden until an admin turns it on."
+            : "Ask an admin to paste the Jimmy cricket code."}
+        </p>
+      )}
+      <DwellSlider id="cricket" label="Cricket" seconds={seconds} />
+      <label className="grid gap-1.5">
+        <span className="text-sm font-bold">Cricket code</span>
+        <input
+          type="text"
+          value={draftCode}
+          aria-label="Cricket code"
+          placeholder="Short code, such as BQWA8Z"
+          readOnly={!admin}
+          onChange={(event) => {
+            if (!admin) return;
+            onDraftCode(event.target.value);
+          }}
+          onBlur={() => {
+            if (!admin) return;
+            onSaveCode();
+          }}
+          className="h-11 rounded-xl border border-input bg-transparent px-3 text-base font-bold read-only:opacity-70"
+        />
+      </label>
+      {admin ? (
+        <div className="grid gap-2 rounded-2xl border border-[#0d7a64]/25 bg-[#eefaf6] p-3">
+          <p className="text-sm font-bold">What to show</p>
+          {(
+            [
+              ["lastNext", "Last game + next game"],
+              ["leaders", "Leader boxes"],
+              ["ladder", "Ladder"],
+              ["draw", "Coming up draw"],
+            ] as const
+          ).map(([key, label]) => (
+            <label key={key} className="flex items-center gap-2 text-sm font-bold">
+              <input
+                type="checkbox"
+                checked={panels[key]}
+                onChange={(event) => onPanel(key, event.target.checked)}
+                className="size-5 accent-[#0d7a64]"
               />
-            ))}
-            <ScreenRow
-              id="news"
-              label="Daily News"
-              seconds={prefs.dwells.news}
-              shown={admin ? prefs.shown.news : undefined}
-              onShownChange={admin ? (next) => void saveShown("news", next) : undefined}
+              {label}
+            </label>
+          ))}
+        </div>
+      ) : null}
+      <Button
+        type="button"
+        variant="outline"
+        className="h-10 rounded-xl"
+        disabled={!draftCode.trim()}
+        onClick={onPreview}
+      >
+        Preview Cricket
+      </Button>
+    </div>
+  );
+}
+
+function RevealsPanel({
+  prefs,
+  onShown,
+  onPreview,
+}: {
+  prefs: ReturnType<typeof useDeskPrefs>;
+  onShown: (id: FixedScreenId, next: boolean) => void;
+  onPreview: (id: FixedScreenId) => void;
+}) {
+  return (
+    <section className="grid gap-3">
+      <p className="text-xs font-semibold text-muted-foreground">
+        Change what a prize says, and upload a picture if ice cream becomes movie day. Before the
+        date, prize stops show a lock. On the day, the card flips.
+      </p>
+      {REVEALS.map((reveal) => {
+        const saved = prefs.reveals[reveal.id];
+        return (
+          <div key={reveal.id} className="grid gap-2 rounded-xl border border-[#e2a01a]/30 bg-[#fff8df] p-3">
+            <ShowToggle
+              label={`Show ${reveal.title} on the TV`}
+              checked={prefs.shown[reveal.id]}
+              onChange={(next) => onShown(reveal.id, next)}
             />
-            <ScreenRow
-              id="highlight"
-              label="Student Highlight pages"
-              seconds={prefs.dwells.highlight}
-              shown={admin ? prefs.shown.highlight : undefined}
-              onShownChange={admin ? (next) => void saveShown("highlight", next) : undefined}
-            />
-            <p className="text-xs font-semibold text-muted-foreground">
-              {admin
-                ? "Ticks here show or hide pages for every screen on milawaps — not just this computer."
-                : "Daily News and Student Highlight stay off until an admin ticks them in Settings."}{" "}
-              Each new highlight becomes its own TV page for two days.
-            </p>
-          </div>
-          <label className="grid gap-1.5">
-            <span className="text-sm font-bold">Cricket code</span>
-            <input
-              type="text"
-              value={admin ? draftCricket : prefs.cricketCode}
-              aria-label="Cricket code"
-              placeholder="Short code, such as BQWA8Z"
-              readOnly={!admin}
-              onChange={(event) => {
-                if (!admin) return;
-                setDraftCricket(event.target.value);
-              }}
-              onBlur={() => {
-                if (!admin) return;
-                void saveCricket(draftCricket);
-              }}
-              className="h-11 rounded-xl border border-input bg-transparent px-3 text-base font-bold read-only:opacity-70"
-            />
-            <span className="text-xs font-semibold text-muted-foreground">
-              {admin
-                ? "Paste the short code from Jimmy’s cricket. Saving it adds Cricket for every milawaps screen. Clear and leave the field to take it off."
-                : prefs.cricketCode
-                  ? "Cricket is on for the whole school from the shared code. Ask an admin to change it."
-                  : "Ask an admin to paste the Jimmy cricket code so every TV can show the ladder."}
-            </span>
-          </label>
-          {prefs.cricketCode ? (
-            <ScreenRow
-              id="cricket"
-              label="Cricket"
-              seconds={prefs.dwells.cricket}
-              shown={admin ? prefs.shown.cricket : undefined}
-              onShownChange={admin ? (next) => void saveShown("cricket", next) : undefined}
-            />
-          ) : null}
-          {!admin ? (
-            asking ? (
-              <form
-                className="grid gap-2"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (code.length === 4) void submitCode(code);
-                }}
-              >
-                <label className="grid gap-1">
-                  <span className="text-sm font-bold">Admin code</span>
-                  <input
-                    type="password"
-                    inputMode="numeric"
-                    autoComplete="off"
-                    maxLength={4}
-                    value={code}
-                    aria-label="Admin code"
-                    disabled={busy}
-                    onChange={(event) => {
-                      const next = event.target.value.replace(/\D/g, "").slice(0, 4);
-                      setCode(next);
-                      setMessage("");
-                      if (next.length === 4) void submitCode(next);
-                    }}
-                    className="h-12 rounded-xl border border-input bg-transparent px-3 text-center font-display text-2xl tracking-[0.4em]"
-                  />
-                </label>
-                {message ? (
-                  <p className="text-sm font-semibold text-[#8d1f1f]" role="status">
-                    {message}
-                  </p>
-                ) : null}
-              </form>
-            ) : null
-          ) : (
-          <>
-          <NewsEditor
-            news={draftNews}
-            busy={busy}
-            onChange={setDraftNews}
-            onSave={async () => {
-              const token = window.sessionStorage.getItem(ADMIN_KEY);
-              if (!token) return;
-              setBusy(true);
-              setResetNote("");
-              try {
-                const response = await fetch("/api/news", {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                  },
-                  body: JSON.stringify(draftNews),
-                });
-                const body = (await response.json().catch(() => ({}))) as PublicBoard & {
-                  error?: string;
-                };
-                if (!response.ok) {
-                  setResetNote(body.error ?? "The news page did not save.");
-                  return;
-                }
-                onBoard?.(body);
-                setDraftNews(body.news);
-                setResetNote("Daily News saved.");
-              } catch {
-                setResetNote("The news page did not save.");
-              } finally {
-                setBusy(false);
-              }
-            }}
-          />
-          <section className="grid gap-3 rounded-2xl border border-[#e2a01a]/40 bg-[#fff8df] p-3">
-            <div>
-              <h3 className="font-display text-xl">Prize reveals</h3>
-              <p className="text-xs font-semibold text-muted-foreground">
-                Change what a prize says, and upload a picture if ice cream becomes movie day. The
-                thumbnail is the picture this TV will use. Before the date, prize stops show a lock
-                and teacher takedowns show the silhouette. On the day, the card flips and that
-                prize shows in the circle.
-              </p>
-            </div>
-            {REVEALS.map((reveal) => {
-                const saved = prefs.reveals[reveal.id];
-                return (
-                  <div key={reveal.id} className="grid gap-2 rounded-xl bg-white/80 p-3">
-                    <ScreenRow
-                      id={reveal.id}
-                      label={reveal.title}
-                      seconds={prefs.dwells[reveal.id]}
-                      shown={prefs.shown[reveal.id]}
-                      onShownChange={(next) => void saveShown(reveal.id, next)}
-                    />
-                    <MomentFields
-                      at={saved.at}
-                      saveLabel="Save reveal time"
-                      dateLabel={`${reveal.title} date`}
-                      timeLabel={`${reveal.title} time`}
-                      onSave={(at) => setRevealAt(reveal.id, at)}
-                    />
-                    <PrizeWords
-                      reveal={reveal}
-                      says={saved.label}
-                      line={saved.prize}
-                      image={saved.image}
-                      onSays={(value) => setRevealLabel(reveal.id, value)}
-                      onLine={(value) => setRevealPrize(reveal.id, value)}
-                      onImage={(image) => setRevealImage(reveal.id, image)}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="h-9 rounded-xl"
-                      onClick={() => {
-                        setOpen(false);
-                        onPreview(reveal.id);
-                      }}
-                    >
-                      Preview
-                    </Button>
-                  </div>
-                );
-              })}
-          </section>
-          <div className="grid gap-1.5">
-            <span className="text-sm font-bold">Finish date and time</span>
+            <DwellSlider id={reveal.id} label={reveal.title} seconds={prefs.dwells[reveal.id]} />
             <MomentFields
-              at={prefs.finishAt}
-              saveLabel="Save finish time"
-              dateLabel="Finish date"
-              timeLabel="Finish time"
-              onSave={setFinishAt}
+              at={saved.at}
+              saveLabel="Save reveal time"
+              dateLabel={`${reveal.title} date`}
+              timeLabel={`${reveal.title} time`}
+              onSave={(at) => setRevealAt(reveal.id, at)}
             />
-            <span className="text-xs font-semibold text-muted-foreground">
-              The prizes page shows Countdown clock beside the days, hours, minutes, and seconds. Clear both fields and tap Save to hide the clock.
-            </span>
-          </div>
-          {confirmReset ? (
-            <div className="grid gap-2 rounded-2xl border border-[#c23b3b]/40 bg-[#fff1f1] p-3">
-              <p className="text-sm font-bold text-[#8d1f1f]">
-                This clears every class score and every prize reveal on this TV.
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                <Button type="button" variant="outline" className="h-10 rounded-xl" onClick={() => setConfirmReset(false)}>
-                  Keep them
-                </Button>
-                <Button
-                  type="button"
-                  className="h-10 rounded-xl bg-[#8d1f1f] text-white"
-                  disabled={busy}
-                  onClick={() => void resetBoard()}
-                >
-                  Reset now
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <Button type="button" variant="outline" className="h-10 rounded-xl" onClick={() => setConfirmReset(true)}>
-              Reset scores and reveals
+            <PrizeWords
+              reveal={reveal}
+              says={saved.label}
+              line={saved.prize}
+              image={saved.image}
+              onSays={(value) => setRevealLabel(reveal.id, value)}
+              onLine={(value) => setRevealPrize(reveal.id, value)}
+              onImage={(image) => setRevealImage(reveal.id, image)}
+            />
+            <Button type="button" variant="outline" className="h-9 rounded-xl" onClick={() => onPreview(reveal.id)}>
+              Preview
             </Button>
-          )}
-          {resetNote ? (
-            <p className="text-sm font-semibold" role="status">
-              {resetNote}
-            </p>
-          ) : null}
-          </>
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
+function ShowToggle({
+  label,
+  checked,
+  onChange,
+  hint,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  hint?: string;
+}) {
+  return (
+    <div className="grid gap-1">
+      <label className="flex items-center gap-3 rounded-2xl border border-black/10 bg-white px-3 py-2.5">
+        <input
+          type="checkbox"
+          checked={checked}
+          aria-label={label}
+          onChange={(event) => onChange(event.target.checked)}
+          className="size-6 accent-[#e2a01a]"
+        />
+        <span className="text-sm font-extrabold">{label}</span>
+      </label>
+      {hint ? <p className="text-xs font-semibold text-muted-foreground">{hint}</p> : null}
+    </div>
+  );
+}
+
+function DwellSlider({
+  id,
+  label,
+  seconds,
+}: {
+  id: FixedScreenId;
+  label: string;
+  seconds: number;
+}) {
+  return (
+    <div className="grid gap-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm font-bold">Time on TV</span>
+        <span className="font-display text-lg tabular-nums">{seconds}s</span>
+      </div>
+      <input
+        type="range"
+        min={MIN_DWELL_SECONDS}
+        max={MAX_DWELL_SECONDS}
+        step={1}
+        value={seconds}
+        aria-label={`${label} seconds`}
+        onChange={(event) => setViewDwell(id, Number(event.target.value))}
+        className="accent-[#e2a01a]"
+      />
+    </div>
   );
 }
 
@@ -584,9 +1059,9 @@ function NewsEditor({
   return (
     <section className="grid gap-3 rounded-2xl border border-[#1f6f8b]/30 bg-[#eef9ff] p-3">
       <div>
-        <h3 className="font-display text-xl">Daily News</h3>
+        <h3 className="font-display text-xl">Writing</h3>
         <p className="text-xs font-semibold text-muted-foreground">
-          Write the headline kids will check, add reminders and coming-up lines, and upload a photo.
+          Keep lines short so they fit the TV boards.
         </p>
       </div>
       <label className="grid gap-1">
@@ -675,10 +1150,7 @@ function NewsEditor({
           })
         }
       />
-      <UpcomingList
-        rows={news.upcoming}
-        onChange={(upcoming) => onChange({ ...news, upcoming })}
-      />
+      <UpcomingList rows={news.upcoming} onChange={(upcoming) => onChange({ ...news, upcoming })} />
       {error ? <p className="text-xs font-bold text-[#8d1f1f]">{error}</p> : null}
       <Button type="button" className="h-10 rounded-xl" disabled={busy} onClick={() => void onSave()}>
         Save Daily News
@@ -796,48 +1268,6 @@ function UpcomingList({
   );
 }
 
-function ScreenRow({
-  id,
-  label,
-  seconds,
-  shown,
-  onShownChange,
-}: {
-  id: FixedScreenId;
-  label: string;
-  seconds: number;
-  shown?: boolean;
-  onShownChange?: (shown: boolean) => void;
-}) {
-  return (
-    <div className="grid gap-1.5">
-      <div className="flex items-center gap-2">
-        {shown === undefined || !onShownChange ? null : (
-          <input
-            type="checkbox"
-            checked={shown}
-            aria-label={`Show ${label} on every milawaps screen`}
-            onChange={(event) => onShownChange(event.target.checked)}
-            className="size-5 accent-[#e2a01a]"
-          />
-        )}
-        <span className="min-w-0 flex-1 text-sm leading-tight font-bold">{label}</span>
-        <span className="font-display text-lg tabular-nums">{seconds}s</span>
-      </div>
-      <input
-        type="range"
-        min={MIN_DWELL_SECONDS}
-        max={MAX_DWELL_SECONDS}
-        step={1}
-        value={seconds}
-        aria-label={`${label} seconds`}
-        onChange={(event) => setViewDwell(id, Number(event.target.value))}
-        className="accent-[#e2a01a]"
-      />
-    </div>
-  );
-}
-
 function splitLocal(value: number | null) {
   if (!value) return { date: "", time: "" };
   const parsed = new Date(value);
@@ -875,7 +1305,7 @@ function MomentFields({
   const saved = splitLocal(at);
   const [date, setDate] = useState(saved.date);
   const [time, setTime] = useState(saved.time);
-  const [note, setNote] = useState("");
+  const [fieldNote, setFieldNote] = useState("");
 
   useEffect(() => {
     const next = splitLocal(at);
@@ -886,20 +1316,20 @@ function MomentFields({
   function save() {
     if (!date && !time) {
       onSave(null);
-      setNote("Cleared");
+      setFieldNote("Cleared");
       return;
     }
     if (!date || !time) {
-      setNote("Choose a date and a time, then tap Save.");
+      setFieldNote("Choose a date and a time, then tap Save.");
       return;
     }
     const stamp = new Date(`${date}T${time}`).getTime();
     if (!Number.isFinite(stamp)) {
-      setNote("That time did not save. Try again.");
+      setFieldNote("That time did not save. Try again.");
       return;
     }
     onSave(stamp);
-    setNote(`Saved ${formatWhen(stamp)}`);
+    setFieldNote(`Saved ${formatWhen(stamp)}`);
   }
 
   return (
@@ -913,7 +1343,7 @@ function MomentFields({
             aria-label={dateLabel}
             onChange={(event) => {
               setDate(event.target.value);
-              setNote("");
+              setFieldNote("");
             }}
             className="h-10 rounded-xl border border-input bg-transparent px-3 text-sm font-bold"
           />
@@ -926,7 +1356,7 @@ function MomentFields({
             aria-label={timeLabel}
             onChange={(event) => {
               setTime(event.target.value);
-              setNote("");
+              setFieldNote("");
             }}
             className="h-10 rounded-xl border border-input bg-transparent px-3 text-sm font-bold"
           />
@@ -934,7 +1364,7 @@ function MomentFields({
       </div>
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-semibold text-muted-foreground" role="status">
-          {note || (at ? `Set for ${formatWhen(at)}` : "Not set yet")}
+          {fieldNote || (at ? `Set for ${formatWhen(at)}` : "Not set yet")}
         </p>
         <Button type="button" className="h-9 shrink-0 rounded-xl" onClick={save}>
           {saveLabel}

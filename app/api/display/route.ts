@@ -18,6 +18,8 @@ export async function GET() {
       shown: board.shown,
       cricketCode: board.cricketCode,
       updatedAt: board.displayUpdatedAt,
+      newsLayout: board.newsLayout,
+      cricketPanels: board.cricketPanels,
     });
   } catch {
     return json({ error: "The display desk is out of reach." }, 500);

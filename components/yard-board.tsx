@@ -90,11 +90,14 @@ export function YardBoard() {
   const [reasonPrompt, setReasonPrompt] = useState<{ id: string; line: string } | null>(null);
 
   const displaySyncKey = data?.displayUpdatedAt
-    ? `${data.displayUpdatedAt}:${data.cricketCode}:${JSON.stringify(data.shown)}`
+    ? `${data.displayUpdatedAt}:${data.cricketCode}:${JSON.stringify(data.shown)}:${data.newsLayout}:${JSON.stringify(data.cricketPanels)}`
     : "";
   useEffect(() => {
     if (!data?.displayUpdatedAt) return;
-    hydrateDisplay(data.shown, data.cricketCode);
+    hydrateDisplay(data.shown, data.cricketCode, {
+      newsLayout: data.newsLayout,
+      cricketPanels: data.cricketPanels,
+    });
   }, [displaySyncKey, data]);
 
   // Desk (not kiosk): always browse News/Stars. TV show flags only gate the kiosk loop.
@@ -557,9 +560,9 @@ export function YardBoard() {
               transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             >
               {view === "cricket" ? (
-                <CricketView code={cricketCode} fill />
+                <CricketView code={cricketCode} fill panels={prefs.cricketPanels} />
               ) : view === "news" ? (
-                <NewsView news={data.news ?? emptyNews()} />
+                <NewsView news={data.news ?? emptyNews()} layout={prefs.newsLayout} />
               ) : activeHighlight ? (
                 <HighlightView
                   entry={activeHighlight}

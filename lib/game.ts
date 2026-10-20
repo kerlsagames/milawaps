@@ -94,6 +94,10 @@ export type PublicBoard = {
   cricketCode: string;
   /** When shared TV pages were last saved by an admin (0 = never). */
   displayUpdatedAt: number;
+  /** Shared Daily News TV layout. */
+  newsLayout: import("@/lib/site-display").NewsLayoutId;
+  /** Which cricket panels are on for every visitor. */
+  cricketPanels: import("@/lib/site-display").CricketPanels;
 };
 
 export type Milestone = {

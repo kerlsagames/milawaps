@@ -10,6 +10,11 @@ import {
   type RevealId,
   type ShownMap,
 } from "@/lib/reveals";
+import {
+  DEFAULT_CRICKET_PANELS,
+  type CricketPanels,
+  type NewsLayoutId,
+} from "@/lib/site-display";
 import { staffFromToken } from "@/lib/who";
 
 function revealDefaultLabel(reveal: (typeof REVEALS)[number]) {
@@ -41,6 +46,8 @@ export type DeskPrefs = {
   reveals: RevealMap;
   timer: TimerStyle;
   cricketCode: string;
+  newsLayout: NewsLayoutId;
+  cricketPanels: CricketPanels;
 };
 
 export const MIN_DWELL_SECONDS = 5;
@@ -81,6 +88,8 @@ const serverPrefs: DeskPrefs = {
   reveals: defaultReveals(),
   timer: "race",
   cricketCode: "",
+  newsLayout: "split",
+  cricketPanels: { ...DEFAULT_CRICKET_PANELS },
 };
 
 let current: DeskPrefs = serverPrefs;
@@ -181,6 +190,27 @@ function readTimer(): TimerStyle {
   return window.localStorage.getItem("ott-timer-style") === "blocks" ? "blocks" : "race";
 }
 
+function readNewsLayout(): NewsLayoutId {
+  const raw = window.localStorage.getItem("ott-news-layout");
+  return raw === "stack" || raw === "boards" || raw === "split" ? raw : "split";
+}
+
+function readCricketPanels(): CricketPanels {
+  try {
+    const raw = window.localStorage.getItem("ott-cricket-panels");
+    if (!raw) return { ...DEFAULT_CRICKET_PANELS };
+    const parsed = JSON.parse(raw) as Partial<CricketPanels>;
+    return {
+      lastNext: typeof parsed.lastNext === "boolean" ? parsed.lastNext : true,
+      leaders: typeof parsed.leaders === "boolean" ? parsed.leaders : true,
+      ladder: typeof parsed.ladder === "boolean" ? parsed.ladder : true,
+      draw: typeof parsed.draw === "boolean" ? parsed.draw : true,
+    };
+  } catch {
+    return { ...DEFAULT_CRICKET_PANELS };
+  }
+}
+
 function readPrefs(): DeskPrefs {
   const cricketCode = readCricket();
   const shown = readShown();
@@ -194,6 +224,8 @@ function readPrefs(): DeskPrefs {
     reveals: readReveals(),
     timer: readTimer(),
     cricketCode,
+    newsLayout: readNewsLayout(),
+    cricketPanels: readCricketPanels(),
   };
 }
 
@@ -251,18 +283,49 @@ export function setScreenShown(screen: FixedScreenId, shown: boolean) {
   publish({ ...readPrefs(), shown: next });
 }
 
+export function setNewsLayoutLocal(layout: NewsLayoutId) {
+  window.localStorage.setItem("ott-news-layout", layout);
+  publish({ ...readPrefs(), newsLayout: layout });
+}
+
+export function setCricketPanelsLocal(panels: CricketPanels) {
+  window.localStorage.setItem("ott-cricket-panels", JSON.stringify(panels));
+  publish({ ...readPrefs(), cricketPanels: panels });
+}
+
 /** Apply shared TV display settings from the server board (every visitor). */
-export function hydrateDisplay(shown: ShownMap, cricketCode: string) {
+export function hydrateDisplay(
+  shown: ShownMap,
+  cricketCode: string,
+  extras?: { newsLayout?: NewsLayoutId; cricketPanels?: CricketPanels },
+) {
   const code = cricketCode.trim().slice(0, 300);
   window.localStorage.setItem("ott-kiosk-shown", JSON.stringify(shown));
   if (code) window.localStorage.setItem("ott-cricket-code", code);
   else window.localStorage.removeItem("ott-cricket-code");
-  publish({ ...readPrefs(), shown: { ...shown }, cricketCode: code });
+  if (extras?.newsLayout) {
+    window.localStorage.setItem("ott-news-layout", extras.newsLayout);
+  }
+  if (extras?.cricketPanels) {
+    window.localStorage.setItem("ott-cricket-panels", JSON.stringify(extras.cricketPanels));
+  }
+  publish({
+    ...readPrefs(),
+    shown: { ...shown },
+    cricketCode: code,
+    newsLayout: extras?.newsLayout ?? readNewsLayout(),
+    cricketPanels: extras?.cricketPanels ?? readCricketPanels(),
+  });
 }
 
 /** Admin: save show/hide and cricket code for every milawaps visitor. */
 export async function saveSiteDisplay(
-  patch: { shown?: Partial<ShownMap>; cricketCode?: string },
+  patch: {
+    shown?: Partial<ShownMap>;
+    cricketCode?: string;
+    newsLayout?: NewsLayoutId;
+    cricketPanels?: Partial<CricketPanels>;
+  },
   adminToken: string,
 ): Promise<{ ok: true; board: import("@/lib/game").PublicBoard } | { ok: false; error: string }> {
   try {
@@ -280,7 +343,10 @@ export async function saveSiteDisplay(
     if (!response.ok) {
       return { ok: false, error: body.error ?? "Those TV pages did not save." };
     }
-    hydrateDisplay(body.shown, body.cricketCode);
+    hydrateDisplay(body.shown, body.cricketCode, {
+      newsLayout: body.newsLayout,
+      cricketPanels: body.cricketPanels,
+    });
     return { ok: true, board: body };
   } catch {
     return { ok: false, error: "Those TV pages did not save." };

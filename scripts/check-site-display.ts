@@ -8,6 +8,8 @@ assert.equal(empty.updatedAt, 0);
 assert.equal(empty.shown.board, true);
 assert.equal(empty.shown.news, false);
 assert.equal(empty.shown.cricket, false);
+assert.equal(empty.newsLayout, "split");
+assert.equal(empty.cricketPanels.ladder, true);
 
 const withCode = siteDisplayFromInput({ cricketCode: "BQWA8Z" }, empty);
 assert.equal(withCode.cricketCode, "BQWA8Z");
@@ -28,9 +30,18 @@ assert.equal(cleared.shown.news, true);
 const sanitized = sanitizeSiteDisplay({
   shown: { ...DEFAULT_SHOWN, news: true, board: false },
   cricketCode: "  abc  ",
+  newsLayout: "boards",
+  cricketPanels: { lastNext: false, leaders: true, ladder: true, draw: false },
 });
 assert.equal(sanitized.cricketCode, "abc");
 assert.equal(sanitized.shown.news, true);
 assert.equal(sanitized.shown.board, false);
+assert.equal(sanitized.newsLayout, "boards");
+assert.equal(sanitized.cricketPanels.lastNext, false);
+assert.equal(sanitized.cricketPanels.draw, false);
+
+const layoutOnly = siteDisplayFromInput({ newsLayout: "stack" }, sanitized);
+assert.equal(layoutOnly.newsLayout, "stack");
+assert.equal(layoutOnly.cricketCode, "abc");
 
 console.log("site display checks passed");
