@@ -47,7 +47,6 @@ export function StaffHud({
   onBoard: (board: PublicBoard) => void;
   onLogout: () => void;
 }) {
-  const [confirmReset, setConfirmReset] = useState(false);
   const [highlightUnit, setHighlightUnit] = useState<UnitId | null>(null);
   const allFull = board
     ? UNITS.every((unit) => board.units[unit.id] >= UNIT_MAX)
@@ -60,13 +59,7 @@ export function StaffHud({
   );
 
   return (
-    <Sheet
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) setConfirmReset(false);
-        onOpenChange(next);
-      }}
-    >
+    <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
         className="max-h-[88vh] gap-0 overflow-hidden rounded-t-[28px] border-black/10 p-0 sm:inset-x-auto sm:right-4 sm:bottom-4 sm:left-auto sm:w-[440px] sm:rounded-[28px]"
@@ -167,28 +160,6 @@ export function StaffHud({
               Lock desk
             </Button>
           </div>
-
-          {confirmReset ? (
-            <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" className="h-11" onClick={() => setConfirmReset(false)}>
-                Keep scores
-              </Button>
-              <Button
-                variant="destructive"
-                className="h-11"
-                onClick={() => {
-                  setConfirmReset(false);
-                  onScore("reset");
-                }}
-              >
-                Clear the board
-              </Button>
-            </div>
-          ) : (
-            <Button variant="ghost" className="h-10 text-muted-foreground" onClick={() => setConfirmReset(true)}>
-              Reset the week
-            </Button>
-          )}
         </div>
       </SheetContent>
       {token ? (

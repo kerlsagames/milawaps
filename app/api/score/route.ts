@@ -47,8 +47,16 @@ export async function POST(request: Request) {
     return json({ error: "Unknown scoring action." }, 400);
   }
 
+  // Full board clear is admin-only (Settings → Reset). Teachers use undo for mistakes.
+  if (action === "reset") {
+    return json(
+      { error: "Only an admin can clear the board. Use Settings with the admin code." },
+      403,
+    );
+  }
+
   let unitId: UnitId | undefined;
-  if (action === "teamwork" || action === "reset" || action === "undo") {
+  if (action === "teamwork" || action === "undo") {
     unitId = undefined;
   } else if (!isUnitId(unitValue)) {
     return json({ error: "Choose F/1, 2/3/4, or 5/6." }, 400);
