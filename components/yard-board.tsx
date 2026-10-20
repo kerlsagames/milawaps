@@ -491,7 +491,10 @@ export function YardBoard() {
       <div className={cn("flex min-h-0 flex-1", kiosk ? "flex-row" : "flex-col lg:flex-row")}>
       <main
         className={cn(
-          "relative mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col overflow-y-auto px-3 py-2 lg:overflow-hidden lg:px-4",
+          "relative mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-2 py-1.5 sm:px-3 sm:py-2 lg:px-4",
+          view === "prizes" || view === "yard" || Boolean(activeReveal)
+            ? "overflow-y-auto lg:overflow-hidden"
+            : "overflow-hidden",
           (view === "prizes" ||
             view === "board" ||
             view === "cricket" ||
@@ -530,7 +533,14 @@ export function YardBoard() {
           <AnimatePresence mode="wait">
             <motion.div
               key={view}
-              className="relative min-h-0 lg:h-full"
+              className={cn(
+                "relative min-h-0",
+                (view === "board" ||
+                  view === "cricket" ||
+                  view === "news" ||
+                  Boolean(activeHighlightId)) &&
+                  "h-full",
+              )}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
@@ -799,10 +809,10 @@ function TvFit({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <div ref={frame} className="min-h-0 lg:h-full lg:overflow-hidden">
+    <div ref={frame} className="h-full min-h-0 overflow-hidden">
       <div
         ref={inner}
-        className="lg:h-full"
+        className="h-full"
         style={{ transform: `scale(${scale})`, transformOrigin: "top center" }}
       >
         {children}

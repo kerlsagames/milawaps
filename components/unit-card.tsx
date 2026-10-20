@@ -5,12 +5,14 @@ import { Sparkles } from "lucide-react";
 import { UNIT_MAX, type ScoreAction, type UnitId, type UnitTheme } from "@/lib/game";
 import { BlockMatrix, StrikeMatrix } from "@/components/block-matrix";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export function UnitCard({
   unit,
   score,
   crosses,
   index,
+  compact = false,
   onScore,
   onHighlight,
 }: {
@@ -18,6 +20,8 @@ export function UnitCard({
   score: number;
   crosses: number;
   index: number;
+  /** Phone yard desk: shrink so F/1, 2/3/4 and 5/6 all fit. */
+  compact?: boolean;
   onScore?: (action: ScoreAction, unitId: UnitId) => void;
   onHighlight?: (unitId: UnitId) => void;
 }) {
@@ -28,37 +32,65 @@ export function UnitCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      className="@container relative flex flex-col overflow-hidden rounded-3xl border bg-card"
+      className={cn(
+        "@container relative flex min-h-0 flex-col overflow-hidden rounded-2xl border bg-card lg:rounded-3xl",
+        compact && "min-h-0",
+      )}
       style={{
         borderColor: `${unit.color}66`,
-        boxShadow: `0 5px 0 ${unit.deep}`,
+        boxShadow: `0 4px 0 ${unit.deep}`,
       }}
     >
       <div
-        className="flex items-center justify-between gap-3 px-3 py-2.5 lg:px-4 lg:py-4"
+        className={cn(
+          "flex items-center justify-between gap-2",
+          compact ? "px-2 py-1.5 lg:px-4 lg:py-4" : "px-3 py-2.5 lg:px-4 lg:py-4",
+        )}
         style={{ background: unit.color, color: unit.ink }}
       >
         <div className="min-w-0">
           <p
-            className="font-display text-[2.65rem] leading-none whitespace-nowrap lg:text-[length:min(8.5rem,calc((100cqi-8rem)/3))] lg:leading-[0.78]"
+            className={cn(
+              "font-display leading-none whitespace-nowrap",
+              compact
+                ? "text-[1.85rem] lg:text-[length:min(8.5rem,calc((100cqi-8rem)/3))] lg:leading-[0.78]"
+                : "text-[2.65rem] lg:text-[length:min(8.5rem,calc((100cqi-8rem)/3))] lg:leading-[0.78]",
+            )}
             style={{
               letterSpacing: "-0.04em",
-              textShadow: `0 4px 0 ${unit.deep}`,
+              textShadow: `0 3px 0 ${unit.deep}`,
             }}
           >
             {unit.code}
           </p>
         </div>
         <div
-          className="grid size-14 shrink-0 place-items-center rounded-full bg-[#fffdf8] shadow-[0_3px_0_rgba(42,28,4,0.28)] lg:size-24 lg:shadow-[0_4px_0_rgba(42,28,4,0.28)]"
+          className={cn(
+            "grid shrink-0 place-items-center rounded-full bg-[#fffdf8]",
+            compact
+              ? "size-10 shadow-[0_2px_0_rgba(42,28,4,0.28)] lg:size-24 lg:shadow-[0_4px_0_rgba(42,28,4,0.28)]"
+              : "size-14 shadow-[0_3px_0_rgba(42,28,4,0.28)] lg:size-24 lg:shadow-[0_4px_0_rgba(42,28,4,0.28)]",
+          )}
           aria-label={`${unit.code} tally ${score}`}
         >
-          <p className="font-display text-3xl leading-none tabular-nums lg:text-5xl">{score}</p>
+          <p
+            className={cn(
+              "font-display leading-none tabular-nums",
+              compact ? "text-2xl lg:text-5xl" : "text-3xl lg:text-5xl",
+            )}
+          >
+            {score}
+          </p>
         </div>
       </div>
 
-      <div className="flex flex-col p-2 pt-2 lg:p-3 lg:pt-2">
-        <div className="h-1.5 overflow-hidden rounded-full bg-black/10 lg:h-2">
+      <div
+        className={cn(
+          "flex min-h-0 flex-1 flex-col",
+          compact ? "p-1.5 pt-1.5 lg:p-3 lg:pt-2" : "p-2 pt-2 lg:p-3 lg:pt-2",
+        )}
+      >
+        <div className={cn("overflow-hidden rounded-full bg-black/10", compact ? "h-1 lg:h-2" : "h-1.5 lg:h-2")}>
           <motion.div
             className="h-full rounded-full"
             style={{ backgroundColor: unit.color }}
@@ -74,16 +106,19 @@ export function UnitCard({
         </div>
 
         {crosses > 0 ? (
-          <p className="mt-1.5 truncate text-xs text-muted-foreground lg:hidden">
+          <p className={cn("truncate text-muted-foreground lg:hidden", compact ? "mt-0.5 text-[10px]" : "mt-1.5 text-xs")}>
             {crosses} strike{crosses === 1 ? "" : "s"}
           </p>
         ) : null}
 
         {onScore ? (
-          <div className="mt-2 grid grid-cols-3 gap-1.5">
+          <div className={cn("mt-auto grid grid-cols-3", compact ? "mt-1.5 gap-1 lg:mt-2 lg:gap-1.5" : "mt-2 gap-1.5")}>
             <Button
               type="button"
-              className="h-14 rounded-xl text-lg lg:h-12 lg:text-base"
+              className={cn(
+                "rounded-xl",
+                compact ? "h-10 text-base lg:h-12 lg:text-base" : "h-14 text-lg lg:h-12 lg:text-base",
+              )}
               style={{ background: unit.color, color: unit.ink }}
               disabled={score >= UNIT_MAX}
               onClick={() => onScore("spot", unit.id)}
@@ -92,7 +127,10 @@ export function UnitCard({
             </Button>
             <Button
               type="button"
-              className="h-14 rounded-xl text-lg lg:h-12 lg:text-base"
+              className={cn(
+                "rounded-xl",
+                compact ? "h-10 text-base lg:h-12 lg:text-base" : "h-14 text-lg lg:h-12 lg:text-base",
+              )}
               style={{ background: unit.deep, color: "#fff7ea" }}
               disabled={score >= UNIT_MAX}
               onClick={() => onScore("surge", unit.id)}
@@ -102,7 +140,10 @@ export function UnitCard({
             <Button
               type="button"
               variant="outline"
-              className="h-14 rounded-xl border-[#c23b3b]/40 bg-[#c23b3b]/10 text-lg text-[#8d1f1f] lg:h-12 lg:text-base"
+              className={cn(
+                "rounded-xl border-[#c23b3b]/40 bg-[#c23b3b]/10 text-[#8d1f1f]",
+                compact ? "h-10 text-base lg:h-12 lg:text-base" : "h-14 text-lg lg:h-12 lg:text-base",
+              )}
               disabled={score <= 0}
               onClick={() => onScore("strike", unit.id)}
             >
@@ -115,10 +156,15 @@ export function UnitCard({
           <Button
             type="button"
             variant="outline"
-            className="mt-2 h-12 w-full rounded-xl border-[#e2a01a] bg-[#fff8df] text-sm font-extrabold lg:h-11"
+            className={cn(
+              "w-full rounded-xl border-[#e2a01a] bg-[#fff8df] font-extrabold",
+              compact
+                ? "mt-1 h-8 text-xs lg:mt-2 lg:h-11 lg:text-sm"
+                : "mt-2 h-12 text-sm lg:h-11",
+            )}
             onClick={() => onHighlight(unit.id)}
           >
-            <Sparkles className="size-4" aria-hidden="true" />
+            <Sparkles className={cn(compact ? "size-3.5 lg:size-4" : "size-4")} aria-hidden="true" />
             Student highlight
           </Button>
         ) : null}
