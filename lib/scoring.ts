@@ -180,6 +180,10 @@ export function applyAction(
     };
   }
 
+  if (action === "undo" || !isScoreAction(action)) {
+    throw new Error("Use undoLastTick for undo.");
+  }
+
   if (action !== "teamwork" && !unitId) {
     throw new Error("A unit is required for this score.");
   }
@@ -255,4 +259,50 @@ export function attachReason(
     REASON_ARCHIVE,
   );
   return { ...state, log, reasons, updatedAt: now };
+}
+
+/** Reverse the most recent non-reset tick and drop it from the log. */
+export function undoLastTick(state: ScoreState, now = Date.now()): ScoreState {
+  const log = state.log ?? [];
+  const entry = log[0];
+  if (!entry || entry.action === "reset" || entry.action === "undo") {
+    throw new Error("Nothing to undo.");
+  }
+  if (!isScoreAction(entry.action)) {
+    throw new Error("Nothing to undo.");
+  }
+
+  const units = { ...state.units };
+  const crosses = { ...(state.crosses ?? { f1: 0, "234": 0, "56": 0 }) };
+
+  if (entry.action === "teamwork") {
+    for (const id of UNIT_IDS) {
+      units[id] = clampScore(units[id] - ACTION_COPY.teamwork.delta);
+    }
+  } else if (isUnitId(entry.unitId) && entry.action === "strike") {
+    if (crosses[entry.unitId] > 0) {
+      units[entry.unitId] = clampScore(units[entry.unitId] + 1);
+      crosses[entry.unitId] = clampStrike(crosses[entry.unitId] - 1);
+    }
+  } else if (isUnitId(entry.unitId)) {
+    units[entry.unitId] = clampScore(units[entry.unitId] - ACTION_COPY[entry.action].delta);
+  }
+
+  const nextLog = log.slice(1);
+  const previous = nextLog.find((item) => isScoreAction(item.action));
+  return {
+    units,
+    crosses,
+    updatedAt: now,
+    lastAction: previous
+      ? {
+          action: previous.action as ScoreAction,
+          unitId: previous.unitId,
+          at: previous.at,
+          staffId: previous.staffId,
+        }
+      : null,
+    log: nextLog,
+    reasons: (state.reasons ?? []).filter((item) => item.id !== entry.id),
+  };
 }

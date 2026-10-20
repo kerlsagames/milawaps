@@ -248,7 +248,7 @@ export function YardBoard() {
             return;
           }
           const entry = body.log?.[0];
-          if (action !== "reset" && entry?.id) {
+          if (action !== "reset" && action !== "undo" && entry?.id) {
             setReasonPrompt({ id: entry.id, line: tickerLine(entry) ?? "Points saved" });
           } else {
             setReasonPrompt(null);
@@ -456,7 +456,6 @@ export function YardBoard() {
         onOpenChange={setHudOpen}
         board={data}
         dutyName={dutyName}
-        staffId={staffFromToken(token)}
         token={token}
         error={deskError}
         onScore={score}

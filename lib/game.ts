@@ -18,7 +18,7 @@ export const VIEWS = [
 export type ViewId = (typeof VIEWS)[number]["id"];
 
 export type ScoreAction = "spot" | "surge" | "strike" | "teamwork";
-export type ActionId = ScoreAction | "reset";
+export type ActionId = ScoreAction | "reset" | "undo";
 
 export const STAFF = [
   { id: "jess", name: "Jess", kid: "Miss B" },
@@ -263,7 +263,7 @@ export function isScoreAction(value: unknown): value is ScoreAction {
 }
 
 export function isActionId(value: unknown): value is ActionId {
-  return isScoreAction(value) || value === "reset";
+  return isScoreAction(value) || value === "reset" || value === "undo";
 }
 
 export function unitById(id: UnitId): UnitTheme {
@@ -304,6 +304,7 @@ export function actionLabel(action: LastAction): string {
 export function scoreLogLabel(entry: ScoreLogEntry): string {
   const who = staffName(entry.staffId) ?? "Someone";
   if (entry.action === "reset") return `${who} cleared the board`;
+  if (entry.action === "undo" || !isScoreAction(entry.action)) return `${who} undid a tick`;
   const copy = ACTION_COPY[entry.action];
   const where = entry.unitId === "all" ? "all units" : unitById(entry.unitId).code;
   const because = entry.reason ? ` · ${entry.reason}` : "";

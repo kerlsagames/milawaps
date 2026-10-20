@@ -48,7 +48,7 @@ export async function POST(request: Request) {
   }
 
   let unitId: UnitId | undefined;
-  if (action === "teamwork" || action === "reset") {
+  if (action === "teamwork" || action === "reset" || action === "undo") {
     unitId = undefined;
   } else if (!isUnitId(unitValue)) {
     return json({ error: "Choose F/1, 2/3/4, or 5/6." }, 400);
@@ -59,7 +59,10 @@ export async function POST(request: Request) {
   try {
     const result = await commitAction(action, unitId, staffId);
     return json({ ...result.board, events: result.events });
-  } catch {
+  } catch (error) {
+    if (action === "undo" && error instanceof Error) {
+      return json({ error: error.message }, 400);
+    }
     return json({ error: "The score did not save. Try the tick again." }, 500);
   }
 }

@@ -19,7 +19,7 @@ import {
   type HighlightStudent,
 } from "@/lib/highlights";
 import { emptyNews, newsFromInput, sanitizeNews, type DailyNews } from "@/lib/news";
-import { applyAction, attachReason, sanitizeScores } from "@/lib/scoring";
+import { applyAction, attachReason, sanitizeScores, undoLastTick } from "@/lib/scoring";
 
 const SCORE_KEY = "ott:scores";
 const SECURITY_KEY = "ott:security";
@@ -195,6 +195,12 @@ export function commitAction(
 ): Promise<{ board: PublicBoard; events: ReturnType<typeof applyAction>["events"] }> {
   return serialized(async () => {
     const blob = await readBlob();
+    if (action === "undo") {
+      const scores = undoLastTick(blob.scores);
+      const next = { ...blob, scores };
+      await writeBlob(next);
+      return { board: toPublic(next), events: [] };
+    }
     const result = applyAction(blob.scores, action, unitId, staffId);
     const next = { ...blob, scores: result.state };
     await writeBlob(next);

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { STRIKE_MAX, UNIT_MAX, VAULT_TARGET, emptyScores, vaultTotal } from "../lib/game";
-import { applyAction, attachReason } from "../lib/scoring";
+import { applyAction, attachReason, undoLastTick } from "../lib/scoring";
 import { tickerLine } from "../lib/ticker";
 
 const start = emptyScores(1_000);
@@ -122,5 +122,12 @@ assert.equal(tickerLine(noted.state.log[0]), "Miss B has just given F/1 +1 point
 const kept = applyAction(withReason, "reset", undefined, "craig", 12_000);
 assert.equal(kept.state.units.f1, 0);
 assert.equal(kept.state.reasons.length, 1);
+
+const forUndo = applyAction(start, "surge", "56", "ash", 13_000);
+assert.equal(forUndo.state.units["56"], 2);
+const undone = undoLastTick(forUndo.state, 14_000);
+assert.equal(undone.units["56"], 0);
+assert.equal(undone.log.length, 0);
+assert.equal(undone.lastAction, null);
 
 console.log("scoring checks passed");
