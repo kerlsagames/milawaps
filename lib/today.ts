@@ -89,7 +89,8 @@ function undoAction(
 }
 
 export function todayFeed(
-  board: Pick<PublicBoard, "units" | "crosses" | "log" | "highlights">,
+  board: Pick<PublicBoard, "units" | "crosses" | "log"> &
+    Partial<Pick<PublicBoard, "highlights">>,
   now = Date.now(),
   prizeName: (points: number, title: string) => string = (_points, title) => title,
 ): TodayItem[] {
