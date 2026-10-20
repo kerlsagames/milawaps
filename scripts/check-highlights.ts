@@ -5,11 +5,15 @@ import { STUDENTS } from "../lib/students";
 import { kioskScreens, DEFAULT_SHOWN } from "../lib/reveals";
 
 assert.equal(STUDENTS.filter((student) => student.unitId === "f1").length, 17);
-assert.equal(STUDENTS.filter((student) => student.unitId === "234").length, 5);
+assert.equal(STUDENTS.filter((student) => student.unitId === "234").length, 20);
 assert.ok(STUDENTS.some((student) => student.name === "Ellie Mae"));
 assert.ok(STUDENTS.some((student) => student.id === "f1-murphy"));
 assert.ok(STUDENTS.some((student) => student.id === "234-leo"));
 assert.ok(STUDENTS.some((student) => student.id === "234-isla"));
+assert.ok(STUDENTS.some((student) => student.id === "234-austin"));
+assert.ok(STUDENTS.some((student) => student.id === "234-tjmara"));
+assert.ok(STUDENTS.some((student) => student.name === "Matilda L"));
+assert.ok(STUDENTS.some((student) => student.name === "Matilda M"));
 
 const news = sanitizeNews({
   headline: "Sports day",
