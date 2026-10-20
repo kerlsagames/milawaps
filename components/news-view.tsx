@@ -125,9 +125,9 @@ function ScatterBoard({ news }: { news: DailyNews }) {
                 <li
                   key={item.id}
                   className={cn(
-                    "min-h-0 overflow-hidden rounded-lg border-2 border-[#2a1c04]/15 px-2.5 py-1.5 font-extrabold break-words text-[#2a1c04] shadow-[2px_2px_0_rgba(42,28,4,0.12)]",
+                    "min-h-0 overflow-hidden rounded-lg border-2 border-[#2a1c04]/20 px-3 py-2 font-black break-words text-[#1a1206] shadow-[2px_2px_0_rgba(42,28,4,0.14)]",
                     CHIP_TONES[index % CHIP_TONES.length],
-                    "text-[clamp(1rem,2.1vh,1.55rem)]",
+                    "text-[clamp(1.2rem,2.7vh,2rem)]",
                   )}
                 >
                   <span className={lineClampFor(news.reminders.length)}>{item.text}</span>
@@ -158,11 +158,11 @@ function ScatterBoard({ news }: { news: DailyNews }) {
                   )}
                 >
                   {item.when ? (
-                    <p className="text-[clamp(0.65rem,1.2vh,0.85rem)] font-black tracking-[0.12em] text-[#0d5c4c] uppercase">
+                    <p className="text-[clamp(0.8rem,1.5vh,1.05rem)] font-black tracking-[0.12em] text-[#0d5c4c] uppercase">
                       {item.when}
                     </p>
                   ) : null}
-                  <p className="text-[clamp(1rem,2.1vh,1.55rem)] leading-snug font-extrabold break-words text-[#16384a]">
+                  <p className="text-[clamp(1.2rem,2.7vh,2rem)] leading-snug font-black break-words text-[#102a36]">
                     <span className={lineClampFor(news.upcoming.length)}>{item.text}</span>
                   </p>
                 </li>
@@ -181,7 +181,7 @@ function ScatterBoard({ news }: { news: DailyNews }) {
             grow={false}
             bodyClass="bg-[#f3eeff]"
           >
-            <p className="rounded-lg border-2 border-[#6c5ce7]/35 bg-[#ffe66d] px-2.5 py-2 text-[clamp(1.05rem,2.3vh,1.7rem)] leading-snug font-black break-words text-[#2a1c04] shadow-[3px_3px_0_rgba(108,92,231,0.25)]">
+            <p className="rounded-lg border-2 border-[#6c5ce7]/35 bg-[#ffe66d] px-3 py-2.5 text-[clamp(1.2rem,2.8vh,2.1rem)] leading-snug font-black break-words text-[#1a1206] shadow-[3px_3px_0_rgba(108,92,231,0.25)]">
               <span className="line-clamp-3">{news.challenge}</span>
             </p>
           </TiltCard>
@@ -239,13 +239,13 @@ function TiltCard({
       }}
     >
       <div
-        className="relative shrink-0 px-3 py-1.5 sm:py-2"
+        className="relative shrink-0 px-3 py-2 sm:px-3.5 sm:py-2.5"
         style={{
           background: `linear-gradient(105deg, ${headerFrom} 0%, ${headerTo} 55%, ${headerFrom} 100%)`,
         }}
       >
         <p
-          className="font-display text-[clamp(1.35rem,3.2vh,2.35rem)] leading-none tracking-tight text-white"
+          className="font-display text-[clamp(1.55rem,3.9vh,2.85rem)] leading-none tracking-tight text-white"
           style={{ textShadow: "0 2px 0 rgba(0,0,0,0.28), 2px 2px 0 rgba(0,0,0,0.18)" }}
         >
           {title}
@@ -274,7 +274,7 @@ function RemindersPanel({ news, size }: { news: DailyNews; size: TextSize }) {
             <li
               key={item.id}
               className={cn(
-                "min-h-0 overflow-hidden rounded-lg border-2 border-[#2a1c04]/15 px-3 py-2 font-extrabold break-words text-[#2a1c04] shadow-[2px_2px_0_rgba(42,28,4,0.12)]",
+                "min-h-0 overflow-hidden rounded-lg border-2 border-[#2a1c04]/20 px-3 py-2 font-black break-words text-[#1a1206] shadow-[2px_2px_0_rgba(42,28,4,0.14)]",
                 CHIP_TONES[index % CHIP_TONES.length],
                 textClass(size),
               )}
@@ -304,11 +304,11 @@ function UpcomingPanel({ news, size }: { news: DailyNews; size: TextSize }) {
               )}
             >
               {item.when ? (
-                <p className="text-[clamp(0.7rem,1.3vh,0.9rem)] font-black tracking-[0.12em] text-[#0d5c4c] uppercase">
+                <p className="text-[clamp(0.8rem,1.5vh,1.05rem)] font-black tracking-[0.12em] text-[#0d5c4c] uppercase">
                   {item.when}
                 </p>
               ) : null}
-              <p className={cn("leading-snug font-extrabold break-words text-[#16384a]", textClass(size))}>
+              <p className={cn("leading-snug font-black break-words text-[#102a36]", textClass(size))}>
                 <span className={lineClampFor(news.upcoming.length)}>{item.text}</span>
               </p>
             </li>
@@ -361,9 +361,9 @@ function PhotoPanel({ news, className }: { news: DailyNews; className?: string }
 type TextSize = "md" | "lg" | "xl";
 
 function textClass(size: TextSize) {
-  if (size === "xl") return "text-[clamp(1.2rem,2.8vh,2.1rem)]";
-  if (size === "lg") return "text-[clamp(1.1rem,2.5vh,1.85rem)]";
-  return "text-[clamp(1.05rem,2.3vh,1.7rem)]";
+  if (size === "xl") return "text-[clamp(1.35rem,3.1vh,2.35rem)]";
+  if (size === "lg") return "text-[clamp(1.25rem,2.8vh,2.15rem)]";
+  return "text-[clamp(1.2rem,2.6vh,2rem)]";
 }
 
 function lineClampFor(count: number) {
@@ -396,13 +396,13 @@ function Panel({
       style={{ background: body }}
     >
       <div
-        className="relative shrink-0 px-3 py-1.5 sm:py-2"
+        className="relative shrink-0 px-3 py-2 sm:py-2.5"
         style={{
           background: `linear-gradient(105deg, ${from} 0%, ${to} 55%, ${from} 100%)`,
         }}
       >
         <p
-          className="font-display text-[clamp(1.25rem,2.8vh,2.1rem)] leading-none tracking-tight text-white"
+          className="font-display text-[clamp(1.45rem,3.4vh,2.55rem)] leading-none tracking-tight text-white"
           style={{ textShadow: "0 2px 0 rgba(0,0,0,0.28), 2px 2px 0 rgba(0,0,0,0.18)" }}
         >
           {title}
