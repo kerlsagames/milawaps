@@ -721,10 +721,11 @@ export function YardBoard() {
             data.log[0].action === "undo"
           }
           onClick={() => scoreOrUnlock("undo")}
-          className="fixed bottom-3 left-3 z-[70] h-11 rounded-2xl border-2 border-[#2a1c04] bg-[#fffdf8] px-3.5 text-sm font-extrabold shadow-[0_6px_0_#2a1c04] sm:bottom-5 sm:left-5 sm:h-12 sm:px-4 sm:text-base"
+          className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-3 z-[100] h-12 rounded-2xl border-2 border-[#2a1c04] bg-[#fffdf8] px-3.5 text-sm font-extrabold shadow-[0_6px_0_#2a1c04] sm:bottom-5 sm:left-5 sm:h-12 sm:px-4 sm:text-base"
         >
           <Undo2 className="size-4" aria-hidden="true" />
-          Undo last click
+          <span className="sm:hidden">Undo</span>
+          <span className="hidden sm:inline">Undo last click</span>
         </Button>
       ) : null}
       {reasonPrompt && token ? (
@@ -767,7 +768,7 @@ async function celebrate(events: MilestoneEvent[]) {
     const colors = unit
       ? [unit.color, "#ffe08a", "#fff7e8"]
       : ["#ffe08a", "#ff5d8f", "#8b7cf7", "#ffffff"];
-    const jackpot = event.secret || event.points === 60;
+    const jackpot = event.secret || event.points === 80;
     void confetti({
       particleCount: jackpot ? 140 : 70,
       spread: jackpot ? 100 : 65,

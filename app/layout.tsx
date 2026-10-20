@@ -15,13 +15,13 @@ const fredoka = Fredoka({
 });
 
 export const metadata: Metadata = {
-  title: "Term 4 Tidy Challenge",
+  title: "Term 4 Challenge",
   description:
-    "Sunny yard tidy tracker for Milawa Primary. Three units, sixty tidy squares each, a strikes grid, and a prize path.",
-  applicationName: "Term 4 Tidy Challenge",
+    "Sunny yard tracker for Milawa Primary. Three units, eighty squares each, a strikes grid, and a prize path.",
+  applicationName: "Term 4 Challenge",
   appleWebApp: {
     capable: true,
-    title: "Term 4 Tidy Challenge",
+    title: "Term 4 Challenge",
     statusBarStyle: "default",
   },
 };

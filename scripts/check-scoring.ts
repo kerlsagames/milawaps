@@ -13,44 +13,44 @@ assert.equal(spot.state.log[0]?.staffId, "jess");
 assert.equal(spot.state.log[0]?.action, "spot");
 
 const game = applyAction(
-  { ...start, units: { f1: 0, "234": 14, "56": 0 } },
+  { ...start, units: { f1: 0, "234": 19, "56": 0 } },
   "spot",
   "234",
   "craig",
   4_000,
 );
-assert.equal(game.state.units["234"], 15);
+assert.equal(game.state.units["234"], 20);
 assert.equal(game.events[0]?.title, "Game with Mr K");
 assert.equal(game.events[0]?.secret, true);
 
 const secret = applyAction(
-  { ...game.state, units: { ...game.state.units, "234": 29 } },
+  { ...game.state, units: { ...game.state.units, "234": 39 } },
   "spot",
   "234",
   "ash",
   4_100,
 );
-assert.equal(secret.state.units["234"], 30);
+assert.equal(secret.state.units["234"], 40);
 assert.equal(secret.events[0]?.title, "Teacher Takedown #1");
 assert.equal(secret.events[0]?.secret, true);
 assert.equal(secret.events.some((event) => event.scope === "vault"), false);
 
 const surge = applyAction(secret.state, "surge", "234", "ricky", 5_000);
-assert.equal(surge.state.units["234"], 32);
+assert.equal(surge.state.units["234"], 42);
 
 const laser = applyAction(
-  { ...start, units: { f1: 0, "234": 44, "56": 0 } },
+  { ...start, units: { f1: 0, "234": 59, "56": 0 } },
   "spot",
   "234",
   "craig",
   5_500,
 );
-assert.equal(laser.state.units["234"], 45);
+assert.equal(laser.state.units["234"], 60);
 assert.equal(laser.events[0]?.title, "Laser Tag");
 assert.equal(laser.events[0]?.secret, true);
 
 const capped = applyAction(
-  { ...start, units: { f1: 59, "234": 60, "56": 60 } },
+  { ...start, units: { f1: 79, "234": 80, "56": 80 } },
   "teamwork",
   undefined,
   "tiff",
@@ -86,13 +86,13 @@ assert.equal(fullStrikes.state.units.f1, 3);
 assert.equal(fullStrikes.state.crosses.f1, STRIKE_MAX);
 
 const fullSchool = applyAction(
-  { ...start, units: { f1: 45, "234": 45, "56": 59 } },
+  { ...start, units: { f1: 45, "234": 45, "56": 79 } },
   "spot",
   "56",
   "maria",
   8_000,
 );
-assert.equal(vaultTotal(fullSchool.state.units), 150);
+assert.equal(vaultTotal(fullSchool.state.units), 170);
 assert.equal(fullSchool.events.filter((event) => event.scope === "vault").length, 0);
 assert.equal(fullSchool.events[0]?.title, "Teacher Takedown #2");
 assert.equal(fullSchool.events[0]?.secret, true);

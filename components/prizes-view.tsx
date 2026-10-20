@@ -14,7 +14,7 @@ import {
 import { Countdown } from "@/components/countdown";
 import { prizeIsPublic, revealForPoints, type RevealDef } from "@/lib/reveals";
 
-const HIGHEST = CLASS_MILESTONES[CLASS_MILESTONES.length - 1]?.points ?? 60;
+const HIGHEST = CLASS_MILESTONES[CLASS_MILESTONES.length - 1]?.points ?? 80;
 const NODE = "var(--node)";
 
 function namedPrize(points: number, reveals: RevealMap, now: number) {

@@ -30,7 +30,7 @@ export function BlockMatrix({
   return (
     <div
       role="img"
-      aria-label={`${label}: ${earned} tidy squares out of ${UNIT_MAX}.`}
+      aria-label={`${label}: ${earned} squares out of ${UNIT_MAX}.`}
       className="grid gap-1"
       style={{ gridTemplateColumns: "repeat(10, minmax(0, 1fr))" }}
     >

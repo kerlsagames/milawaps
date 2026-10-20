@@ -5,7 +5,7 @@ export const REVEALS = [
   {
     id: "reveal-game",
     n: 1,
-    points: 15,
+    points: 20,
     title: "Game with Mr K",
     mask: "Prize 1",
     prize: "A game with Mr K",
@@ -16,7 +16,7 @@ export const REVEALS = [
   {
     id: "reveal-1",
     n: 2,
-    points: 30,
+    points: 40,
     title: "Teacher Takedown #1",
     mask: "Takedown 1",
     prize: "Dress a teacher in clothes of your choice for a day",
@@ -27,7 +27,7 @@ export const REVEALS = [
   {
     id: "reveal-laser",
     n: 3,
-    points: 45,
+    points: 60,
     title: "Laser Tag",
     mask: "Prize 2",
     prize: "Laser tag for your class",
@@ -38,7 +38,7 @@ export const REVEALS = [
   {
     id: "reveal-2",
     n: 4,
-    points: 60,
+    points: 80,
     title: "Teacher Takedown #2",
     mask: "Takedown 2",
     prize: "Whipped cream pie in a teacher's face",

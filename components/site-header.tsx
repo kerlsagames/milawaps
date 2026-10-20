@@ -75,7 +75,7 @@ export function SiteHeader({
             Milawa Primary
           </p>
           <h1 className="truncate font-display text-[15px] leading-tight sm:text-xl">
-            Term 4 Tidy Challenge
+            Term 4 Challenge
           </h1>
         </div>
         <p className="hidden text-sm font-bold text-muted-foreground md:block">{clock}</p>

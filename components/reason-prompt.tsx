@@ -39,8 +39,8 @@ export function ReasonPrompt({
     <div
       className={cn(
         // Stay on the right so Undo (bottom-left) keeps its own lane on phones.
-        "fixed right-3 bottom-3 z-[70] max-w-[min(18rem,calc(100%-11rem))] rounded-2xl border-2 border-[#2a1c04] bg-[#fffdf8] p-2.5 shadow-[0_6px_0_#2a1c04] transition-opacity duration-300 sm:right-5 sm:bottom-5 sm:max-w-[18rem]",
-        open ? "w-[min(18rem,calc(100%-11rem))] sm:w-[18rem]" : "w-auto",
+        "fixed right-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-[100] max-w-[min(18rem,calc(100%-7.5rem))] rounded-2xl border-2 border-[#2a1c04] bg-[#fffdf8] p-2.5 shadow-[0_6px_0_#2a1c04] transition-opacity duration-300 sm:right-5 sm:bottom-5 sm:max-w-[18rem]",
+        open ? "w-[min(18rem,calc(100%-7.5rem))] sm:w-[18rem]" : "w-auto",
         fading && !open && "pointer-events-none opacity-0",
       )}
     >

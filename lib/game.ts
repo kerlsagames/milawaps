@@ -2,11 +2,11 @@ export const UNIT_IDS = ["f1", "234", "56"] as const;
 
 export type UnitId = (typeof UNIT_IDS)[number];
 
-export const UNIT_MAX = 60;
+export const UNIT_MAX = 80;
 export const STRIKE_MAX = 30;
 export const VAULT_TARGET = UNIT_MAX * UNIT_IDS.length;
 /** School meter fills when the three classes add up to this many squares. */
-export const SCHOOL_GOAL = 150;
+export const SCHOOL_GOAL = 200;
 export const PIN_LENGTH = 6;
 
 export const VIEWS = [
@@ -115,28 +115,28 @@ export type MilestoneEvent = Milestone & {
 
 export const CLASS_MILESTONES: Milestone[] = [
   {
-    points: 15,
+    points: 20,
     title: "Game with Mr K",
     short: "Mr K",
-    detail: "A game with Mr K for the class that hits 15.",
+    detail: "A game with Mr K for the class that hits 20.",
     secret: true,
   },
   {
-    points: 30,
+    points: 40,
     title: "Teacher Takedown #1",
     short: "Takedown #1",
     detail: "Teacher Takedown #1. The class finds out on the day.",
     secret: true,
   },
   {
-    points: 45,
+    points: 60,
     title: "Laser Tag",
     short: "Laser",
     detail: "Laser tag for your class.",
     secret: true,
   },
   {
-    points: 60,
+    points: 80,
     title: "Teacher Takedown #2",
     short: "Takedown #2",
     detail: "Teacher Takedown #2. The teachers look nervous.",

@@ -19,7 +19,7 @@ export function VaultMeter({
     <section className="flex shrink-0 items-center gap-1.5 rounded-xl border-2 border-[#f5b942] bg-card px-1.5 py-1 shadow-[0_3px_0_#c48a16] lg:gap-4 lg:rounded-[28px] lg:border-4 lg:px-4 lg:py-3 lg:shadow-[0_8px_0_#c48a16]">
       <div
         className="grid size-11 shrink-0 place-items-center rounded-full bg-[#f5b942] text-[#2a1c04] shadow-[0_2px_0_#a86a12] lg:size-32 lg:shadow-[0_5px_0_#a86a12]"
-        aria-label={`School tidy total ${total} out of ${SCHOOL_GOAL}`}
+        aria-label={`School total ${total} out of ${SCHOOL_GOAL}`}
       >
         <div className="text-center">
           <p className="font-display text-xl leading-none tabular-nums lg:text-6xl">{total}</p>
@@ -28,7 +28,7 @@ export function VaultMeter({
       </div>
       <div className="min-w-0 flex-1">
         <h2 className="font-display text-base leading-none lg:text-5xl">
-          {full ? "The whole yard is glowing" : "School tidy total"}
+          {full ? "The whole yard is glowing" : "School total"}
         </h2>
         <div className="relative mt-1 h-2 overflow-hidden rounded-full bg-black/10 lg:mt-3 lg:h-7">
           <motion.div

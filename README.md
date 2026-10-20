@@ -1,4 +1,4 @@
-# Term 4 Tidy Challenge
+# Term 4 Challenge
 
 A sunny window-TV scoreboard for Milawa Primary. Three units chase 60 tidy squares each. Four prizes stay secret on the path until each reveal date. Strikes sit on their own grid and take one tidy square off.
 
