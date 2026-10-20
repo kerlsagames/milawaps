@@ -5,19 +5,35 @@ import { STUDENTS } from "../lib/students";
 import { kioskScreens, DEFAULT_SHOWN } from "../lib/reveals";
 
 assert.equal(STUDENTS.filter((student) => student.unitId === "f1").length, 17);
+assert.equal(STUDENTS.filter((student) => student.unitId === "234").length, 20);
+assert.equal(STUDENTS.filter((student) => student.unitId === "56").length, 23);
 assert.ok(STUDENTS.some((student) => student.name === "Ellie Mae"));
 assert.ok(STUDENTS.some((student) => student.id === "f1-murphy"));
+assert.ok(STUDENTS.some((student) => student.id === "234-leo"));
+assert.ok(STUDENTS.some((student) => student.id === "234-isla"));
+assert.ok(STUDENTS.some((student) => student.id === "234-austin"));
+assert.ok(STUDENTS.some((student) => student.id === "234-tjmara"));
+assert.ok(STUDENTS.some((student) => student.name === "Matilda L"));
+assert.ok(STUDENTS.some((student) => student.name === "Matilda M"));
+assert.ok(STUDENTS.some((student) => student.id === "56-cooper"));
+assert.ok(STUDENTS.some((student) => student.id === "56-liv"));
+assert.ok(STUDENTS.some((student) => student.id === "56-josie"));
+assert.ok(STUDENTS.some((student) => student.name === "Ryley"));
+assert.ok(STUDENTS.some((student) => student.name === "Riley"));
 
 const news = sanitizeNews({
   headline: "Sports day",
   blurb: "Bring a hat",
+  challenge: "Find the hidden duck — 2+ points",
   reminders: [{ id: "1", text: "Hats on" }],
   upcoming: [{ id: "2", when: "Fri", text: "Assembly" }],
   picture: "/milawa-yard.jpg",
 });
 assert.equal(news.headline, "Sports day");
+assert.equal(news.challenge, "Find the hidden duck — 2+ points");
 assert.equal(news.reminders[0]?.text, "Hats on");
 assert.equal(emptyNews().reminders.length, 0);
+assert.equal(emptyNews().challenge, "");
 
 const first = createHighlight(
   [

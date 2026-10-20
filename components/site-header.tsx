@@ -16,6 +16,14 @@ const icons = {
   news: Newspaper,
 } as const;
 
+export type HeaderTab = {
+  id: ScreenId;
+  label: string;
+  short: string;
+  /** When false, the tab stays visible but clicks do nothing. */
+  open?: boolean;
+};
+
 export function SiteHeader({
   view,
   tabs,
@@ -29,7 +37,7 @@ export function SiteHeader({
   onStartKiosk,
 }: {
   view: ScreenId;
-  tabs: { id: ScreenId; label: string; short: string }[];
+  tabs: HeaderTab[];
   onView: (view: ScreenId) => void;
   authed: boolean;
   dutyName: string | null;
@@ -100,15 +108,26 @@ export function SiteHeader({
       <div className="flex gap-1 overflow-x-auto px-3 pb-2 sm:px-5" role="tablist" aria-label="Board views">
         {tabs.map((item) => {
           const Icon = item.id in icons ? icons[item.id as keyof typeof icons] : Sparkles;
-          const selected = item.id === view;
+          const selected =
+            item.id === view ||
+            (item.id === "highlight" && typeof view === "string" && view.startsWith("highlight:"));
+          const locked = item.open === false;
           return (
             <Button
               key={item.id}
               role="tab"
               aria-selected={selected}
+              aria-disabled={locked || undefined}
+              title={locked ? "Not open yet — a teacher turns this on in Settings" : undefined}
               variant={selected ? "default" : "ghost"}
-              onClick={() => onView(item.id)}
-              className="h-8 shrink-0 rounded-xl px-3"
+              onClick={() => {
+                if (locked) return;
+                onView(item.id);
+              }}
+              className={cn(
+                "h-8 shrink-0 rounded-xl px-3",
+                locked && "opacity-55",
+              )}
             >
               <Icon />
               <span className="sm:hidden">{item.short}</span>

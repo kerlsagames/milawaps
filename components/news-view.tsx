@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { motion } from "framer-motion";
 import type { DailyNews } from "@/lib/news";
 
 export function NewsView({ news }: { news: DailyNews }) {
@@ -44,15 +43,10 @@ export function NewsView({ news }: { news: DailyNews }) {
             <p className="mt-2 max-w-3xl text-base font-bold text-[#3d5f70] sm:text-xl">{news.blurb}</p>
           ) : null}
         </div>
-        <motion.div
-          key={clock}
-          initial={{ opacity: 0.4, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-[24px] border-4 border-[#16384a] bg-[#16384a] px-4 py-3 text-[#ffe08a] shadow-[0_8px_0_#0d2430]"
-        >
+        <div className="rounded-[24px] border-4 border-[#16384a] bg-[#16384a] px-4 py-3 text-[#ffe08a] shadow-[0_8px_0_#0d2430]">
           <p className="text-[10px] font-extrabold tracking-[0.22em] uppercase">Live clock</p>
-          <p className="font-display text-2xl leading-none sm:text-4xl">{clock}</p>
-        </motion.div>
+          <p className="font-display text-2xl leading-none sm:text-4xl tabular-nums">{clock}</p>
+        </div>
       </header>
 
       <div className="relative grid min-h-0 flex-1 gap-3 lg:grid-cols-[1.1fr_0.9fr]">
@@ -92,6 +86,13 @@ export function NewsView({ news }: { news: DailyNews }) {
               </ul>
             )}
           </Panel>
+          {news.challenge ? (
+            <Panel title="Yard challenge" tone="#7b4bff">
+              <p className="rounded-2xl bg-white/90 px-3 py-3 text-base font-extrabold text-[#2a1c04] shadow-[0_3px_0_rgba(42,28,4,0.12)]">
+                {news.challenge}
+              </p>
+            </Panel>
+          ) : null}
         </section>
         <section className="relative min-h-[14rem] overflow-hidden rounded-[28px] border-4 border-[#16384a] bg-[#fffdf8] shadow-[0_10px_0_#0d2430]">
           {news.picture ? (

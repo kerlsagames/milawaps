@@ -4,6 +4,8 @@ export type NewsUpcoming = { id: string; when: string; text: string };
 export type DailyNews = {
   headline: string;
   blurb: string;
+  /** Optional yard challenge of the day / week, e.g. "Find the hidden duck — 2+ points". */
+  challenge: string;
   reminders: NewsReminder[];
   upcoming: NewsUpcoming[];
   picture: string | null;
@@ -23,6 +25,7 @@ export function emptyNews(now = Date.now()): DailyNews {
   return {
     headline: "Today at Milawa",
     blurb: "Check the board for reminders and what is coming up.",
+    challenge: "",
     reminders: [],
     upcoming: [],
     picture: null,
@@ -64,6 +67,7 @@ export function sanitizeNews(raw: unknown, now = Date.now()): DailyNews {
   return {
     headline: text(record.headline, 80) || base.headline,
     blurb: text(record.blurb, 200) || base.blurb,
+    challenge: text(record.challenge, 160),
     reminders,
     upcoming,
     picture,

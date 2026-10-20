@@ -549,6 +549,17 @@ function NewsEditor({
           className="h-10 rounded-xl border border-input bg-white px-3 text-sm font-bold"
         />
       </label>
+      <label className="grid gap-1">
+        <span className="text-xs font-bold">Yard challenge (optional)</span>
+        <input
+          type="text"
+          value={news.challenge}
+          aria-label="Yard challenge"
+          placeholder="e.g. Find the hidden duck — 2+ points"
+          onChange={(event) => onChange({ ...news, challenge: event.target.value.slice(0, 160) })}
+          className="h-10 rounded-xl border border-input bg-white px-3 text-sm font-bold"
+        />
+      </label>
       <div className="flex items-center gap-3">
         <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-input bg-white">
           {news.picture ? (
