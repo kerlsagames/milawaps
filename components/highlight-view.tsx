@@ -5,10 +5,22 @@ import { motion } from "framer-motion";
 import { kidName, unitById } from "@/lib/game";
 import type { HighlightEntry } from "@/lib/highlights";
 import { studentById } from "@/lib/students";
+import { Button } from "@/components/ui/button";
 
 const ANGLES = [-7, 5, -4, 8, -6, 3, -9, 6];
 
-export function HighlightView({ entry }: { entry: HighlightEntry }) {
+export function HighlightView({
+  entry,
+  canRemove = false,
+  removing = false,
+  onRemove,
+}: {
+  entry: HighlightEntry;
+  canRemove?: boolean;
+  removing?: boolean;
+  onRemove?: () => void;
+}) {
+  const [confirm, setConfirm] = useState(false);
   const students = entry.students
     .map((item) => studentById(item.id))
     .filter((student): student is NonNullable<typeof student> => Boolean(student));
@@ -70,7 +82,7 @@ export function HighlightView({ entry }: { entry: HighlightEntry }) {
           })}
         </div>
 
-        <div className="flex min-h-0 flex-col items-center justify-center rounded-[28px] border-4 border-[#2a1c04] bg-[#fff8df]/92 px-5 py-6 text-center shadow-[0_10px_0_#6b5844] lg:px-8 lg:py-8">
+        <div className="relative flex min-h-0 flex-col items-center justify-center rounded-[28px] border-4 border-[#2a1c04] bg-[#fff8df]/92 px-5 py-6 text-center shadow-[0_10px_0_#6b5844] lg:px-8 lg:py-8">
           <p className="text-sm font-extrabold tracking-[0.28em] text-[#8a5a00] uppercase sm:text-base">
             Student spotlight
           </p>
@@ -86,6 +98,47 @@ export function HighlightView({ entry }: { entry: HighlightEntry }) {
               {entry.reason}
             </p>
           </div>
+
+          {canRemove && onRemove ? (
+            <div className="mt-6 w-full max-w-md">
+              {confirm ? (
+                <div className="rounded-2xl border-2 border-[#c23b3b]/40 bg-[#fff5f3] px-4 py-3 text-left">
+                  <p className="text-sm font-extrabold text-[#8d1f1f]">Remove this highlight?</p>
+                  <p className="mt-1 text-sm font-bold text-[#5a3208]">
+                    It will leave the TV loop straight away. This cannot be undone.
+                  </p>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-11 rounded-xl"
+                      disabled={removing}
+                      onClick={() => setConfirm(false)}
+                    >
+                      Keep it
+                    </Button>
+                    <Button
+                      type="button"
+                      className="h-11 rounded-xl bg-[#c23b3b] text-white hover:bg-[#a82f2f]"
+                      disabled={removing}
+                      onClick={onRemove}
+                    >
+                      {removing ? "Removing…" : "Yes, remove"}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 rounded-xl border-[#c23b3b]/40 text-[#8d1f1f]"
+                  onClick={() => setConfirm(true)}
+                >
+                  Remove highlight
+                </Button>
+              )}
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

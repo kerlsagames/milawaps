@@ -1,6 +1,6 @@
 import { readBearer, verifyToken } from "@/lib/auth";
 import { isUnitId, type UnitId } from "@/lib/game";
-import { commitHighlight, readBoard } from "@/lib/store";
+import { commitHighlight, readBoard, removeHighlight } from "@/lib/store";
 import type { HighlightStudent } from "@/lib/highlights";
 
 export const runtime = "nodejs";
@@ -67,7 +67,44 @@ export async function POST(request: Request) {
     return json(board);
   } catch (error) {
     const message = error instanceof Error ? error.message : "That highlight did not save.";
-    const status = message.includes("Upstash Redis") ? 503 : 400;
+    const status =
+      message.includes("durable store") || message.includes("Upstash Redis") ? 503 : 400;
+    return json({ error: message }, status);
+  }
+}
+
+export async function DELETE(request: Request) {
+  const staffId = verifyToken(readBearer(request));
+  if (!staffId) {
+    return json({ error: "The yard desk is locked." }, 401);
+  }
+
+  let payload: unknown;
+  try {
+    payload = await request.json();
+  } catch {
+    return json({ error: "That highlight could not be read." }, 400);
+  }
+
+  const id =
+    payload && typeof payload === "object" && "id" in payload
+      ? (payload as { id?: unknown }).id
+      : undefined;
+  if (typeof id !== "string" || !id.trim()) {
+    return json({ error: "Choose a highlight to remove." }, 400);
+  }
+
+  try {
+    const board = await removeHighlight(id.trim());
+    return json(board);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "That highlight did not remove.";
+    const status =
+      message.includes("durable store") || message.includes("Upstash Redis")
+        ? 503
+        : message.includes("already gone")
+          ? 404
+          : 400;
     return json({ error: message }, status);
   }
 }

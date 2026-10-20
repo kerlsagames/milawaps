@@ -77,6 +77,7 @@ export function YardBoard() {
   const [pinOpen, setPinOpen] = useState(false);
   const [hudOpen, setHudOpen] = useState(false);
   const [highlightUnit, setHighlightUnit] = useState<UnitId | null>(null);
+  const [removingHighlight, setRemovingHighlight] = useState(false);
   const [deskError, setDeskError] = useState<string | null>(null);
   const [reasonPrompt, setReasonPrompt] = useState<{ id: string; line: string } | null>(null);
 
@@ -438,7 +439,49 @@ export function YardBoard() {
                     </p>
                   </div>
                 ) : null}
-                {activeHighlight ? <HighlightView entry={activeHighlight} /> : null}
+                {activeHighlight ? (
+                  <HighlightView
+                    entry={activeHighlight}
+                    canRemove={Boolean(token) && !kiosk}
+                    removing={removingHighlight}
+                    onRemove={() => {
+                      if (!token || removingHighlight) return;
+                      setRemovingHighlight(true);
+                      setDeskError(null);
+                      void fetch("/api/highlight", {
+                        method: "DELETE",
+                        headers: {
+                          "Content-Type": "application/json",
+                          Authorization: `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({ id: activeHighlight.id }),
+                      })
+                        .then(async (response) => {
+                          const body = (await response.json().catch(() => ({}))) as PublicBoard & {
+                            error?: string;
+                          };
+                          if (response.status === 401) {
+                            clearToken();
+                            setPinOpen(true);
+                            setDeskError("The desk locked itself. Enter the PIN again.");
+                            return;
+                          }
+                          if (!response.ok) {
+                            setDeskError(body.error ?? "That highlight did not remove.");
+                            return;
+                          }
+                          await mutate(body, { revalidate: false });
+                          setView("board");
+                        })
+                        .catch(() => {
+                          setDeskError("That highlight did not remove. Try again.");
+                        })
+                        .finally(() => {
+                          setRemovingHighlight(false);
+                        });
+                    }}
+                  />
+                ) : null}
                 {activeReveal && (
                   <RevealView
                     reveal={activeReveal}
@@ -457,7 +500,7 @@ export function YardBoard() {
           {data?.lastAction ? actionLabel(data.lastAction) : "Waiting for the first tick."}
         </p>
       </main>
-      {kiosk || view === "board" ? (
+      {view === "board" ? (
         <TodayColumn board={data} live={live} variant={kiosk ? "kiosk" : "board"} />
       ) : null}
       </div>

@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
-import { createHighlight, activeHighlights, sanitizeHighlights } from "../lib/highlights";
+import {
+  createHighlight,
+  activeHighlights,
+  removeHighlightById,
+  sanitizeHighlights,
+} from "../lib/highlights";
 import { emptyNews, sanitizeNews } from "../lib/news";
 import { STUDENTS } from "../lib/students";
 import { kioskScreens, DEFAULT_SHOWN } from "../lib/reveals";
@@ -62,5 +67,10 @@ assert.equal(screens.includes("highlight"), false);
 
 const off = kioskScreens({ ...DEFAULT_SHOWN, highlight: false }, [first], 1_500);
 assert.equal(off.some((id) => String(id).startsWith("highlight:")), false);
+
+const afterRemove = removeHighlightById(kept, first.id, 1_500);
+assert.equal(afterRemove?.length, 1);
+assert.equal(afterRemove?.[0]?.id, second.id);
+assert.equal(removeHighlightById(kept, "missing-id", 1_500), null);
 
 console.log("highlight and news checks passed");

@@ -15,6 +15,7 @@ import {
 } from "@/lib/game";
 import {
   createHighlight,
+  removeHighlightById,
   sanitizeHighlights,
   type HighlightEntry,
   type HighlightStudent,
@@ -324,6 +325,17 @@ export function commitHighlight(
     const blob = await readBlob();
     const entry = createHighlight(students, reason, staffId);
     const highlights = sanitizeHighlights([entry, ...blob.highlights]);
+    const next = { ...blob, highlights };
+    await writeBlob(next);
+    return toPublic(next);
+  });
+}
+
+export function removeHighlight(id: string): Promise<PublicBoard> {
+  return serialized(async () => {
+    const blob = await readBlob();
+    const highlights = removeHighlightById(blob.highlights, id);
+    if (!highlights) throw new Error("That highlight is already gone.");
     const next = { ...blob, highlights };
     await writeBlob(next);
     return toPublic(next);

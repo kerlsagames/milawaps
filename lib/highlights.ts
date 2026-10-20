@@ -103,3 +103,16 @@ export function parseHighlightScreen(id: string): string | null {
   const value = id.slice("highlight:".length);
   return value || null;
 }
+
+/** Drop one highlight by id. Returns null if that id was not found. */
+export function removeHighlightById(
+  list: HighlightEntry[],
+  id: string,
+  now = Date.now(),
+): HighlightEntry[] | null {
+  const trimmed = id.trim();
+  if (!trimmed) return null;
+  const next = list.filter((entry) => entry.id !== trimmed);
+  if (next.length === list.length) return null;
+  return sanitizeHighlights(next, now);
+}
