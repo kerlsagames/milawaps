@@ -4,8 +4,9 @@ import { emptyNews, sanitizeNews } from "../lib/news";
 import { STUDENTS } from "../lib/students";
 import { kioskScreens, DEFAULT_SHOWN } from "../lib/reveals";
 
-assert.equal(STUDENTS.length, 63);
-assert.equal(STUDENTS.filter((student) => student.unitId === "f1").length, 21);
+assert.equal(STUDENTS.filter((student) => student.unitId === "f1").length, 17);
+assert.ok(STUDENTS.some((student) => student.name === "Ellie Mae"));
+assert.ok(STUDENTS.some((student) => student.id === "f1-murphy"));
 
 const news = sanitizeNews({
   headline: "Sports day",
@@ -19,7 +20,10 @@ assert.equal(news.reminders[0]?.text, "Hats on");
 assert.equal(emptyNews().reminders.length, 0);
 
 const first = createHighlight(
-  [{ id: "f1-01", unitId: "f1" }, { id: "f1-02", unitId: "f1" }],
+  [
+    { id: "f1-abbey", unitId: "f1" },
+    { id: "f1-ada", unitId: "f1" },
+  ],
   "Packed the shed",
   "jess",
   1_000,
@@ -27,7 +31,7 @@ const first = createHighlight(
 assert.equal(first.students.length, 2);
 assert.equal(first.expiresAt, 1_000 + 2 * 24 * 60 * 60 * 1000);
 
-const second = createHighlight([{ id: "234-01", unitId: "234" }], "Led the line", "craig", 2_000);
+const second = createHighlight([{ id: "f1-will", unitId: "f1" }], "Led the line", "craig", 2_000);
 const kept = sanitizeHighlights([first, second, { ...first, expiresAt: 500 }], 1_500);
 assert.equal(kept.length, 2);
 assert.equal(activeHighlights(kept, 1_500).length, 2);

@@ -96,7 +96,7 @@ function StudentPhoto({
 
   if (failed) {
     return (
-      <div className="grid aspect-[3/4] place-items-center p-4 text-center" style={{ background: color }}>
+      <div className="grid aspect-[4/3] place-items-center p-4 text-center" style={{ background: color }}>
         <div>
           <p className="font-display text-3xl leading-none text-[#2a1c04] sm:text-4xl">{name}</p>
           <p className="mt-2 text-xs font-bold">Photo coming soon</p>
@@ -106,7 +106,7 @@ function StudentPhoto({
   }
 
   return (
-    <div className="relative aspect-[3/4] overflow-hidden rounded-[22px] bg-[#efe6d6]">
+    <div className="relative aspect-[4/3] overflow-hidden rounded-[22px] bg-[#efe6d6]">
       <img
         src={image}
         alt={name}

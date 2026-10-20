@@ -114,30 +114,36 @@ export function HighlightDialog({
         {unitId ? (
           <div className="grid gap-2">
             <p className="text-sm font-bold">Students</p>
-            <div className="grid max-h-56 grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3">
-              {students.map((student) => {
-                const on = picked.includes(student.id);
-                return (
-                  <button
-                    key={student.id}
-                    type="button"
-                    aria-pressed={on}
-                    onClick={() =>
-                      setPicked((current) =>
-                        on ? current.filter((id) => id !== student.id) : [...current, student.id],
-                      )
-                    }
-                    className={
-                      on
-                        ? "rounded-xl bg-[#2a1c04] px-2 py-2 text-left text-sm font-bold text-[#ffe08a]"
-                        : "rounded-xl border border-black/10 bg-white px-2 py-2 text-left text-sm font-bold"
-                    }
-                  >
-                    {student.name}
-                  </button>
-                );
-              })}
-            </div>
+            {students.length === 0 ? (
+              <p className="rounded-xl bg-[#fff8df] px-3 py-2 text-sm font-bold text-[#8a5a00]">
+                Photos for this class are not on the board yet.
+              </p>
+            ) : (
+              <div className="grid max-h-56 grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3">
+                {students.map((student) => {
+                  const on = picked.includes(student.id);
+                  return (
+                    <button
+                      key={student.id}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() =>
+                        setPicked((current) =>
+                          on ? current.filter((id) => id !== student.id) : [...current, student.id],
+                        )
+                      }
+                      className={
+                        on
+                          ? "rounded-xl bg-[#2a1c04] px-2 py-2 text-left text-sm font-bold text-[#ffe08a]"
+                          : "rounded-xl border border-black/10 bg-white px-2 py-2 text-left text-sm font-bold"
+                      }
+                    >
+                      {student.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         ) : null}
 
