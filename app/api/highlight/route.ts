@@ -63,8 +63,8 @@ export async function POST(request: Request) {
   }
 
   try {
-    const board = await commitHighlight(students, reason, staffId);
-    return json(board);
+    const result = await commitHighlight(students, reason, staffId);
+    return json({ ...result.board, events: result.events });
   } catch (error) {
     const message = error instanceof Error ? error.message : "That highlight did not save.";
     const status =
