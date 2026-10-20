@@ -18,7 +18,9 @@ export async function POST(request: Request) {
   try {
     const result = await commitAction("reset", undefined, "craig");
     return json(result.board);
-  } catch {
-    return json({ error: "The scores did not reset." }, 500);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "The scores did not reset.";
+    const status = message.includes("Upstash Redis") ? 503 : 500;
+    return json({ error: message }, status);
   }
 }

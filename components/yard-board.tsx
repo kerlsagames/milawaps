@@ -370,6 +370,17 @@ export function YardBoard() {
           </section>
         )}
 
+        {data?.storage === "memory" ? (
+          <section
+            className="mb-2 rounded-2xl border-2 border-[#c23b3b]/40 bg-[#c23b3b]/10 px-4 py-3 text-sm font-bold text-[#8d1f1f]"
+            role="status"
+          >
+            Scores are not sticking on this host. Connect Upstash Redis in the Vercel project
+            (Storage → Create Database), then redeploy — otherwise every tick vanishes when the
+            server restarts.
+          </section>
+        ) : null}
+
         {!data && !error && <BoardSkeleton />}
 
         {data && (

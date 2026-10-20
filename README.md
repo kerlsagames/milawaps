@@ -48,11 +48,11 @@ Jimmy’s cricket can feed one TV page. In Settings, paste a short code such as 
 ## Deploy on Vercel
 
 1. Import this project.
-2. Add a Redis integration from the Vercel Marketplace. Vercel KV now runs through that integration, and `@vercel/kv` is the client this app uses. No separate database signup is required beyond the integration on the project.
-3. Confirm the project has `KV_REST_API_URL` and `KV_REST_API_TOKEN`, or `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`. Either pair is enough.
+2. **Required:** add Upstash Redis from the Vercel dashboard (Storage → Create Database → Upstash Redis) and connect it to the project. Without Redis, ticks look like they save and then reset to zero on the next request — the serverless filesystem is not shared between instances.
+3. Confirm the project has `KV_REST_API_URL` and `KV_REST_API_TOKEN`, or `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`. Either pair is enough. `@vercel/kv` is the client this app uses.
 4. Set `STAFF_PIN` to a private 6-digit code, or leave it unset to keep **737373**.
 5. Deploy.
 
-The score and PIN routes run on the Node.js runtime so local file fallback still works in dev. On Vercel, leave KV connected or each server instance only remembers scores in memory until it goes cold. The yard duty desk says which store it is using.
+The score and PIN routes run on the Node.js runtime so local file fallback still works in `npm run dev`. On Vercel the board refuses to save until Redis is connected, and the homepage shows a clear warning if storage is still memory-only. The yard duty desk says which store it is using.
 
 Five wrong codes rest the pad for 60 seconds. A successful sign-in is kept in this browser, under that teacher's name, until **Lock desk**.

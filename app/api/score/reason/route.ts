@@ -41,7 +41,11 @@ export async function POST(request: Request) {
     return json(board);
   } catch (error) {
     const message = error instanceof Error ? error.message : "The reason did not save.";
-    const status = message === "The reason did not save." ? 500 : 400;
+    const status = message.includes("Upstash Redis")
+      ? 503
+      : message === "The reason did not save."
+        ? 500
+        : 400;
     return json({ error: message }, status);
   }
 }

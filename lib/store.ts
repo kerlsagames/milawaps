@@ -27,6 +27,10 @@ const NEWS_KEY = "ott:news";
 const HIGHLIGHT_KEY = "ott:highlights";
 const FILE_PATH = path.join(process.cwd(), "data", "yard.json");
 
+/** Shown when Vercel has no Redis — ticks would otherwise vanish between instances. */
+export const DURABLE_STORE_MESSAGE =
+  "Scores need Upstash Redis on Vercel. Open the project → Storage → Create Database → Upstash Redis, connect it, then redeploy.";
+
 type FileBlob = {
   scores: ScoreState;
   security: SecurityState;
@@ -61,9 +65,20 @@ function ensureKvEnv() {
   }
 }
 
+export function hasDurableStore() {
+  ensureKvEnv();
+  return Boolean(process.env.KV_REST_API_URL?.trim() && process.env.KV_REST_API_TOKEN?.trim());
+}
+
+function onVercel() {
+  return process.env.VERCEL === "1";
+}
+
 export function storageMode(): StorageMode {
   ensureKvEnv();
-  if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) return "kv";
+  if (hasDurableStore()) return "kv";
+  // The serverless filesystem is not shared across instances — never call that "file".
+  if (onVercel()) return "memory";
   return memory.__ottStorage === "memory" ? "memory" : "file";
 }
 
@@ -104,13 +119,15 @@ async function readFileBlob(): Promise<FileBlob> {
   try {
     const text = await fs.readFile(FILE_PATH, "utf8");
     const parsed = JSON.parse(text) as Partial<FileBlob>;
+    memory.__ottStorage = "file";
     return normalizeBlob(parsed);
   } catch (error) {
     const code = (error as NodeJS.ErrnoException).code;
     if (code !== "ENOENT") {
       memory.__ottStorage = "memory";
     }
-    return memory.__ottBoard ?? freshBlob();
+    if (!memory.__ottBoard) memory.__ottBoard = freshBlob();
+    return memory.__ottBoard;
   }
 }
 
@@ -120,6 +137,7 @@ async function writeFileBlob(blob: FileBlob) {
     const temporary = `${FILE_PATH}.tmp`;
     await fs.writeFile(temporary, JSON.stringify(blob), "utf8");
     await fs.rename(temporary, FILE_PATH);
+    memory.__ottBoard = blob;
     memory.__ottStorage = "file";
   } catch {
     memory.__ottBoard = blob;
@@ -129,14 +147,24 @@ async function writeFileBlob(blob: FileBlob) {
 
 async function readBlob(): Promise<FileBlob> {
   ensureKvEnv();
-  if (storageMode() === "kv") {
+  if (hasDurableStore()) {
     const [scores, security, news, highlights] = await Promise.all([
       kv.get<unknown>(SCORE_KEY),
       kv.get<unknown>(SECURITY_KEY),
       kv.get<unknown>(NEWS_KEY),
       kv.get<unknown>(HIGHLIGHT_KEY),
     ]);
-    return normalizeBlob({ scores: scores as ScoreState, security: security as SecurityState, news: news as DailyNews, highlights: highlights as HighlightEntry[] });
+    return normalizeBlob({
+      scores: scores as ScoreState,
+      security: security as SecurityState,
+      news: news as DailyNews,
+      highlights: highlights as HighlightEntry[],
+    });
+  }
+  if (onVercel()) {
+    memory.__ottStorage = "memory";
+    if (!memory.__ottBoard) memory.__ottBoard = freshBlob();
+    return memory.__ottBoard;
   }
   if (memory.__ottStorage === "memory" && memory.__ottBoard) {
     return memory.__ottBoard;
@@ -144,15 +172,24 @@ async function readBlob(): Promise<FileBlob> {
   return readFileBlob();
 }
 
-async function writeBlob(blob: FileBlob) {
+async function writeBlob(blob: FileBlob, opts?: { allowEphemeral?: boolean }) {
   ensureKvEnv();
-  if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+  if (hasDurableStore()) {
     await Promise.all([
       kv.set(SCORE_KEY, blob.scores),
       kv.set(SECURITY_KEY, blob.security),
       kv.set(NEWS_KEY, blob.news),
       kv.set(HIGHLIGHT_KEY, blob.highlights),
     ]);
+    return;
+  }
+  if (onVercel()) {
+    if (!opts?.allowEphemeral) {
+      // Refuse silent memory saves — the next server instance would show zero again.
+      throw new Error(DURABLE_STORE_MESSAGE);
+    }
+    memory.__ottBoard = blob;
+    memory.__ottStorage = "memory";
     return;
   }
   await writeFileBlob(blob);
@@ -184,7 +221,8 @@ export function readSecurity(): Promise<SecurityState> {
 export function writeSecurity(security: SecurityState): Promise<void> {
   return serialized(async () => {
     const blob = await readBlob();
-    await writeBlob({ ...blob, security });
+    // PIN lockouts may sit in memory on Vercel; score ticks still require Redis.
+    await writeBlob({ ...blob, security }, { allowEphemeral: true });
   });
 }
 

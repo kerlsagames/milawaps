@@ -33,7 +33,9 @@ export async function POST(request: Request) {
   try {
     const board = await commitNews(payload);
     return json(board);
-  } catch {
-    return json({ error: "The news page did not save." }, 500);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "The news page did not save.";
+    const status = message.includes("Upstash Redis") ? 503 : 500;
+    return json({ error: message }, status);
   }
 }

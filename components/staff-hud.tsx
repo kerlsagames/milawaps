@@ -25,9 +25,9 @@ import {
 } from "@/components/ui/sheet";
 
 const storageCopy: Record<StorageMode, string> = {
-  kv: "Saving to Vercel KV",
+  kv: "Saving to Redis",
   file: "Saving on this server",
-  memory: "No shared store connected",
+  memory: "Scores will not stick — Redis missing",
 };
 
 export function StaffHud({

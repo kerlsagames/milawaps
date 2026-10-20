@@ -67,6 +67,7 @@ export async function POST(request: Request) {
     return json(board);
   } catch (error) {
     const message = error instanceof Error ? error.message : "That highlight did not save.";
-    return json({ error: message }, 400);
+    const status = message.includes("Upstash Redis") ? 503 : 400;
+    return json({ error: message }, status);
   }
 }

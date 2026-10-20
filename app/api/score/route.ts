@@ -59,7 +59,9 @@ export async function POST(request: Request) {
   try {
     const result = await commitAction(action, unitId, staffId);
     return json({ ...result.board, events: result.events });
-  } catch {
-    return json({ error: "The score did not save. Try the tick again." }, 500);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "The score did not save. Try the tick again.";
+    const status = message.includes("Upstash Redis") ? 503 : 500;
+    return json({ error: message }, status);
   }
 }
