@@ -2,7 +2,7 @@
 
 A sunny window-TV scoreboard for Milawa Primary. Three units chase 60 tidy squares each. Four prizes stay secret on the path until each reveal date. Strikes sit on their own grid and take one tidy square off.
 
-The board polls `/api/score` every 3 seconds, so a TV in the window and a phone on yard duty stay in step without WebSockets. Scores live in Vercel KV when those environment variables are present. With no KV credentials, the dev server writes `data/yard.json` on this machine instead.
+The board polls `/api/score` every 3 seconds, so a TV in the window and a phone on yard duty stay in step without WebSockets. Scores live in Vercel Blob (or Upstash Redis) when those environment variables are present. With no durable store, the dev server writes `data/yard.json` on this machine instead.
 
 ## Run it locally
 

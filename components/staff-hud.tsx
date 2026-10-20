@@ -21,9 +21,9 @@ import {
 } from "@/components/ui/sheet";
 
 const storageCopy: Record<StorageMode, string> = {
-  kv: "Saving to Redis",
+  kv: "Scores are saving",
   file: "Saving on this server",
-  memory: "Scores will not stick — Redis missing",
+  memory: "Scores will not stick — storage missing",
 };
 
 export function StaffHud({

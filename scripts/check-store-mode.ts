@@ -14,6 +14,8 @@ const snapshot = {
   KV_REST_API_TOKEN: process.env.KV_REST_API_TOKEN,
   UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
   UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
+  BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
+  BLOB_STORE_ID: process.env.BLOB_STORE_ID,
 };
 
 try {
@@ -23,6 +25,8 @@ try {
     KV_REST_API_TOKEN: undefined,
     UPSTASH_REDIS_REST_URL: undefined,
     UPSTASH_REDIS_REST_TOKEN: undefined,
+    BLOB_READ_WRITE_TOKEN: undefined,
+    BLOB_STORE_ID: undefined,
   });
   assert.equal(hasDurableStore(), false);
   assert.equal(storageMode(), "memory");
@@ -33,6 +37,8 @@ try {
     KV_REST_API_TOKEN: undefined,
     UPSTASH_REDIS_REST_URL: undefined,
     UPSTASH_REDIS_REST_TOKEN: undefined,
+    BLOB_READ_WRITE_TOKEN: undefined,
+    BLOB_STORE_ID: undefined,
   });
   assert.equal(storageMode(), "file");
 
@@ -40,6 +46,8 @@ try {
     VERCEL: "1",
     KV_REST_API_URL: "https://example.upstash.io",
     KV_REST_API_TOKEN: "test-token",
+    BLOB_READ_WRITE_TOKEN: undefined,
+    BLOB_STORE_ID: undefined,
   });
   assert.equal(hasDurableStore(), true);
   assert.equal(storageMode(), "kv");
@@ -50,6 +58,32 @@ try {
     KV_REST_API_TOKEN: undefined,
     UPSTASH_REDIS_REST_URL: "https://example.upstash.io",
     UPSTASH_REDIS_REST_TOKEN: "upstash-token",
+    BLOB_READ_WRITE_TOKEN: undefined,
+    BLOB_STORE_ID: undefined,
+  });
+  assert.equal(hasDurableStore(), true);
+  assert.equal(storageMode(), "kv");
+
+  setEnv({
+    VERCEL: "1",
+    KV_REST_API_URL: undefined,
+    KV_REST_API_TOKEN: undefined,
+    UPSTASH_REDIS_REST_URL: undefined,
+    UPSTASH_REDIS_REST_TOKEN: undefined,
+    BLOB_READ_WRITE_TOKEN: "vercel_blob_rw_test",
+    BLOB_STORE_ID: undefined,
+  });
+  assert.equal(hasDurableStore(), true);
+  assert.equal(storageMode(), "kv");
+
+  setEnv({
+    VERCEL: "1",
+    KV_REST_API_URL: undefined,
+    KV_REST_API_TOKEN: undefined,
+    UPSTASH_REDIS_REST_URL: undefined,
+    UPSTASH_REDIS_REST_TOKEN: undefined,
+    BLOB_READ_WRITE_TOKEN: undefined,
+    BLOB_STORE_ID: "store_test",
   });
   assert.equal(hasDurableStore(), true);
   assert.equal(storageMode(), "kv");

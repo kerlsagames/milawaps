@@ -72,7 +72,8 @@ export async function POST(request: Request) {
       return json({ error: error.message }, 400);
     }
     const message = error instanceof Error ? error.message : "The score did not save. Try the tick again.";
-    const status = message.includes("Upstash Redis") ? 503 : 500;
+    const status =
+      message.includes("durable store") || message.includes("Upstash Redis") ? 503 : 500;
     return json({ error: message }, status);
   }
 }

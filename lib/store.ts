@@ -1,5 +1,6 @@
 import { promises as fs } from "fs";
 import path from "path";
+import { get, put } from "@vercel/blob";
 import { kv } from "@vercel/kv";
 import {
   type ActionId,
@@ -25,11 +26,12 @@ const SCORE_KEY = "ott:scores";
 const SECURITY_KEY = "ott:security";
 const NEWS_KEY = "ott:news";
 const HIGHLIGHT_KEY = "ott:highlights";
+const BLOB_BOARD_PATH = "yard/board.json";
 const FILE_PATH = path.join(process.cwd(), "data", "yard.json");
 
-/** Shown when Vercel has no Redis — ticks would otherwise vanish between instances. */
+/** Shown when Vercel has no durable store — ticks would otherwise vanish between instances. */
 export const DURABLE_STORE_MESSAGE =
-  "Scores need Upstash Redis on Vercel. Open the project → Storage → Create Database → Upstash Redis, connect it, then redeploy.";
+  "Scores need a durable store on Vercel. Connect Blob or Upstash Redis in the project Storage tab, then redeploy.";
 
 type FileBlob = {
   scores: ScoreState;
@@ -65,9 +67,19 @@ function ensureKvEnv() {
   }
 }
 
-export function hasDurableStore() {
+function hasRedisStore() {
   ensureKvEnv();
   return Boolean(process.env.KV_REST_API_URL?.trim() && process.env.KV_REST_API_TOKEN?.trim());
+}
+
+function hasBlobStore() {
+  return Boolean(
+    process.env.BLOB_READ_WRITE_TOKEN?.trim() || process.env.BLOB_STORE_ID?.trim(),
+  );
+}
+
+export function hasDurableStore() {
+  return hasRedisStore() || hasBlobStore();
 }
 
 function onVercel() {
@@ -75,7 +87,7 @@ function onVercel() {
 }
 
 export function storageMode(): StorageMode {
-  ensureKvEnv();
+  // Report "kv" for any durable remote store so the desk shows "Scores are saving".
   if (hasDurableStore()) return "kv";
   // The serverless filesystem is not shared across instances — never call that "file".
   if (onVercel()) return "memory";
@@ -145,21 +157,58 @@ async function writeFileBlob(blob: FileBlob) {
   }
 }
 
+async function readVercelBlob(): Promise<FileBlob> {
+  const result = await get(BLOB_BOARD_PATH, {
+    access: "private",
+    useCache: false,
+  });
+  if (!result || result.statusCode !== 200 || !result.stream) {
+    return freshBlob();
+  }
+  const text = await new Response(result.stream).text();
+  if (!text.trim()) return freshBlob();
+  return normalizeBlob(JSON.parse(text) as Partial<FileBlob>);
+}
+
+async function writeVercelBlob(blob: FileBlob) {
+  await put(BLOB_BOARD_PATH, JSON.stringify(blob), {
+    access: "private",
+    allowOverwrite: true,
+    contentType: "application/json",
+    addRandomSuffix: false,
+  });
+}
+
+async function readKvBlob(): Promise<FileBlob> {
+  const [scores, security, news, highlights] = await Promise.all([
+    kv.get<unknown>(SCORE_KEY),
+    kv.get<unknown>(SECURITY_KEY),
+    kv.get<unknown>(NEWS_KEY),
+    kv.get<unknown>(HIGHLIGHT_KEY),
+  ]);
+  return normalizeBlob({
+    scores: scores as ScoreState,
+    security: security as SecurityState,
+    news: news as DailyNews,
+    highlights: highlights as HighlightEntry[],
+  });
+}
+
+async function writeKvBlob(blob: FileBlob) {
+  await Promise.all([
+    kv.set(SCORE_KEY, blob.scores),
+    kv.set(SECURITY_KEY, blob.security),
+    kv.set(NEWS_KEY, blob.news),
+    kv.set(HIGHLIGHT_KEY, blob.highlights),
+  ]);
+}
+
 async function readBlob(): Promise<FileBlob> {
-  ensureKvEnv();
-  if (hasDurableStore()) {
-    const [scores, security, news, highlights] = await Promise.all([
-      kv.get<unknown>(SCORE_KEY),
-      kv.get<unknown>(SECURITY_KEY),
-      kv.get<unknown>(NEWS_KEY),
-      kv.get<unknown>(HIGHLIGHT_KEY),
-    ]);
-    return normalizeBlob({
-      scores: scores as ScoreState,
-      security: security as SecurityState,
-      news: news as DailyNews,
-      highlights: highlights as HighlightEntry[],
-    });
+  if (hasRedisStore()) {
+    return readKvBlob();
+  }
+  if (hasBlobStore()) {
+    return readVercelBlob();
   }
   if (onVercel()) {
     memory.__ottStorage = "memory";
@@ -173,14 +222,12 @@ async function readBlob(): Promise<FileBlob> {
 }
 
 async function writeBlob(blob: FileBlob, opts?: { allowEphemeral?: boolean }) {
-  ensureKvEnv();
-  if (hasDurableStore()) {
-    await Promise.all([
-      kv.set(SCORE_KEY, blob.scores),
-      kv.set(SECURITY_KEY, blob.security),
-      kv.set(NEWS_KEY, blob.news),
-      kv.set(HIGHLIGHT_KEY, blob.highlights),
-    ]);
+  if (hasRedisStore()) {
+    await writeKvBlob(blob);
+    return;
+  }
+  if (hasBlobStore()) {
+    await writeVercelBlob(blob);
     return;
   }
   if (onVercel()) {
@@ -221,7 +268,7 @@ export function readSecurity(): Promise<SecurityState> {
 export function writeSecurity(security: SecurityState): Promise<void> {
   return serialized(async () => {
     const blob = await readBlob();
-    // PIN lockouts may sit in memory on Vercel; score ticks still require Redis.
+    // PIN lockouts may sit in memory on Vercel; score ticks still require durable storage.
     await writeBlob({ ...blob, security }, { allowEphemeral: true });
   });
 }
