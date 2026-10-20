@@ -88,6 +88,12 @@ export type PublicBoard = {
   storage: StorageMode;
   news: import("@/lib/news").DailyNews;
   highlights: import("@/lib/highlights").HighlightEntry[];
+  /** Shared TV playlist: which screens are on for every visitor. */
+  shown: import("@/lib/reveals").ShownMap;
+  /** Shared Jimmy cricket short code for every visitor. */
+  cricketCode: string;
+  /** When shared TV pages were last saved by an admin (0 = never). */
+  displayUpdatedAt: number;
 };
 
 export type Milestone = {

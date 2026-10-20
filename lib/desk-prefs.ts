@@ -251,6 +251,42 @@ export function setScreenShown(screen: FixedScreenId, shown: boolean) {
   publish({ ...readPrefs(), shown: next });
 }
 
+/** Apply shared TV display settings from the server board (every visitor). */
+export function hydrateDisplay(shown: ShownMap, cricketCode: string) {
+  const code = cricketCode.trim().slice(0, 300);
+  window.localStorage.setItem("ott-kiosk-shown", JSON.stringify(shown));
+  if (code) window.localStorage.setItem("ott-cricket-code", code);
+  else window.localStorage.removeItem("ott-cricket-code");
+  publish({ ...readPrefs(), shown: { ...shown }, cricketCode: code });
+}
+
+/** Admin: save show/hide and cricket code for every milawaps visitor. */
+export async function saveSiteDisplay(
+  patch: { shown?: Partial<ShownMap>; cricketCode?: string },
+  adminToken: string,
+): Promise<{ ok: true; board: import("@/lib/game").PublicBoard } | { ok: false; error: string }> {
+  try {
+    const response = await fetch("/api/display", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify(patch),
+    });
+    const body = (await response.json().catch(() => ({}))) as import("@/lib/game").PublicBoard & {
+      error?: string;
+    };
+    if (!response.ok) {
+      return { ok: false, error: body.error ?? "Those TV pages did not save." };
+    }
+    hydrateDisplay(body.shown, body.cricketCode);
+    return { ok: true, board: body };
+  } catch {
+    return { ok: false, error: "Those TV pages did not save." };
+  }
+}
+
 export function setRevealAt(id: RevealId, at: number | null) {
   const reveals = readReveals();
   reveals[id] = {

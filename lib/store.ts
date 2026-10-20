@@ -22,11 +22,18 @@ import {
 } from "@/lib/highlights";
 import { emptyNews, newsFromInput, sanitizeNews, type DailyNews } from "@/lib/news";
 import { applyAction, attachReason, sanitizeScores, undoLastTick } from "@/lib/scoring";
+import {
+  emptySiteDisplay,
+  sanitizeSiteDisplay,
+  siteDisplayFromInput,
+  type SiteDisplay,
+} from "@/lib/site-display";
 
 const SCORE_KEY = "ott:scores";
 const SECURITY_KEY = "ott:security";
 const NEWS_KEY = "ott:news";
 const HIGHLIGHT_KEY = "ott:highlights";
+const DISPLAY_KEY = "ott:display";
 const BLOB_BOARD_PATH = "yard/board.json";
 const FILE_PATH = path.join(process.cwd(), "data", "yard.json");
 
@@ -39,6 +46,7 @@ type FileBlob = {
   security: SecurityState;
   news: DailyNews;
   highlights: HighlightEntry[];
+  display: SiteDisplay;
 };
 
 type MemoryGlobal = typeof globalThis & {
@@ -101,6 +109,7 @@ function freshBlob(): FileBlob {
     security: emptySecurity(),
     news: emptyNews(),
     highlights: [],
+    display: emptySiteDisplay(),
   };
 }
 
@@ -125,6 +134,7 @@ function normalizeBlob(raw: Partial<FileBlob> | null | undefined): FileBlob {
     security: sanitizeSecurity(raw?.security),
     news: sanitizeNews(raw?.news),
     highlights: sanitizeHighlights(raw?.highlights),
+    display: sanitizeSiteDisplay(raw?.display),
   };
 }
 
@@ -181,17 +191,19 @@ async function writeVercelBlob(blob: FileBlob) {
 }
 
 async function readKvBlob(): Promise<FileBlob> {
-  const [scores, security, news, highlights] = await Promise.all([
+  const [scores, security, news, highlights, display] = await Promise.all([
     kv.get<unknown>(SCORE_KEY),
     kv.get<unknown>(SECURITY_KEY),
     kv.get<unknown>(NEWS_KEY),
     kv.get<unknown>(HIGHLIGHT_KEY),
+    kv.get<unknown>(DISPLAY_KEY),
   ]);
   return normalizeBlob({
     scores: scores as ScoreState,
     security: security as SecurityState,
     news: news as DailyNews,
     highlights: highlights as HighlightEntry[],
+    display: display as SiteDisplay,
   });
 }
 
@@ -201,6 +213,7 @@ async function writeKvBlob(blob: FileBlob) {
     kv.set(SECURITY_KEY, blob.security),
     kv.set(NEWS_KEY, blob.news),
     kv.set(HIGHLIGHT_KEY, blob.highlights),
+    kv.set(DISPLAY_KEY, blob.display),
   ]);
 }
 
@@ -244,6 +257,7 @@ async function writeBlob(blob: FileBlob, opts?: { allowEphemeral?: boolean }) {
 }
 
 export function toPublic(blob: FileBlob): PublicBoard {
+  const display = sanitizeSiteDisplay(blob.display);
   return {
     units: blob.scores.units,
     updatedAt: blob.scores.updatedAt,
@@ -255,6 +269,9 @@ export function toPublic(blob: FileBlob): PublicBoard {
     storage: storageMode(),
     news: blob.news,
     highlights: sanitizeHighlights(blob.highlights),
+    shown: display.shown,
+    cricketCode: display.cricketCode,
+    displayUpdatedAt: display.updatedAt,
   };
 }
 
@@ -337,6 +354,16 @@ export function removeHighlight(id: string): Promise<PublicBoard> {
     const highlights = removeHighlightById(blob.highlights, id);
     if (!highlights) throw new Error("That highlight is already gone.");
     const next = { ...blob, highlights };
+    await writeBlob(next);
+    return toPublic(next);
+  });
+}
+
+export function commitDisplay(raw: unknown): Promise<PublicBoard> {
+  return serialized(async () => {
+    const blob = await readBlob();
+    const display = siteDisplayFromInput(raw, sanitizeSiteDisplay(blob.display));
+    const next = { ...blob, display };
     await writeBlob(next);
     return toPublic(next);
   });

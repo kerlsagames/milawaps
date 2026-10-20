@@ -158,11 +158,15 @@ function mergeLeaders(fromApi: CricketLeaders, fromStats: CricketLeaders): Crick
   };
 }
 
-function fixtureFinished(result: string) {
+export function fixtureIsFinished(result: string) {
   const value = result.trim().toLowerCase();
   if (!value) return false;
   if (value === "under way" || value === "underway" || value === "still to play") return false;
   return true;
+}
+
+function fixtureFinished(result: string) {
+  return fixtureIsFinished(result);
 }
 
 function fixtureLive(result: string) {

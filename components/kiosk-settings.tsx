@@ -15,13 +15,13 @@ import {
   MAX_DWELL_SECONDS,
   MIN_DWELL_SECONDS,
   resetReveals,
+  saveSiteDisplay,
   setCricketCode,
   setFinishAt,
   setRevealAt,
   setRevealImage,
   setRevealLabel,
   setRevealPrize,
-  setScreenShown,
   setTimerStyle,
   setViewDwell,
   useDeskPrefs,
@@ -51,11 +51,17 @@ export function KioskSettings({
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetNote, setResetNote] = useState("");
   const [draftNews, setDraftNews] = useState<DailyNews>(news ?? emptyNews());
+  const [draftCricket, setDraftCricket] = useState(prefs.cricketCode);
 
   useEffect(() => {
     if (!open) return;
     setDraftNews(news ?? emptyNews());
   }, [open, news]);
+
+  useEffect(() => {
+    if (!open) return;
+    setDraftCricket(prefs.cricketCode);
+  }, [open, prefs.cricketCode]);
 
   useEffect(() => {
     if (!open) return;
@@ -82,6 +88,38 @@ export function KioskSettings({
     setAsking(false);
     setCode("");
     setMessage("");
+  }
+
+  async function saveShown(id: FixedScreenId, next: boolean) {
+    const token = window.sessionStorage.getItem(ADMIN_KEY);
+    if (!token) return;
+    setBusy(true);
+    setResetNote("");
+    const result = await saveSiteDisplay({ shown: { [id]: next } }, token);
+    if (!result.ok) {
+      setResetNote(result.error);
+      setBusy(false);
+      return;
+    }
+    onBoard?.(result.board);
+    setResetNote("TV pages updated for everyone.");
+    setBusy(false);
+  }
+
+  async function saveCricket(code: string) {
+    const token = window.sessionStorage.getItem(ADMIN_KEY);
+    if (!token) return;
+    setBusy(true);
+    setResetNote("");
+    const result = await saveSiteDisplay({ cricketCode: code }, token);
+    if (!result.ok) {
+      setResetNote(result.error);
+      setBusy(false);
+      return;
+    }
+    onBoard?.(result.board);
+    setResetNote(code.trim() ? "Cricket code saved for everyone." : "Cricket page cleared for everyone.");
+    setBusy(false);
   }
 
   async function resetBoard() {
@@ -198,6 +236,11 @@ export function KioskSettings({
                 label={view.label}
                 seconds={prefs.dwells[view.id]}
                 shown={admin ? prefs.shown[view.id] : undefined}
+                onShownChange={
+                  admin
+                    ? (next) => void saveShown(view.id, next)
+                    : undefined
+                }
               />
             ))}
             <ScreenRow
@@ -205,15 +248,19 @@ export function KioskSettings({
               label="Daily News"
               seconds={prefs.dwells.news}
               shown={admin ? prefs.shown.news : undefined}
+              onShownChange={admin ? (next) => void saveShown("news", next) : undefined}
             />
             <ScreenRow
               id="highlight"
               label="Student Highlight pages"
               seconds={prefs.dwells.highlight}
               shown={admin ? prefs.shown.highlight : undefined}
+              onShownChange={admin ? (next) => void saveShown("highlight", next) : undefined}
             />
             <p className="text-xs font-semibold text-muted-foreground">
-              Daily News and Student Highlight stay off the kiosk until a teacher ticks them here.
+              {admin
+                ? "Ticks here show or hide pages for every screen on milawaps — not just this computer."
+                : "Daily News and Student Highlight stay off until an admin ticks them in Settings."}{" "}
               Each new highlight becomes its own TV page for two days.
             </p>
           </div>
@@ -221,15 +268,26 @@ export function KioskSettings({
             <span className="text-sm font-bold">Cricket code</span>
             <input
               type="text"
-              value={prefs.cricketCode}
+              value={admin ? draftCricket : prefs.cricketCode}
               aria-label="Cricket code"
               placeholder="Short code, such as BQWA8Z"
-              onChange={(event) => setCricketCode(event.target.value)}
-              className="h-11 rounded-xl border border-input bg-transparent px-3 text-base font-bold"
+              readOnly={!admin}
+              onChange={(event) => {
+                if (!admin) return;
+                setDraftCricket(event.target.value);
+              }}
+              onBlur={() => {
+                if (!admin) return;
+                void saveCricket(draftCricket);
+              }}
+              className="h-11 rounded-xl border border-input bg-transparent px-3 text-base font-bold read-only:opacity-70"
             />
             <span className="text-xs font-semibold text-muted-foreground">
-              Paste the short code from Jimmy’s cricket, or a share link. The TV adds a Cricket
-              page with the ladder, the draw, and a few stats. Clear this to take the page off.
+              {admin
+                ? "Paste the short code from Jimmy’s cricket. Saving it adds Cricket for every milawaps screen. Clear and leave the field to take it off."
+                : prefs.cricketCode
+                  ? "Cricket is on for the whole school from the shared code. Ask an admin to change it."
+                  : "Ask an admin to paste the Jimmy cricket code so every TV can show the ladder."}
             </span>
           </label>
           {prefs.cricketCode ? (
@@ -237,7 +295,8 @@ export function KioskSettings({
               id="cricket"
               label="Cricket"
               seconds={prefs.dwells.cricket}
-              shown={undefined}
+              shown={admin ? prefs.shown.cricket : undefined}
+              onShownChange={admin ? (next) => void saveShown("cricket", next) : undefined}
             />
           ) : null}
           {!admin ? (
@@ -331,6 +390,7 @@ export function KioskSettings({
                       label={reveal.title}
                       seconds={prefs.dwells[reveal.id]}
                       shown={prefs.shown[reveal.id]}
+                      onShownChange={(next) => void saveShown(reveal.id, next)}
                     />
                     <MomentFields
                       at={saved.at}
@@ -741,21 +801,23 @@ function ScreenRow({
   label,
   seconds,
   shown,
+  onShownChange,
 }: {
   id: FixedScreenId;
   label: string;
   seconds: number;
   shown?: boolean;
+  onShownChange?: (shown: boolean) => void;
 }) {
   return (
     <div className="grid gap-1.5">
       <div className="flex items-center gap-2">
-        {shown === undefined ? null : (
+        {shown === undefined || !onShownChange ? null : (
           <input
             type="checkbox"
             checked={shown}
-            aria-label={`Show ${label} on the TV`}
-            onChange={(event) => setScreenShown(id, event.target.checked)}
+            aria-label={`Show ${label} on every milawaps screen`}
+            onChange={(event) => onShownChange(event.target.checked)}
             className="size-5 accent-[#e2a01a]"
           />
         )}
