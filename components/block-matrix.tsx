@@ -100,42 +100,53 @@ export function StrikeMatrix({ count, label }: { count: number; label: string })
   const marked = Math.max(0, Math.min(STRIKE_MAX, count));
 
   return (
-    <div>
-      <p className="mb-1 text-[11px] font-extrabold tracking-[0.16em] text-[#8d1f1f] uppercase">Strikes</p>
-      <div
-        role="img"
-        aria-label={`${label}: ${marked} strikes out of ${STRIKE_MAX}.`}
-        className="grid w-full gap-1.5"
-        style={{ gridTemplateColumns: `repeat(${STRIKE_COLS}, minmax(0, 1fr))` }}
-      >
-        {Array.from({ length: STRIKE_MAX }, (_, index) => {
-          const struck = index < marked;
-          return (
-            <span
-              key={index}
-              className={cn(
-                // aspect-square per cell — container aspect-ratio + gaps made tall pills.
-                "relative aspect-square overflow-hidden rounded-md border",
-                struck ? "border-[#9b1c1c] bg-[#c23b3b]/20" : "border-black/10 bg-black/5",
-              )}
-            >
-              {struck ? (
-                <svg
-                  viewBox="0 0 10 10"
-                  className="pointer-events-none absolute top-1/2 left-1/2 h-[64%] w-[64%] -translate-x-1/2 -translate-y-1/2"
-                  aria-hidden="true"
+    <div className="flex h-full min-h-0 flex-col">
+      <p className="mb-1 shrink-0 text-[11px] font-extrabold tracking-[0.16em] text-[#8d1f1f] uppercase">
+        Strikes
+      </p>
+      <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden">
+        <div
+          className="h-auto max-h-full w-full max-w-full"
+          style={{ aspectRatio: `${STRIKE_COLS} / ${STRIKE_ROWS}` }}
+        >
+          <div
+            role="img"
+            aria-label={`${label}: ${marked} strikes out of ${STRIKE_MAX}.`}
+            className="grid h-full w-full gap-1"
+            style={{
+              gridTemplateColumns: `repeat(${STRIKE_COLS}, minmax(0, 1fr))`,
+              gridTemplateRows: `repeat(${STRIKE_ROWS}, minmax(0, 1fr))`,
+            }}
+          >
+            {Array.from({ length: STRIKE_MAX }, (_, index) => {
+              const struck = index < marked;
+              return (
+                <span
+                  key={index}
+                  className={cn(
+                    "relative min-h-0 min-w-0 overflow-hidden rounded-md border",
+                    struck ? "border-[#9b1c1c] bg-[#c23b3b]/20" : "border-black/10 bg-black/5",
+                  )}
                 >
-                  <path
-                    d="M1.2 1.2 L8.8 8.8 M8.8 1.2 L1.2 8.8"
-                    stroke="#9b1c1c"
-                    strokeWidth="1.7"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              ) : null}
-            </span>
-          );
-        })}
+                  {struck ? (
+                    <svg
+                      viewBox="0 0 10 10"
+                      className="pointer-events-none absolute top-1/2 left-1/2 h-[64%] w-[64%] -translate-x-1/2 -translate-y-1/2"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M1.2 1.2 L8.8 8.8 M8.8 1.2 L1.2 8.8"
+                        stroke="#9b1c1c"
+                        strokeWidth="1.7"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  ) : null}
+                </span>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );

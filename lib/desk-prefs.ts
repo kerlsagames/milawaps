@@ -87,7 +87,7 @@ const serverPrefs: DeskPrefs = {
   finishAt: null,
   shown: DEFAULT_SHOWN,
   reveals: defaultReveals(),
-  timer: "race",
+  timer: "blocks",
   cricketCode: "",
   newsLayout: "split",
   cricketPanels: { ...DEFAULT_CRICKET_PANELS },
@@ -188,7 +188,8 @@ function readFinish(): number | null {
 }
 
 function readTimer(): TimerStyle {
-  return window.localStorage.getItem("ott-timer-style") === "blocks" ? "blocks" : "race";
+  // Default: coloured rectangles. Only switch to the race if the TV chose it.
+  return window.localStorage.getItem("ott-timer-style") === "race" ? "race" : "blocks";
 }
 
 function readNewsLayout(): NewsLayoutId {
