@@ -59,7 +59,7 @@ const first = createHighlight(
   1_000,
 );
 assert.equal(first.students.length, 2);
-assert.equal(first.expiresAt, 1_000 + 30 * 60 * 60 * 1000);
+assert.equal(first.expiresAt, 1_000 + 26 * 60 * 60 * 1000);
 
 const mixed = createHighlight(
   [
@@ -141,11 +141,11 @@ assert.equal(kept.length, 3);
 assert.equal(activeHighlights(kept, 1_500).length, 2);
 assert.equal(activeHighlights(kept, first.expiresAt + 1).length, 1);
 
-assert.equal(HIGHLIGHT_TTL_MS, 30 * 60 * 60 * 1000);
-assert.equal(formatHighlightCountdown(30 * 60 * 60 * 1000), "30:00:00");
+assert.equal(HIGHLIGHT_TTL_MS, 26 * 60 * 60 * 1000);
+assert.equal(formatHighlightCountdown(26 * 60 * 60 * 1000), "26:00:00");
 assert.equal(formatHighlightCountdown(65_000), "1:05");
 
-// Older 48h spotlights clamp down to the 30h default.
+// Older longer spotlights clamp down to the 26h default.
 const legacy48 = sanitizeHighlights(
   [
     {
