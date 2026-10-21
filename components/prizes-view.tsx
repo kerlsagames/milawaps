@@ -196,10 +196,15 @@ function Stop({
           <img
             src={art}
             alt=""
-            className={
+            className={blendSquare ? "size-full scale-125 object-cover" : "size-full object-cover"}
+            style={
               blendSquare
-                ? "size-full scale-[1.08] object-cover [mask-image:radial-gradient(circle_closest-side_at_center,#000_52%,transparent_100%)] [-webkit-mask-image:radial-gradient(circle_closest-side_at_center,#000_52%,transparent_100%)]"
-                : "size-full object-cover"
+                ? {
+                    // Soft vignette so the square paper stamp dissolves into the circle fill.
+                    maskImage: "radial-gradient(circle at center, #000 32%, transparent 70%)",
+                    WebkitMaskImage: "radial-gradient(circle at center, #000 32%, transparent 70%)",
+                  }
+                : undefined
             }
           />
         ) : (
