@@ -10,7 +10,7 @@ import {
   type UnitId,
   clampScore,
 } from "@/lib/game";
-import { activeHighlights, type HighlightEntry } from "@/lib/highlights";
+import { activeHighlights, highlightPointTotal, type HighlightEntry } from "@/lib/highlights";
 import { milestonesBetween } from "@/lib/scoring";
 import { studentById } from "@/lib/students";
 import { melbourneDateKey } from "@/lib/ticker";
@@ -55,8 +55,7 @@ function nameList(entry: HighlightEntry): string {
 }
 
 function highlightPoints(entry: HighlightEntry): number {
-  // commitHighlight awards one spot (+1) per class in the highlight.
-  return Math.max(1, new Set(entry.students.map((student) => student.unitId)).size);
+  return Math.max(1, highlightPointTotal(entry.students));
 }
 
 function highlightLine(entry: HighlightEntry): string {
