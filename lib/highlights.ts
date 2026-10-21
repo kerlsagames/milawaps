@@ -1,4 +1,4 @@
-import { isStaffId, isUnitId, kidName, unitById, type StaffId, type UnitId } from "@/lib/game";
+import { isStaffId, isUnitId, type StaffId, type UnitId } from "@/lib/game";
 import { studentById } from "@/lib/students";
 
 /** Spotlights leave the TV after this long. */
@@ -135,53 +135,6 @@ export function removeHighlightById(
   const next = list.filter((entry) => entry.id !== trimmed);
   if (next.length === list.length) return null;
   return sanitizeHighlights(next, now);
-}
-
-function melbourneStamp(at: number) {
-  return new Intl.DateTimeFormat("en-AU", {
-    timeZone: "Australia/Melbourne",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(at);
-}
-
-function csvEscape(value: string) {
-  if (/[",\n\r]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
-  return value;
-}
-
-/** Spreadsheet of stored spotlights (live + recent history). */
-export function highlightsToCsv(entries: HighlightEntry[]): string {
-  const header = ["When", "Staff", "Students", "Classes", "Reason", "Expires", "Status"];
-  const lines = [header.join(",")];
-  const now = Date.now();
-  const sorted = [...entries].sort((left, right) => right.at - left.at);
-  for (const entry of sorted) {
-    const names = entry.students
-      .map((student) => studentById(student.id)?.name)
-      .filter((name): name is string => Boolean(name));
-    const classes = [
-      ...new Set(entry.students.map((student) => unitById(student.unitId).code)),
-    ].join(" / ");
-    lines.push(
-      [
-        melbourneStamp(entry.at),
-        kidName(entry.staffId),
-        names.join("; "),
-        classes,
-        entry.reason,
-        melbourneStamp(entry.expiresAt),
-        entry.expiresAt > now ? "Live" : "Ended",
-      ]
-        .map(csvEscape)
-        .join(","),
-    );
-  }
-  return `${lines.join("\n")}\n`;
 }
 
 export function formatHighlightCountdown(msLeft: number) {

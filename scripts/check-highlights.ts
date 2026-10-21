@@ -5,12 +5,17 @@ import {
   formatHighlightCountdown,
   highlightPointTotal,
   highlightSpotUnits,
-  highlightsToCsv,
   removeHighlightById,
   sanitizeHighlights,
   HIGHLIGHT_POINT_MAX,
   HIGHLIGHT_TTL_MS,
 } from "../lib/highlights";
+import {
+  buildHighlightWorkbook,
+  classLabel,
+  highlightsToCsv,
+  shoutOutCounts,
+} from "../lib/highlight-spreadsheet";
 import { emptyNews, sanitizeNews } from "../lib/news";
 import { emptyScores } from "../lib/game";
 import { applyAction } from "../lib/scoring";
@@ -162,9 +167,20 @@ const legacy48 = sanitizeHighlights(
 assert.equal(legacy48[0]?.expiresAt, 10_000 + HIGHLIGHT_TTL_MS);
 
 const csv = highlightsToCsv(kept);
-assert.match(csv, /When,Staff,Students,Classes,Reason,Expires,Status/);
+assert.match(csv, /When,Staff,Student,Class,Reason,Expires,Status/);
 assert.match(csv, /Packed the shed/);
 assert.match(csv, /Ended/);
+assert.match(csv, /F-1/);
+assert.equal(classLabel("234"), "2-3-4");
+
+// Workbook covers full history + a tab per grade with every student.
+const book = buildHighlightWorkbook(kept, 1_500);
+assert.deepEqual(book.SheetNames, ["All shout-outs", "F-1", "2-3-4", "5-6"]);
+const counts = shoutOutCounts(kept);
+// first + old-ended copy both include Abbey & Ada; Will is only on second.
+assert.equal(counts.get("f1-abbey"), 2);
+assert.equal(counts.get("f1-ada"), 2);
+assert.equal(counts.get("f1-will"), 1);
 
 const shown = { ...DEFAULT_SHOWN, news: true, highlight: true };
 const screens = kioskScreens(shown, [first, second], 1_500);
