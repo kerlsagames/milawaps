@@ -144,6 +144,7 @@ export function KioskSettings({
       cricketCode?: string;
       newsLayout?: NewsLayoutId;
       cricketPanels?: Partial<CricketPanels>;
+      finishAt?: number | null;
     },
     okNote: string,
   ) {
@@ -326,7 +327,15 @@ export function KioskSettings({
               }}
               onOpenPage={setPage}
               onTimer={setTimerStyle}
-              onFinish={setFinishAt}
+              onFinish={(at) => {
+                setFinishAt(at);
+                void patchDisplay(
+                  { finishAt: at },
+                  at
+                    ? "Finish time saved for every TV."
+                    : "Finish time cleared on every TV.",
+                );
+              }}
               onConfirmReset={setConfirmReset}
               onReset={() => void resetBoard()}
             />
@@ -573,6 +582,9 @@ function HomePanel({
       {admin ? (
         <div className="grid gap-1.5">
           <span className="text-sm font-bold">Finish date and time</span>
+          <p className="text-xs font-semibold text-muted-foreground">
+            Saves to every milawaps TV — the prize-path countdown uses this clock.
+          </p>
           <MomentFields
             at={prefsFinishAt}
             saveLabel="Save finish time"

@@ -10,6 +10,7 @@ assert.equal(empty.shown.news, false);
 assert.equal(empty.shown.cricket, false);
 assert.equal(empty.newsLayout, "split");
 assert.equal(empty.cricketPanels.ladder, true);
+assert.equal(empty.finishAt, null);
 
 const withCode = siteDisplayFromInput({ cricketCode: "BQWA8Z" }, empty);
 assert.equal(withCode.cricketCode, "BQWA8Z");
@@ -43,5 +44,15 @@ assert.equal(sanitized.cricketPanels.draw, false);
 const layoutOnly = siteDisplayFromInput({ newsLayout: "stack" }, sanitized);
 assert.equal(layoutOnly.newsLayout, "stack");
 assert.equal(layoutOnly.cricketCode, "abc");
+
+const withFinish = siteDisplayFromInput({ finishAt: 1_800_000_000_000 }, layoutOnly);
+assert.equal(withFinish.finishAt, 1_800_000_000_000);
+assert.equal(withFinish.newsLayout, "stack");
+const clearedFinish = siteDisplayFromInput({ finishAt: null }, withFinish);
+assert.equal(clearedFinish.finishAt, null);
+assert.equal(
+  sanitizeSiteDisplay({ finishAt: "nope", cricketCode: "x" }).finishAt,
+  null,
+);
 
 console.log("site display checks passed");
