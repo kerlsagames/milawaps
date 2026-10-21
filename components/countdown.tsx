@@ -21,14 +21,13 @@ export function Countdown() {
 
   return (
     <section
-      className="w-full shrink-0 rounded-2xl border-4 border-[#2a1c04] bg-[#2a1c04] px-3 py-2 text-[#ffe08a] shadow-[0_4px_0_#6b5844] lg:w-auto lg:rounded-[28px] lg:px-5 lg:py-2 lg:shadow-[0_6px_0_#6b5844]"
+      className="w-full max-w-3xl shrink-0 rounded-2xl border-4 border-[#2a1c04] bg-[#2a1c04] px-3 py-2 text-[#ffe08a] shadow-[0_4px_0_#6b5844] lg:rounded-[28px] lg:px-8 lg:py-3 lg:shadow-[0_6px_0_#6b5844]"
       aria-label={done ? "Countdown clock. Time's up" : `Countdown clock. ${remainLabel(parts)}`}
     >
-      <div className="flex items-center justify-between gap-2 lg:justify-center lg:gap-8">
-        <p className="shrink-0 text-left font-display text-sm leading-none lg:text-3xl">
+      <div className="flex items-center justify-center gap-3 lg:gap-10">
+        <p className="shrink-0 font-display text-sm leading-none lg:text-3xl">
           <span className="lg:hidden">Clock</span>
-          <span className="hidden lg:inline">Countdown </span>
-          <span className="hidden lg:inline">clock</span>
+          <span className="hidden lg:inline">Countdown clock</span>
         </p>
         {done ? (
           <p className="font-display text-2xl leading-none lg:text-5xl">Time's up</p>

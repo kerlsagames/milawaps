@@ -27,19 +27,16 @@ export function PrizesView({ board }: { board: PublicBoard }) {
   const now = Date.now();
 
   return (
-    <div className="flex flex-col gap-3 lg:h-full">
-      <header className="flex shrink-0 flex-col gap-1.5 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
-        <div className="min-w-0">
-          <p className="text-[11px] font-bold tracking-[0.22em] text-ink-gold uppercase">Follow the path</p>
-          <h2 className="font-display text-3xl leading-none lg:text-5xl">Prizes</h2>
-          <p className="mt-0.5 text-sm font-extrabold text-[#5c4a32] lg:mt-1 lg:text-2xl">
-            Unlock prizes as you get more ticks.
-          </p>
-        </div>
-        <Countdown />
+    <div className="flex h-full min-h-0 flex-col gap-3">
+      <header className="shrink-0">
+        <p className="text-[11px] font-bold tracking-[0.22em] text-ink-gold uppercase">Follow the path</p>
+        <h2 className="font-display text-3xl leading-none lg:text-5xl">Prizes</h2>
+        <p className="mt-0.5 text-sm font-extrabold text-[#5c4a32] lg:mt-1 lg:text-2xl">
+          Unlock prizes as you get more ticks.
+        </p>
       </header>
 
-      <div className="flex flex-col gap-3 lg:min-h-0 lg:flex-1">
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
         {UNITS.map((unit) => (
           <ClassPath
             key={unit.id}
@@ -49,6 +46,11 @@ export function PrizesView({ board }: { board: PublicBoard }) {
             now={now}
           />
         ))}
+      </div>
+
+      {/* Kiosk/TV has spare room under the paths — park the clock dead-centre at the bottom. */}
+      <div className="mt-auto flex shrink-0 justify-center pt-1 lg:pt-2">
+        <Countdown />
       </div>
     </div>
   );
