@@ -114,21 +114,15 @@ export function UnitCard({
 
         <div className="mt-2 hidden min-h-0 flex-1 flex-col gap-2 overflow-hidden lg:flex">
           {/*
-            Size container: scale the 10×8 board to leftover height so cells stay
-            square, trophies stay centered, and +1 buttons are never covered.
+            Fit the 10×8 board inside leftover height without container queries —
+            those collapse under the kiosk’s transform: scale and hide the grids.
           */}
-          <div className="grid min-h-0 flex-1 place-items-center overflow-hidden [container-type:size]">
-            <div
-              className="max-w-full"
-              style={{
-                width: "min(100cqw, calc(100cqh * 10 / 8))",
-                aspectRatio: "10 / 8",
-              }}
-            >
+          <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden">
+            <div className="aspect-[10/8] h-auto max-h-full w-full max-w-full">
               <BlockMatrix score={score} color={unit.color} ink={unit.ink} label={unit.code} />
             </div>
           </div>
-          <div className="w-full shrink-0">
+          <div className="max-h-[34%] min-h-0 w-full shrink-0 overflow-hidden">
             <StrikeMatrix count={crosses} label={unit.code} />
           </div>
         </div>

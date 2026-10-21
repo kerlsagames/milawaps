@@ -57,10 +57,12 @@ export function sanitizeHighlights(raw: unknown, now = Date.now()): HighlightEnt
       return [{ id: known.id, unitId: known.unitId }];
     });
     if (students.length === 0) continue;
-    const expiresAt =
+    // Cap at 30h from creation so older 48h (2-day) rows adopt the new default.
+    const rawExpires =
       typeof row.expiresAt === "number" && Number.isFinite(row.expiresAt)
         ? row.expiresAt
         : row.at + HIGHLIGHT_TTL_MS;
+    const expiresAt = Math.min(rawExpires, row.at + HIGHLIGHT_TTL_MS);
     // Keep expired rows for spreadsheet download — TV uses activeHighlights().
     list.push({
       id:

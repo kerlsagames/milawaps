@@ -144,6 +144,23 @@ assert.equal(activeHighlights(kept, first.expiresAt + 1).length, 1);
 assert.equal(HIGHLIGHT_TTL_MS, 30 * 60 * 60 * 1000);
 assert.equal(formatHighlightCountdown(30 * 60 * 60 * 1000), "30:00:00");
 assert.equal(formatHighlightCountdown(65_000), "1:05");
+
+// Older 48h spotlights clamp down to the 30h default.
+const legacy48 = sanitizeHighlights(
+  [
+    {
+      id: "legacy-48h",
+      at: 10_000,
+      expiresAt: 10_000 + 48 * 60 * 60 * 1000,
+      staffId: "jess",
+      reason: "Old two-day spotlight",
+      students: [{ id: "f1-will", unitId: "f1" }],
+    },
+  ],
+  10_000,
+);
+assert.equal(legacy48[0]?.expiresAt, 10_000 + HIGHLIGHT_TTL_MS);
+
 const csv = highlightsToCsv(kept);
 assert.match(csv, /When,Staff,Students,Classes,Reason,Expires,Status/);
 assert.match(csv, /Packed the shed/);
