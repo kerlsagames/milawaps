@@ -3,7 +3,8 @@ import { emptyScores } from "../lib/game";
 import { createHighlight } from "../lib/highlights";
 import { applyAction } from "../lib/scoring";
 import { JIMMY_CRICKET_BOARD, parseCricketSnapshot, shareUrlForCode } from "../lib/cricket";
-import { todayFeed } from "../lib/today";
+import { feedEventStamp, melbourneYesterdayKey, todayFeed } from "../lib/today";
+import { melbourneDateKey } from "../lib/ticker";
 
 process.env.CRICKET_SHARE_ORIGIN = "https://example.com";
 assert.equal(shareUrlForCode("BQWA8Z"), `${JIMMY_CRICKET_BOARD}/BQWA8Z`);
@@ -93,20 +94,27 @@ for (let index = 0; index < 20; index += 1) {
   spots = applyAction(spots, "spot", "f1", "jess", todayAt(index)).state;
 }
 const latest = todayFeed(spots, now);
-assert.equal(latest.length, 8);
+assert.equal(latest.length, 10);
 assert.equal(latest[0]?.kind, "unlock");
 assert.equal(latest[0]?.text, "F/1 unlocked Game with Mr K");
 assert.equal(latest[1]?.kind, "tick");
 assert.match(latest[1]?.text ?? "", /Miss B · F\/1 \+1 point/);
-assert.equal(latest.filter((item) => item.kind === "tick").length, 7);
+assert.equal(latest.filter((item) => item.kind === "tick").length, 9);
 
 let mixed = emptyScores(1);
 mixed = applyAction(mixed, "spot", "234", "craig", Date.parse("2026-10-18T10:00:00+11:00")).state;
 mixed = applyAction(mixed, "strike", "234", "ash", Date.parse("2026-10-19T10:00:00+11:00")).state;
-const todayOnly = todayFeed(mixed, now);
-assert.equal(todayOnly.length, 1);
-assert.equal(todayOnly[0]?.kind, "strike");
-assert.match(todayOnly[0]?.text ?? "", /Mr C · 2\/3\/4 −1 point/);
+const acrossDays = todayFeed(mixed, now);
+assert.equal(acrossDays.length, 2);
+assert.equal(acrossDays[0]?.kind, "strike");
+assert.match(acrossDays[0]?.text ?? "", /Mr C · 2\/3\/4 −1 point/);
+assert.equal(acrossDays[1]?.kind, "tick");
+assert.match(acrossDays[1]?.text ?? "", /Mr Kerlin · 2\/3\/4 \+1 point/);
+assert.equal(melbourneDateKey(now), "2026-10-19");
+assert.equal(melbourneYesterdayKey(now), "2026-10-18");
+assert.match(feedEventStamp(Date.parse("2026-10-19T10:00:00+11:00"), now), /^\d/);
+assert.match(feedEventStamp(Date.parse("2026-10-18T10:00:00+11:00"), now), /^Yesterday /);
+assert.match(feedEventStamp(Date.parse("2026-10-17T10:00:00+11:00"), now), /^Sat /);
 
 const surged = applyAction(
   { ...emptyScores(1), units: { f1: 18, "234": 0, "56": 0 } },

@@ -10,7 +10,7 @@ import {
   type UnitId,
   clampScore,
 } from "@/lib/game";
-import { activeHighlights, highlightPointTotal, type HighlightEntry } from "@/lib/highlights";
+import { highlightPointTotal, type HighlightEntry } from "@/lib/highlights";
 import { milestonesBetween } from "@/lib/scoring";
 import { studentById } from "@/lib/students";
 import { melbourneDateKey } from "@/lib/ticker";
@@ -26,9 +26,9 @@ export type TodayItem = {
   points?: number;
 };
 
-const TODAY_LIMIT = 8;
-/** Longer list for the phone Today tab so duty teachers can scroll the day. */
-const TODAY_PAGE_LIMIT = 40;
+/** Sidebar, kiosk, and desk tab all show the same rolling window. */
+const TODAY_LIMIT = 10;
+const TODAY_PAGE_LIMIT = 10;
 
 function pointPhrase(delta: number) {
   const amount = Math.abs(delta);
@@ -68,7 +68,7 @@ function highlightLine(entry: HighlightEntry): string {
   return reason ? `${base} · ${reason}` : base;
 }
 
-/** Spot ticks created with a highlight — Today only needs the highlight line. */
+/** Spot ticks created with a highlight — the feed only needs the highlight line. */
 function isHighlightCompanionSpot(entry: ScoreLogEntry, highlights: HighlightEntry[]): boolean {
   if (entry.action !== "spot" || !isUnitId(entry.unitId)) return false;
   const reason = entry.reason?.trim() ?? "";
@@ -112,6 +112,39 @@ function undoAction(
   return { units, crosses: nextCrosses };
 }
 
+/** Melbourne calendar day before `now` (YYYY-MM-DD). */
+export function melbourneYesterdayKey(now: number) {
+  const [year, month, day] = melbourneDateKey(now).split("-").map(Number);
+  const previous = new Date(Date.UTC(year!, month! - 1, day!));
+  previous.setUTCDate(previous.getUTCDate() - 1);
+  const y = previous.getUTCFullYear();
+  const m = String(previous.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(previous.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/** Time for feed rows; include the day when the event is not from today. */
+export function feedEventStamp(at: number, now = Date.now()) {
+  const time = new Intl.DateTimeFormat("en-AU", {
+    timeZone: "Australia/Melbourne",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(at);
+  const dayKey = melbourneDateKey(at);
+  const todayKey = melbourneDateKey(now);
+  if (dayKey === todayKey) return time;
+  if (dayKey === melbourneYesterdayKey(now)) return `Yesterday ${time}`;
+  const weekday = new Intl.DateTimeFormat("en-AU", {
+    timeZone: "Australia/Melbourne",
+    weekday: "short",
+  }).format(at);
+  return `${weekday} ${time}`;
+}
+
+/**
+ * Latest feed: most recent ticks / strikes / unlocks / highlights across days.
+ * Caps at `limit` so a new event bumps the oldest row off.
+ */
 export function todayFeed(
   board: Pick<PublicBoard, "units" | "crosses" | "log"> &
     Partial<Pick<PublicBoard, "highlights">>,
@@ -119,7 +152,6 @@ export function todayFeed(
   prizeName: (points: number, title: string) => string = (_points, title) => title,
   limit = TODAY_LIMIT,
 ): TodayItem[] {
-  const today = melbourneDateKey(now);
   let units = { ...board.units };
   let crosses: Record<UnitId, number> = {
     f1: board.crosses?.f1 ?? 0,
@@ -127,13 +159,11 @@ export function todayFeed(
     "56": board.crosses?.["56"] ?? 0,
   };
   const items: TodayItem[] = [];
-  const todaysHighlights = activeHighlights(board.highlights ?? [], now).filter(
-    (entry) => melbourneDateKey(entry.at) === today,
-  );
+  // Include ended spotlights too — they still belong in the rolling feed history.
+  const feedHighlights = [...(board.highlights ?? [])];
 
   for (const entry of board.log ?? []) {
     if (entry.action === "reset") break;
-    if (melbourneDateKey(entry.at) !== today) break;
     const undone = undoAction(units, crosses, entry);
     if (!undone) break;
     const unlocks = milestonesBetween(undone.units, units).reverse();
@@ -147,7 +177,7 @@ export function todayFeed(
       });
     }
     // Highlight already covers the story — skip the companion +1 tick line.
-    if (!isHighlightCompanionSpot(entry, todaysHighlights)) {
+    if (!isHighlightCompanionSpot(entry, feedHighlights)) {
       const line = columnLine(entry);
       if (line) {
         items.push({
@@ -162,7 +192,7 @@ export function todayFeed(
     crosses = undone.crosses;
   }
 
-  for (const entry of todaysHighlights) {
+  for (const entry of feedHighlights) {
     items.push({
       id: `highlight:${entry.id}`,
       at: entry.at,
