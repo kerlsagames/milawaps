@@ -5,7 +5,7 @@ import { Check, Gift, Sparkles, X } from "lucide-react";
 import { useDeskPrefs, type RevealMap } from "@/lib/desk-prefs";
 import type { PublicBoard } from "@/lib/game";
 import { prizeIsPublic, revealForPoints } from "@/lib/reveals";
-import { TODAY_PAGE_LIMIT, todayFeed, type TodayKind } from "@/lib/today";
+import { feedEventStamp, todayFeed, type TodayKind } from "@/lib/today";
 import { cn } from "@/lib/utils";
 
 function prizeName(points: number, title: string, reveals: RevealMap, now: number) {
@@ -16,14 +16,6 @@ function prizeName(points: number, title: string, reveals: RevealMap, now: numbe
     return reveal.wide ? "a secret prize" : "a teacher takedown";
   }
   return saved?.label?.trim() || title;
-}
-
-function eventTime(at: number) {
-  return new Intl.DateTimeFormat("en-AU", {
-    timeZone: "Australia/Melbourne",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(at);
 }
 
 function KindMark({ kind }: { kind: TodayKind }) {
@@ -78,7 +70,7 @@ export function TodayColumn({
 }: {
   board: PublicBoard | undefined;
   live?: "loading" | "live" | "offline";
-  /** `page` is the phone/desk Today tab; `board` is the desktop sidebar. */
+  /** `page` is the phone/desk Latest Feed tab; `board` is the desktop sidebar. */
   variant?: "kiosk" | "board" | "page";
 }) {
   const prefs = useDeskPrefs();
@@ -90,17 +82,12 @@ export function TodayColumn({
   }, []);
 
   const items = board
-    ? todayFeed(
-        board,
-        now,
-        (points, title) => prizeName(points, title, prefs.reveals, now),
-        variant === "page" ? TODAY_PAGE_LIMIT : undefined,
-      )
+    ? todayFeed(board, now, (points, title) => prizeName(points, title, prefs.reveals, now))
     : [];
 
   return (
     <aside
-      aria-label="Today"
+      aria-label="Latest Feed"
       className={cn(
         "flex min-h-0 flex-col gap-2 bg-[#fffdf8] px-3",
         variant === "kiosk" &&
@@ -118,10 +105,10 @@ export function TodayColumn({
     >
       <div className="flex items-end justify-between gap-2">
         <div>
-          <h2 className="font-display text-4xl leading-none">Today</h2>
+          <h2 className="font-display text-3xl leading-none sm:text-4xl">Latest Feed</h2>
           {variant === "page" ? (
             <p className="mt-1 text-sm font-bold text-muted-foreground">
-              What has been given on yard duty today.
+              The 10 most recent ticks, strikes, highlights, and prizes.
             </p>
           ) : null}
         </div>
@@ -130,7 +117,7 @@ export function TodayColumn({
       </div>
       {items.length === 0 ? (
         <p className="rounded-2xl bg-white px-3 py-3 text-sm font-bold text-muted-foreground">
-          No ticks, strikes, highlights, or prizes yet today.
+          No ticks, strikes, highlights, or prizes yet.
         </p>
       ) : (
         <ol className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
@@ -153,8 +140,8 @@ export function TodayColumn({
                       </span>
                     ) : null}
                   </p>
-                  <p className="shrink-0 pt-0.5 text-[10px] font-bold text-muted-foreground sm:text-xs">
-                    {eventTime(item.at)}
+                  <p className="shrink-0 pt-0.5 text-right text-[10px] font-bold text-muted-foreground sm:text-xs">
+                    {feedEventStamp(item.at, now)}
                   </p>
                 </div>
               </div>

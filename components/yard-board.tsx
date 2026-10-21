@@ -408,13 +408,13 @@ export function YardBoard() {
             ...VIEWS.flatMap((item) => {
               const tab = { id: item.id as ScreenId, label: item.label, short: item.short };
               if (item.id !== "board") return [tab];
-              // Phone/desk: Today sits next to the board so duty teachers can check the feed.
+              // Phone/desk: Latest Feed sits next to the board so duty teachers can check recent ticks.
               return [
                 tab,
                 {
                   id: "today" as const,
-                  label: "Today",
-                  short: "Today",
+                  label: "Latest Feed",
+                  short: "Feed",
                   open: deskBrowse,
                 },
               ];
