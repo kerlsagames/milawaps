@@ -105,13 +105,13 @@ export function TodayColumn({
         "flex min-h-0 flex-col gap-2 bg-[#fffdf8] px-3",
         variant === "kiosk" &&
           cn(
-            "w-[min(19rem,40vw)] shrink-0 border-l-4 border-[#e2a01a] pt-4",
+            "w-[min(21.5rem,42vw)] shrink-0 border-l-4 border-[#e2a01a] pt-4",
             prefs.timer === "blocks" ? "pb-16" : "pb-28",
           ),
         // Phones: hide sidebar so the leaderboard gets the full screen.
         // Desktop (lg+): keep the sidebar beside the board.
         variant === "board" &&
-          "hidden lg:flex lg:w-[19rem] lg:shrink-0 lg:border-l-4 lg:border-[#e2a01a] lg:py-4",
+          "hidden lg:flex lg:w-[21.5rem] lg:shrink-0 lg:border-l-4 lg:border-[#e2a01a] lg:py-4",
         variant === "page" &&
           "h-full w-full flex-1 rounded-[28px] border-4 border-[#e2a01a] px-3 py-4 sm:px-4",
       )}
