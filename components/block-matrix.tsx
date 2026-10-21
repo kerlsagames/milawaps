@@ -27,12 +27,17 @@ export function BlockMatrix({
     }
   }
 
+  const rows = UNIT_MAX / 10;
+
   return (
     <div
       role="img"
       aria-label={`${label}: ${earned} squares out of ${UNIT_MAX}.`}
-      className="grid gap-1"
-      style={{ gridTemplateColumns: "repeat(10, minmax(0, 1fr))" }}
+      className="grid h-full min-h-0 w-full gap-1"
+      style={{
+        gridTemplateColumns: "repeat(10, minmax(0, 1fr))",
+        gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
+      }}
     >
       {Array.from({ length: UNIT_MAX }, (_, index) => {
         const square = index + 1;
@@ -48,7 +53,7 @@ export function BlockMatrix({
             key={index}
             title={milestone ? (named ? `${milestone.points} ${caption}` : "Prize") : undefined}
             className={cn(
-              "relative aspect-square rounded-md border",
+              "relative min-h-0 rounded-md border",
               filled && "border-transparent",
               !filled && "border-black/10 bg-black/5",
               milestone && !filled && "border-dashed",
@@ -86,15 +91,21 @@ export function BlockMatrix({
 
 export function StrikeMatrix({ count, label }: { count: number; label: string }) {
   const marked = Math.max(0, Math.min(STRIKE_MAX, count));
+  const rows = STRIKE_MAX / 10;
 
   return (
-    <div>
-      <p className="mb-1 text-[11px] font-extrabold tracking-[0.16em] text-[#8d1f1f] uppercase">Strikes</p>
+    <div className="flex h-full min-h-0 flex-col">
+      <p className="mb-1 shrink-0 text-[11px] font-extrabold tracking-[0.16em] text-[#8d1f1f] uppercase">
+        Strikes
+      </p>
       <div
         role="img"
         aria-label={`${label}: ${marked} strikes out of ${STRIKE_MAX}.`}
-        className="grid gap-1"
-        style={{ gridTemplateColumns: "repeat(10, minmax(0, 1fr))" }}
+        className="grid min-h-0 w-full flex-1 gap-1"
+        style={{
+          gridTemplateColumns: "repeat(10, minmax(0, 1fr))",
+          gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
+        }}
       >
         {Array.from({ length: STRIKE_MAX }, (_, index) => {
           const struck = index < marked;
@@ -102,7 +113,7 @@ export function StrikeMatrix({ count, label }: { count: number; label: string })
             <span
               key={index}
               className={cn(
-                "relative aspect-square rounded-md border",
+                "relative min-h-0 rounded-md border",
                 struck ? "border-[#9b1c1c] bg-[#c23b3b]/20" : "border-black/10 bg-black/5",
               )}
             >

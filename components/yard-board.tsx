@@ -405,7 +405,20 @@ export function YardBoard() {
         <SiteHeader
           view={view}
           tabs={[
-            ...VIEWS.map((item) => ({ id: item.id as ScreenId, label: item.label, short: item.short })),
+            ...VIEWS.flatMap((item) => {
+              const tab = { id: item.id as ScreenId, label: item.label, short: item.short };
+              if (item.id !== "board") return [tab];
+              // Phone/desk: Today sits next to the board so duty teachers can check the feed.
+              return [
+                tab,
+                {
+                  id: "today" as const,
+                  label: "Today",
+                  short: "Today",
+                  open: deskBrowse,
+                },
+              ];
+            }),
             {
               id: "news" as const,
               label: "Daily News",
@@ -510,6 +523,7 @@ export function YardBoard() {
             : "overflow-hidden",
           (view === "prizes" ||
             view === "board" ||
+            view === "today" ||
             view === "cricket" ||
             view === "news" ||
             Boolean(activeHighlightId)) &&
@@ -549,6 +563,7 @@ export function YardBoard() {
               className={cn(
                 "relative min-h-0",
                 (view === "board" ||
+                  view === "today" ||
                   view === "cricket" ||
                   view === "news" ||
                   Boolean(activeHighlightId)) &&
@@ -559,7 +574,9 @@ export function YardBoard() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             >
-              {view === "cricket" ? (
+              {view === "today" ? (
+                <TodayColumn board={data} live={live} variant="page" />
+              ) : view === "cricket" ? (
                 <CricketView code={cricketCode} fill panels={prefs.cricketPanels} />
               ) : view === "news" ? (
                 <NewsView news={data.news ?? emptyNews()} layout={prefs.newsLayout} />
@@ -617,7 +634,9 @@ export function YardBoard() {
                   }}
                 />
               ) : (
-                <TvFit>
+                // TV kiosk scales to fit the screen; the teacher desk keeps natural layout
+                // so +1 / highlight controls are not crushed over the score grids.
+                <DeskFit kiosk={kiosk}>
                   {view === "board" ? (
                     <LeaderboardView
                       board={data}
@@ -691,7 +710,7 @@ export function YardBoard() {
                       label={prefs.reveals[activeReveal.id].label}
                     />
                   )}
-                </TvFit>
+                </DeskFit>
               )}
             </motion.div>
           </AnimatePresence>
@@ -791,6 +810,13 @@ async function celebrate(events: MilestoneEvent[]) {
       });
     }
   }
+}
+
+function DeskFit({ kiosk, children }: { kiosk: boolean; children: ReactNode }) {
+  if (!kiosk) {
+    return <div className="box-border h-full min-h-0 overflow-hidden p-2 lg:p-3">{children}</div>;
+  }
+  return <TvFit>{children}</TvFit>;
 }
 
 function TvFit({ children }: { children: ReactNode }) {

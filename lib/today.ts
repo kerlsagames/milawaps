@@ -25,6 +25,8 @@ export type TodayItem = {
 };
 
 const TODAY_LIMIT = 8;
+/** Longer list for the phone Today tab so duty teachers can scroll the day. */
+const TODAY_PAGE_LIMIT = 40;
 
 function pointPhrase(delta: number) {
   const amount = Math.abs(delta);
@@ -109,6 +111,7 @@ export function todayFeed(
     Partial<Pick<PublicBoard, "highlights">>,
   now = Date.now(),
   prizeName: (points: number, title: string) => string = (_points, title) => title,
+  limit = TODAY_LIMIT,
 ): TodayItem[] {
   const today = melbourneDateKey(now);
   let units = { ...board.units };
@@ -175,5 +178,7 @@ export function todayFeed(
       if (rank !== 0) return rank;
       return left.id.localeCompare(right.id);
     })
-    .slice(0, TODAY_LIMIT);
+    .slice(0, Math.max(1, limit));
 }
+
+export { TODAY_LIMIT, TODAY_PAGE_LIMIT };

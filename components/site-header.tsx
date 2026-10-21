@@ -1,7 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Gift, Lock, LockOpen, Map, Newspaper, PartyPopper, Sparkles, Trophy } from "lucide-react";
+import {
+  Gift,
+  ListOrdered,
+  Lock,
+  LockOpen,
+  Map,
+  Newspaper,
+  PartyPopper,
+  Sparkles,
+  Trophy,
+} from "lucide-react";
 import { KioskSettings } from "@/components/kiosk-settings";
 import type { PublicBoard } from "@/lib/game";
 import type { DailyNews } from "@/lib/news";
@@ -11,6 +21,7 @@ import { cn } from "@/lib/utils";
 
 const icons = {
   board: Trophy,
+  today: ListOrdered,
   prizes: Gift,
   yard: Map,
   news: Newspaper,
