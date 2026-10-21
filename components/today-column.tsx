@@ -5,7 +5,7 @@ import { Check, Gift, Sparkles, X } from "lucide-react";
 import { useDeskPrefs, type RevealMap } from "@/lib/desk-prefs";
 import type { PublicBoard } from "@/lib/game";
 import { prizeIsPublic, revealForPoints } from "@/lib/reveals";
-import { todayFeed, type TodayKind } from "@/lib/today";
+import { TODAY_PAGE_LIMIT, todayFeed, type TodayKind } from "@/lib/today";
 import { cn } from "@/lib/utils";
 
 function prizeName(points: number, title: string, reveals: RevealMap, now: number) {
@@ -78,7 +78,8 @@ export function TodayColumn({
 }: {
   board: PublicBoard | undefined;
   live?: "loading" | "live" | "offline";
-  variant?: "kiosk" | "board";
+  /** `page` is the phone/desk Today tab; `board` is the desktop sidebar. */
+  variant?: "kiosk" | "board" | "page";
 }) {
   const prefs = useDeskPrefs();
   const [now, setNow] = useState(() => Date.now());
@@ -89,7 +90,12 @@ export function TodayColumn({
   }, []);
 
   const items = board
-    ? todayFeed(board, now, (points, title) => prizeName(points, title, prefs.reveals, now))
+    ? todayFeed(
+        board,
+        now,
+        (points, title) => prizeName(points, title, prefs.reveals, now),
+        variant === "page" ? TODAY_PAGE_LIMIT : undefined,
+      )
     : [];
 
   return (
@@ -97,19 +103,30 @@ export function TodayColumn({
       aria-label="Today"
       className={cn(
         "flex min-h-0 flex-col gap-2 bg-[#fffdf8] px-3",
-        variant === "kiosk"
-          ? cn(
-              "w-[min(19rem,40vw)] shrink-0 border-l-4 border-[#e2a01a] pt-4",
-              prefs.timer === "blocks" ? "pb-16" : "pb-28",
-            )
-          : // Phones: hide Today so the leaderboard and yard desk get the full screen.
-            // TV / desktop (lg+): keep the sidebar beside the board.
-            "hidden lg:flex lg:w-[19rem] lg:shrink-0 lg:border-l-4 lg:border-[#e2a01a] lg:py-4",
+        variant === "kiosk" &&
+          cn(
+            "w-[min(19rem,40vw)] shrink-0 border-l-4 border-[#e2a01a] pt-4",
+            prefs.timer === "blocks" ? "pb-16" : "pb-28",
+          ),
+        // Phones: hide sidebar so the leaderboard gets the full screen.
+        // Desktop (lg+): keep the sidebar beside the board.
+        variant === "board" &&
+          "hidden lg:flex lg:w-[19rem] lg:shrink-0 lg:border-l-4 lg:border-[#e2a01a] lg:py-4",
+        variant === "page" &&
+          "h-full w-full flex-1 rounded-[28px] border-4 border-[#e2a01a] px-3 py-4 sm:px-4",
       )}
     >
       <div className="flex items-end justify-between gap-2">
-        <h2 className="font-display text-4xl leading-none">Today</h2>
+        <div>
+          <h2 className="font-display text-4xl leading-none">Today</h2>
+          {variant === "page" ? (
+            <p className="mt-1 text-sm font-bold text-muted-foreground">
+              What has been given on yard duty today.
+            </p>
+          ) : null}
+        </div>
         {variant === "kiosk" && live ? <KioskStatus live={live} /> : null}
+        {variant === "page" && live ? <KioskStatus live={live} /> : null}
       </div>
       {items.length === 0 ? (
         <p className="rounded-2xl bg-white px-3 py-3 text-sm font-bold text-muted-foreground">
@@ -125,8 +142,8 @@ export function TodayColumn({
               <KindMark kind={item.kind} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm leading-snug font-bold">{item.text}</p>
-                  <p className="shrink-0 pt-0.5 text-[10px] font-bold text-muted-foreground">
+                  <p className="text-sm leading-snug font-bold sm:text-base">{item.text}</p>
+                  <p className="shrink-0 pt-0.5 text-[10px] font-bold text-muted-foreground sm:text-xs">
                     {eventTime(item.at)}
                   </p>
                 </div>
