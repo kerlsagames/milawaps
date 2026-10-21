@@ -193,20 +193,23 @@ function Stop({
         }}
       >
         {showPicture ? (
-          <img
-            src={art}
-            alt=""
-            className={blendSquare ? "size-full scale-125 object-cover" : "size-full object-cover"}
-            style={
-              blendSquare
-                ? {
-                    // Soft vignette so the square paper stamp dissolves into the circle fill.
-                    maskImage: "radial-gradient(circle at center, #000 32%, transparent 70%)",
-                    WebkitMaskImage: "radial-gradient(circle at center, #000 32%, transparent 70%)",
-                  }
-                : undefined
-            }
-          />
+          blendSquare ? (
+            <span className="relative block size-full">
+              <img src={art} alt="" className="size-full object-cover" />
+              {/* Extra rim fade for JPG stamps; soft PNGs already fall off to transparent. */}
+              {!art.endsWith(".png") ? (
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0"
+                  style={{
+                    background: `radial-gradient(circle at center, transparent 38%, ${circleFill} 74%)`,
+                  }}
+                />
+              ) : null}
+            </span>
+          ) : (
+            <img src={art} alt="" className="size-full object-cover" />
+          )
         ) : (
           <LockKeyhole className="size-4 lg:size-9" />
         )}
