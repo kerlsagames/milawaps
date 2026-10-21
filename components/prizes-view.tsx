@@ -174,6 +174,10 @@ function Stop({
   const aiming = next?.points === milestone.points;
   const takedownLocked = Boolean(reveal && !reveal.wide && !named);
   const showPicture = Boolean(art);
+  // Mystery faces are square cutouts on charcoal — match that fill and fade
+  // the square edges so they blend into the circle instead of reading as a stamp.
+  const blendSquare = Boolean(reveal && !reveal.wide && showPicture);
+  const circleFill = !showPicture ? "#2a1c04" : takedownLocked ? "#5a524f" : "#efe6d6";
 
   return (
     <li className="flex w-[var(--stop)] flex-col items-center text-center">
@@ -182,14 +186,30 @@ function Stop({
         style={{
           width: NODE,
           height: NODE,
-          background: showPicture ? "#efe6d6" : "#2a1c04",
+          background: circleFill,
           color: showPicture ? unit.ink : "#ffe08a",
           borderColor: aiming ? unit.deep : reached && named ? unit.deep : "rgba(42,34,24,0.12)",
           boxShadow: aiming ? `0 0 0 4px ${unit.color}` : undefined,
         }}
       >
         {showPicture ? (
-          <img src={art} alt="" className="size-full object-cover" />
+          blendSquare ? (
+            <span className="relative block size-full">
+              <img src={art} alt="" className="size-full object-cover" />
+              {/* Extra rim fade for JPG stamps; soft PNGs already fall off to transparent. */}
+              {!art.endsWith(".png") ? (
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0"
+                  style={{
+                    background: `radial-gradient(circle at center, transparent 38%, ${circleFill} 74%)`,
+                  }}
+                />
+              ) : null}
+            </span>
+          ) : (
+            <img src={art} alt="" className="size-full object-cover" />
+          )
         ) : (
           <LockKeyhole className="size-4 lg:size-9" />
         )}

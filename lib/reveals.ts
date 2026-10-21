@@ -10,7 +10,7 @@ export const REVEALS = [
     mask: "Prize 1",
     prize: "A game with Mr K",
     wide: true,
-    face: "/mystery-teacher-a.jpg",
+    face: "/mystery-teacher-a.png",
     image: "/reveals/game.jpg",
   },
   {
@@ -21,7 +21,7 @@ export const REVEALS = [
     mask: "Takedown 1",
     prize: "Dress a teacher in clothes of your choice for a day",
     wide: false,
-    face: "/mystery-teacher-a.jpg",
+    face: "/mystery-teacher-a.png",
     image: "/reveals/takedown-1.jpg",
   },
   {
@@ -32,7 +32,7 @@ export const REVEALS = [
     mask: "Prize 2",
     prize: "Laser tag for your class",
     wide: true,
-    face: "/mystery-teacher-b.jpg",
+    face: "/mystery-teacher-b.png",
     image: "/reveals/laser.jpg",
   },
   {
@@ -43,7 +43,7 @@ export const REVEALS = [
     mask: "Takedown 2",
     prize: "Whipped cream pie in a teacher's face",
     wide: false,
-    face: "/mystery-teacher-b.jpg",
+    face: "/mystery-teacher-b.png",
     image: "/reveals/takedown-2.jpg",
   },
 ] as const;

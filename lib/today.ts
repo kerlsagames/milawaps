@@ -10,7 +10,7 @@ import {
   type UnitId,
   clampScore,
 } from "@/lib/game";
-import { activeHighlights, type HighlightEntry } from "@/lib/highlights";
+import { activeHighlights, highlightPointTotal, type HighlightEntry } from "@/lib/highlights";
 import { milestonesBetween } from "@/lib/scoring";
 import { studentById } from "@/lib/students";
 import { melbourneDateKey } from "@/lib/ticker";
@@ -22,6 +22,8 @@ export type TodayItem = {
   at: number;
   kind: TodayKind;
   text: string;
+  /** Points this row awarded (highlights: +1 per student, max 3). */
+  points?: number;
 };
 
 const TODAY_LIMIT = 8;
@@ -52,6 +54,10 @@ function nameList(entry: HighlightEntry): string {
   if (names.length === 1) return names[0]!;
   if (names.length === 2) return `${names[0]} & ${names[1]}`;
   return `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`;
+}
+
+function highlightPoints(entry: HighlightEntry): number {
+  return Math.max(1, highlightPointTotal(entry.students));
 }
 
 function highlightLine(entry: HighlightEntry): string {
@@ -162,6 +168,7 @@ export function todayFeed(
       at: entry.at,
       kind: "highlight",
       text: highlightLine(entry),
+      points: highlightPoints(entry),
     });
   }
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { UNITS, type PublicBoard, type UnitId } from "@/lib/game";
-import type { HighlightStudent } from "@/lib/highlights";
+import { HIGHLIGHT_POINT_MAX, type HighlightStudent } from "@/lib/highlights";
 import { studentById, studentsForUnit } from "@/lib/students";
 import { Button } from "@/components/ui/button";
 import {
@@ -57,6 +57,11 @@ export function HighlightDialog({
     setPicked((current) => {
       const on = current.some((item) => item.id === student.id);
       if (on) return current.filter((item) => item.id !== student.id);
+      if (current.length >= HIGHLIGHT_POINT_MAX) {
+        setMessage(`Pick up to ${HIGHLIGHT_POINT_MAX} students — one point each.`);
+        return current;
+      }
+      setMessage("");
       return [...current, { id: student.id, unitId: student.unitId }];
     });
   }
@@ -104,8 +109,9 @@ export function HighlightDialog({
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">Student highlight</DialogTitle>
           <DialogDescription>
-            Pick one or more classes, tap who shone, and write why. Each class in the highlight also gets
-            +1. Picks stay when you switch classes. The spotlight page stays on the TV for two days.
+            Pick up to {HIGHLIGHT_POINT_MAX} students across classes, tap who shone, and write why. Each
+            student earns +1 for their class (max {HIGHLIGHT_POINT_MAX}). Picks stay when you switch
+            classes. The spotlight page stays on the TV for two days.
           </DialogDescription>
         </DialogHeader>
 
