@@ -113,12 +113,22 @@ export function UnitCard({
         </div>
 
         <div className="mt-2 hidden min-h-0 flex-1 flex-col gap-2 overflow-hidden lg:flex">
-          <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden">
-            <div className="aspect-[10/8] h-full max-h-full w-auto max-w-full">
+          {/*
+            Size container: scale the 10×8 board to leftover height so cells stay
+            square, trophies stay centered, and +1 buttons are never covered.
+          */}
+          <div className="grid min-h-0 flex-1 place-items-center overflow-hidden [container-type:size]">
+            <div
+              className="max-w-full"
+              style={{
+                width: "min(100cqw, calc(100cqh * 10 / 8))",
+                aspectRatio: "10 / 8",
+              }}
+            >
               <BlockMatrix score={score} color={unit.color} ink={unit.ink} label={unit.code} />
             </div>
           </div>
-          <div className="max-h-[34%] shrink-0 overflow-hidden">
+          <div className="w-full shrink-0">
             <StrikeMatrix count={crosses} label={unit.code} />
           </div>
         </div>

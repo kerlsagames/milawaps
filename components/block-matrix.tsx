@@ -6,6 +6,11 @@ import { CLASS_MILESTONES, STRIKE_MAX, UNIT_MAX } from "@/lib/game";
 import { prizeIsPublic, revealForPoints } from "@/lib/reveals";
 import { cn } from "@/lib/utils";
 
+const SCORE_COLS = 10;
+const SCORE_ROWS = UNIT_MAX / SCORE_COLS;
+const STRIKE_COLS = 10;
+const STRIKE_ROWS = STRIKE_MAX / STRIKE_COLS;
+
 export function BlockMatrix({
   score,
   color,
@@ -27,16 +32,14 @@ export function BlockMatrix({
     }
   }
 
-  const rows = UNIT_MAX / 10;
-
   return (
     <div
       role="img"
       aria-label={`${label}: ${earned} squares out of ${UNIT_MAX}.`}
-      className="grid h-full min-h-0 w-full gap-1"
+      className="grid h-full w-full gap-1"
       style={{
-        gridTemplateColumns: "repeat(10, minmax(0, 1fr))",
-        gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
+        gridTemplateColumns: `repeat(${SCORE_COLS}, minmax(0, 1fr))`,
+        gridTemplateRows: `repeat(${SCORE_ROWS}, minmax(0, 1fr))`,
       }}
     >
       {Array.from({ length: UNIT_MAX }, (_, index) => {
@@ -53,7 +56,7 @@ export function BlockMatrix({
             key={index}
             title={milestone ? (named ? `${milestone.points} ${caption}` : "Prize") : undefined}
             className={cn(
-              "relative min-h-0 rounded-md border",
+              "relative min-h-0 min-w-0 overflow-hidden rounded-md border",
               filled && "border-transparent",
               !filled && "border-black/10 bg-black/5",
               milestone && !filled && "border-dashed",
@@ -66,12 +69,16 @@ export function BlockMatrix({
             {milestone ? (
               <Trophy
                 aria-hidden="true"
-                className="absolute inset-[16%]"
+                className="pointer-events-none absolute top-1/2 left-1/2 h-[70%] w-[70%] -translate-x-1/2 -translate-y-1/2"
                 strokeWidth={2.4}
                 style={{ color: won ? (filled ? ink : "#f5b942") : "#c8b89a" }}
               />
             ) : filled ? (
-              <svg viewBox="0 0 12 12" className="absolute inset-[18%]" aria-hidden="true">
+              <svg
+                viewBox="0 0 12 12"
+                className="pointer-events-none absolute top-1/2 left-1/2 h-[64%] w-[64%] -translate-x-1/2 -translate-y-1/2"
+                aria-hidden="true"
+              >
                 <path
                   d="M2.1 6.2 L4.8 9 L9.9 3.1"
                   fill="none"
@@ -91,21 +98,15 @@ export function BlockMatrix({
 
 export function StrikeMatrix({ count, label }: { count: number; label: string }) {
   const marked = Math.max(0, Math.min(STRIKE_MAX, count));
-  const rows = STRIKE_MAX / 10;
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <p className="mb-1 shrink-0 text-[11px] font-extrabold tracking-[0.16em] text-[#8d1f1f] uppercase">
-        Strikes
-      </p>
+    <div>
+      <p className="mb-1 text-[11px] font-extrabold tracking-[0.16em] text-[#8d1f1f] uppercase">Strikes</p>
       <div
         role="img"
         aria-label={`${label}: ${marked} strikes out of ${STRIKE_MAX}.`}
-        className="grid min-h-0 w-full flex-1 gap-1"
-        style={{
-          gridTemplateColumns: "repeat(10, minmax(0, 1fr))",
-          gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
-        }}
+        className="grid w-full gap-1.5"
+        style={{ gridTemplateColumns: `repeat(${STRIKE_COLS}, minmax(0, 1fr))` }}
       >
         {Array.from({ length: STRIKE_MAX }, (_, index) => {
           const struck = index < marked;
@@ -113,12 +114,17 @@ export function StrikeMatrix({ count, label }: { count: number; label: string })
             <span
               key={index}
               className={cn(
-                "relative min-h-0 rounded-md border",
+                // aspect-square per cell — container aspect-ratio + gaps made tall pills.
+                "relative aspect-square overflow-hidden rounded-md border",
                 struck ? "border-[#9b1c1c] bg-[#c23b3b]/20" : "border-black/10 bg-black/5",
               )}
             >
               {struck ? (
-                <svg viewBox="0 0 10 10" className="absolute inset-[18%]" aria-hidden="true">
+                <svg
+                  viewBox="0 0 10 10"
+                  className="pointer-events-none absolute top-1/2 left-1/2 h-[64%] w-[64%] -translate-x-1/2 -translate-y-1/2"
+                  aria-hidden="true"
+                >
                   <path
                     d="M1.2 1.2 L8.8 8.8 M8.8 1.2 L1.2 8.8"
                     stroke="#9b1c1c"
