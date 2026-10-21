@@ -37,7 +37,8 @@ import {
   setViewDwell,
   useDeskPrefs,
 } from "@/lib/desk-prefs";
-import { highlightsToCsv, type HighlightEntry } from "@/lib/highlights";
+import { highlightsWorkbookBytes } from "@/lib/highlight-spreadsheet";
+import type { HighlightEntry } from "@/lib/highlights";
 import { emptyNews, type DailyNews } from "@/lib/news";
 import { compressPrizeImage } from "@/lib/prize-image";
 import { REVEALS, type FixedScreenId, type ScreenId } from "@/lib/reveals";
@@ -731,23 +732,28 @@ function HighlightPagePanel({
         onNote(body.error ?? "Could not load spotlights.");
         return;
       }
+      // Full stored history (live + ended) — not filtered to today.
       const rows = body.highlights ?? [];
-      if (rows.length === 0) {
-        onNote("No student spotlights saved yet.");
-        return;
-      }
-      const csv = highlightsToCsv(rows);
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const bytes = highlightsWorkbookBytes(rows);
+      const copy = new Uint8Array(bytes.byteLength);
+      copy.set(bytes);
+      const blob = new Blob([copy], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       const stamp = new Date().toISOString().slice(0, 10);
       link.href = url;
-      link.download = `milawaps-spotlights-${stamp}.csv`;
+      link.download = `milawaps-shout-outs-${stamp}.xlsx`;
       document.body.appendChild(link);
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
-      onNote(`Downloaded ${rows.length} spotlight${rows.length === 1 ? "" : "s"}.`);
+      onNote(
+        rows.length === 0
+          ? "Downloaded grade sheets (no shout-outs saved yet)."
+          : `Downloaded ${rows.length} shout-out${rows.length === 1 ? "" : "s"} (all history) plus grade tabs.`,
+      );
     } catch {
       onNote("Could not download spotlights.");
     } finally {
@@ -772,10 +778,10 @@ function HighlightPagePanel({
         <p className="mt-1 text-xs font-semibold text-muted-foreground">
           Each spotlight stays on the TV for 25 hours, then leaves on its own.
         </p>
-        <p className="mt-3 text-sm font-extrabold text-[#2a1c04]">Spotlight spreadsheet</p>
+        <p className="mt-3 text-sm font-extrabold text-[#2a1c04]">Shout-out spreadsheet</p>
         <p className="mt-1 text-xs font-semibold text-muted-foreground">
-          Download every saved student spotlight (live and recent history) as a CSV for Excel or
-          Sheets.
+          Excel workbook of every saved shout-out (not just today), plus a tab for each grade with
+          every student and how many shout-outs they have.
         </p>
         <Button
           type="button"
@@ -783,7 +789,7 @@ function HighlightPagePanel({
           disabled={busy}
           onClick={() => void downloadSpreadsheet()}
         >
-          {busy ? "Preparing…" : "Download spotlights CSV"}
+          {busy ? "Preparing…" : "Download shout-outs spreadsheet"}
         </Button>
       </div>
     </div>
