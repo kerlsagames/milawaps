@@ -2,8 +2,11 @@ import assert from "node:assert/strict";
 import {
   createHighlight,
   activeHighlights,
+  highlightPointTotal,
+  highlightSpotUnits,
   removeHighlightById,
   sanitizeHighlights,
+  HIGHLIGHT_POINT_MAX,
 } from "../lib/highlights";
 import { emptyNews, sanitizeNews } from "../lib/news";
 import { emptyScores } from "../lib/game";
@@ -72,14 +75,40 @@ assert.deepEqual(
 assert.equal(mixed.students.find((student) => student.id === "234-tjmara")?.unitId, "234");
 assert.equal(mixed.students.find((student) => student.id === "56-keshy")?.unitId, "56");
 
-// Highlight save awards +1 (spot) to each class represented.
+// Highlight save awards +1 (spot) per student (max 3), even in the same class.
+assert.equal(HIGHLIGHT_POINT_MAX, 3);
+assert.deepEqual(highlightSpotUnits(mixed.students), ["234", "56"]);
+assert.equal(highlightPointTotal(mixed.students), 2);
+
+const sameClass = createHighlight(
+  [
+    { id: "56-zach", unitId: "56" },
+    { id: "56-max", unitId: "56" },
+  ],
+  "Keeping the yard clean",
+  "ash",
+  5_500,
+);
+assert.deepEqual(highlightSpotUnits(sameClass.students), ["56", "56"]);
+assert.equal(highlightPointTotal(sameClass.students), 2);
+
 let scores = emptyScores(5_000);
-for (const unitId of [...new Set(mixed.students.map((student) => student.unitId))]) {
-  scores = applyAction(scores, "spot", unitId, "jess", 5_000).state;
+let tick = 5_000;
+for (const unitId of highlightSpotUnits(sameClass.students)) {
+  scores = applyAction(scores, "spot", unitId, "ash", tick).state;
+  tick += 1;
 }
-assert.equal(scores.units["234"], 1);
-assert.equal(scores.units["56"], 1);
-assert.equal(scores.units.f1, 0);
+assert.equal(scores.units["56"], 2);
+assert.equal(scores.units["234"], 0);
+
+const fourKids = [
+  { id: "56-zach", unitId: "56" as const },
+  { id: "56-max", unitId: "56" as const },
+  { id: "234-archie", unitId: "234" as const },
+  { id: "f1-millie", unitId: "f1" as const },
+];
+assert.equal(highlightSpotUnits(fourKids).length, 3);
+assert.equal(highlightPointTotal(fourKids), 3);
 
 const wrongClassDropped = sanitizeHighlights(
   [

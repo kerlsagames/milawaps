@@ -3,6 +3,8 @@ import { studentById } from "@/lib/students";
 
 export const HIGHLIGHT_TTL_MS = 2 * 24 * 60 * 60 * 1000;
 export const HIGHLIGHT_LIMIT = 12;
+/** One class tick per student in a highlight, capped so a big group stays fair. */
+export const HIGHLIGHT_POINT_MAX = 3;
 
 export type HighlightStudent = {
   id: string;
@@ -17,6 +19,15 @@ export type HighlightEntry = {
   reason: string;
   students: HighlightStudent[];
 };
+
+/** Unit ids to award (+1 each), one per student, max HIGHLIGHT_POINT_MAX. */
+export function highlightSpotUnits(students: HighlightStudent[]): UnitId[] {
+  return students.slice(0, HIGHLIGHT_POINT_MAX).map((student) => student.unitId);
+}
+
+export function highlightPointTotal(students: HighlightStudent[]): number {
+  return Math.min(HIGHLIGHT_POINT_MAX, students.length);
+}
 
 function text(value: unknown, max: number) {
   if (typeof value !== "string") return "";
