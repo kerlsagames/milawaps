@@ -112,9 +112,15 @@ export function UnitCard({
           />
         </div>
 
-        <div className="mt-2 hidden min-h-0 flex-1 flex-col gap-2 lg:flex">
-          <BlockMatrix score={score} color={unit.color} ink={unit.ink} label={unit.code} />
-          <StrikeMatrix count={crosses} label={unit.code} />
+        <div className="mt-2 hidden min-h-0 flex-1 flex-col gap-2 overflow-hidden lg:flex">
+          <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden">
+            <div className="aspect-[10/8] h-full max-h-full w-auto max-w-full">
+              <BlockMatrix score={score} color={unit.color} ink={unit.ink} label={unit.code} />
+            </div>
+          </div>
+          <div className="max-h-[34%] shrink-0 overflow-hidden">
+            <StrikeMatrix count={crosses} label={unit.code} />
+          </div>
         </div>
 
         {crosses > 0 ? (
@@ -126,7 +132,7 @@ export function UnitCard({
         {(onScore || onHighlight) ? (
           <div
             className={cn(
-              "flex flex-col",
+              "flex shrink-0 flex-col",
               fillActions
                 ? "min-h-0 flex-1 gap-0.5 lg:mt-2 lg:flex-none lg:gap-1.5"
                 : "mt-auto gap-1.5",

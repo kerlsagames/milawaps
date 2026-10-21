@@ -634,7 +634,9 @@ export function YardBoard() {
                   }}
                 />
               ) : (
-                <TvFit>
+                // TV kiosk scales to fit the screen; the teacher desk keeps natural layout
+                // so +1 / highlight controls are not crushed over the score grids.
+                <DeskFit kiosk={kiosk}>
                   {view === "board" ? (
                     <LeaderboardView
                       board={data}
@@ -708,7 +710,7 @@ export function YardBoard() {
                       label={prefs.reveals[activeReveal.id].label}
                     />
                   )}
-                </TvFit>
+                </DeskFit>
               )}
             </motion.div>
           </AnimatePresence>
@@ -808,6 +810,13 @@ async function celebrate(events: MilestoneEvent[]) {
       });
     }
   }
+}
+
+function DeskFit({ kiosk, children }: { kiosk: boolean; children: ReactNode }) {
+  if (!kiosk) {
+    return <div className="box-border h-full min-h-0 overflow-hidden p-2 lg:p-3">{children}</div>;
+  }
+  return <TvFit>{children}</TvFit>;
 }
 
 function TvFit({ children }: { children: ReactNode }) {
