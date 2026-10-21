@@ -1,7 +1,11 @@
-import { isStaffId, isUnitId, type StaffId, type UnitId } from "@/lib/game";
+import { isStaffId, isUnitId, kidName, unitById, type StaffId, type UnitId } from "@/lib/game";
 import { studentById } from "@/lib/students";
 
-export const HIGHLIGHT_TTL_MS = 2 * 24 * 60 * 60 * 1000;
+/** Spotlights leave the TV after this long. */
+export const HIGHLIGHT_TTL_MS = 30 * 60 * 60 * 1000;
+/** How many spotlights stay in the durable store for download history. */
+export const HIGHLIGHT_STORE_LIMIT = 250;
+/** Max live spotlights the kiosk will cycle. */
 export const HIGHLIGHT_LIMIT = 12;
 /** One class tick per student in a highlight, capped so a big group stays fair. */
 export const HIGHLIGHT_POINT_MAX = 3;
@@ -57,7 +61,7 @@ export function sanitizeHighlights(raw: unknown, now = Date.now()): HighlightEnt
       typeof row.expiresAt === "number" && Number.isFinite(row.expiresAt)
         ? row.expiresAt
         : row.at + HIGHLIGHT_TTL_MS;
-    if (expiresAt <= now) continue;
+    // Keep expired rows for spreadsheet download — TV uses activeHighlights().
     list.push({
       id:
         typeof row.id === "string" && row.id.length > 0 && row.id.length <= 80
@@ -69,13 +73,16 @@ export function sanitizeHighlights(raw: unknown, now = Date.now()): HighlightEnt
       reason,
       students,
     });
-    if (list.length === HIGHLIGHT_LIMIT) break;
+    if (list.length >= HIGHLIGHT_STORE_LIMIT) break;
   }
   return list.sort((left, right) => right.at - left.at);
 }
 
 export function activeHighlights(list: HighlightEntry[], now = Date.now()) {
-  return list.filter((entry) => entry.expiresAt > now).sort((left, right) => left.at - right.at);
+  return list
+    .filter((entry) => entry.expiresAt > now)
+    .sort((left, right) => left.at - right.at)
+    .slice(0, HIGHLIGHT_LIMIT);
 }
 
 export function createHighlight(
@@ -126,4 +133,62 @@ export function removeHighlightById(
   const next = list.filter((entry) => entry.id !== trimmed);
   if (next.length === list.length) return null;
   return sanitizeHighlights(next, now);
+}
+
+function melbourneStamp(at: number) {
+  return new Intl.DateTimeFormat("en-AU", {
+    timeZone: "Australia/Melbourne",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(at);
+}
+
+function csvEscape(value: string) {
+  if (/[",\n\r]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
+  return value;
+}
+
+/** Spreadsheet of stored spotlights (live + recent history). */
+export function highlightsToCsv(entries: HighlightEntry[]): string {
+  const header = ["When", "Staff", "Students", "Classes", "Reason", "Expires", "Status"];
+  const lines = [header.join(",")];
+  const now = Date.now();
+  const sorted = [...entries].sort((left, right) => right.at - left.at);
+  for (const entry of sorted) {
+    const names = entry.students
+      .map((student) => studentById(student.id)?.name)
+      .filter((name): name is string => Boolean(name));
+    const classes = [
+      ...new Set(entry.students.map((student) => unitById(student.unitId).code)),
+    ].join(" / ");
+    lines.push(
+      [
+        melbourneStamp(entry.at),
+        kidName(entry.staffId),
+        names.join("; "),
+        classes,
+        entry.reason,
+        melbourneStamp(entry.expiresAt),
+        entry.expiresAt > now ? "Live" : "Ended",
+      ]
+        .map(csvEscape)
+        .join(","),
+    );
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+export function formatHighlightCountdown(msLeft: number) {
+  const total = Math.max(0, Math.floor(msLeft / 1000));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  }
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }

@@ -37,6 +37,7 @@ import {
   setViewDwell,
   useDeskPrefs,
 } from "@/lib/desk-prefs";
+import { highlightsToCsv, type HighlightEntry } from "@/lib/highlights";
 import { emptyNews, type DailyNews } from "@/lib/news";
 import { compressPrizeImage } from "@/lib/prize-image";
 import { REVEALS, type FixedScreenId, type ScreenId } from "@/lib/reveals";
@@ -331,7 +332,7 @@ export function KioskSettings({
             />
           ) : null}
 
-          {page === "board" || page === "prizes" || page === "yard" || page === "highlight" ? (
+          {page === "board" || page === "prizes" || page === "yard" ? (
             <BasicPagePanel
               id={page}
               label={title}
@@ -343,6 +344,20 @@ export function KioskSettings({
                 setOpen(false);
                 onPreview(page);
               }}
+            />
+          ) : null}
+
+          {page === "highlight" ? (
+            <HighlightPagePanel
+              seconds={prefs.dwells.highlight}
+              shown={prefs.shown.highlight}
+              admin={admin}
+              onShown={(next) => void saveShown("highlight", next)}
+              onPreview={() => {
+                setOpen(false);
+                onPreview("highlight");
+              }}
+              onNote={setNote}
             />
           ) : null}
 
@@ -670,6 +685,92 @@ function BasicPagePanel({
       <Button type="button" variant="outline" className="h-10 rounded-xl" onClick={onPreview}>
         Preview {label}
       </Button>
+    </div>
+  );
+}
+
+function HighlightPagePanel({
+  seconds,
+  shown,
+  admin,
+  onShown,
+  onPreview,
+  onNote,
+}: {
+  seconds: number;
+  shown: boolean;
+  admin: boolean;
+  onShown: (next: boolean) => void;
+  onPreview: () => void;
+  onNote: (note: string) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+
+  async function downloadSpreadsheet() {
+    setBusy(true);
+    onNote("");
+    try {
+      const response = await fetch("/api/highlight", { cache: "no-store" });
+      const body = (await response.json().catch(() => ({}))) as {
+        highlights?: HighlightEntry[];
+        error?: string;
+      };
+      if (!response.ok) {
+        onNote(body.error ?? "Could not load spotlights.");
+        return;
+      }
+      const rows = body.highlights ?? [];
+      if (rows.length === 0) {
+        onNote("No student spotlights saved yet.");
+        return;
+      }
+      const csv = highlightsToCsv(rows);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const stamp = new Date().toISOString().slice(0, 10);
+      link.href = url;
+      link.download = `milawaps-spotlights-${stamp}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      onNote(`Downloaded ${rows.length} spotlight${rows.length === 1 ? "" : "s"}.`);
+    } catch {
+      onNote("Could not download spotlights.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="grid gap-3">
+      {admin ? (
+        <ShowToggle label="Show Student Highlights on every TV" checked={shown} onChange={onShown} />
+      ) : (
+        <p className="text-xs font-semibold text-muted-foreground">
+          An admin turns this page on or off for the whole school.
+        </p>
+      )}
+      <DwellSlider id="highlight" label="Highlights" seconds={seconds} />
+      <Button type="button" variant="outline" className="h-10 rounded-xl" onClick={onPreview}>
+        Preview Highlights
+      </Button>
+      <div className="rounded-2xl border border-black/10 bg-[#fff8df] px-3 py-3">
+        <p className="text-sm font-extrabold text-[#2a1c04]">Spotlight spreadsheet</p>
+        <p className="mt-1 text-xs font-semibold text-muted-foreground">
+          Download every saved student spotlight (live and recent history) as a CSV for Excel or
+          Sheets.
+        </p>
+        <Button
+          type="button"
+          className="mt-3 h-10 w-full rounded-xl"
+          disabled={busy}
+          onClick={() => void downloadSpreadsheet()}
+        >
+          {busy ? "Preparing…" : "Download spotlights CSV"}
+        </Button>
+      </div>
     </div>
   );
 }

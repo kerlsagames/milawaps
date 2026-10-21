@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { kidName, unitById } from "@/lib/game";
-import type { HighlightEntry } from "@/lib/highlights";
+import { formatHighlightCountdown, type HighlightEntry } from "@/lib/highlights";
 import { studentById } from "@/lib/students";
 import { Button } from "@/components/ui/button";
 
@@ -129,7 +129,7 @@ export function HighlightView({
           })}
         </div>
 
-        <div className="relative flex min-h-0 flex-col items-center justify-center rounded-[28px] border-4 border-[#2a1c04] bg-[#fff8df]/92 px-5 py-6 text-center shadow-[0_10px_0_#6b5844] lg:px-8 lg:py-8">
+        <div className="relative flex min-h-0 flex-col items-center justify-center rounded-[28px] border-4 border-[#2a1c04] bg-[#fff8df]/92 px-5 py-6 pb-12 text-center shadow-[0_10px_0_#6b5844] lg:px-8 lg:py-8 lg:pb-14">
           <p className="text-sm font-extrabold tracking-[0.28em] text-[#8a5a00] uppercase sm:text-base">
             Student spotlight
           </p>
@@ -193,6 +193,8 @@ export function HighlightView({
               )}
             </div>
           ) : null}
+
+          <SpotlightCountdown expiresAt={entry.expiresAt} />
         </div>
       </div>
     </div>
@@ -204,6 +206,34 @@ function nameList(names: string[]) {
   if (names.length === 1) return names[0]!;
   if (names.length === 2) return `${names[0]} & ${names[1]}`;
   return `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`;
+}
+
+function SpotlightCountdown({ expiresAt }: { expiresAt: number }) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const left = Math.max(0, expiresAt - now);
+  if (left <= 0) {
+    return (
+      <p className="absolute right-3 bottom-3 text-[11px] font-extrabold tracking-wide text-[#8a5a00] uppercase sm:right-4 sm:bottom-4 sm:text-xs">
+        Ending
+      </p>
+    );
+  }
+
+  return (
+    <p
+      className="absolute right-3 bottom-3 rounded-lg bg-[#2a1c04]/8 px-2 py-1 font-display text-sm leading-none tabular-nums text-[#5a3208] sm:right-4 sm:bottom-4 sm:text-base"
+      aria-label={`${formatHighlightCountdown(left)} left on this spotlight`}
+      title="Time left before this spotlight leaves the TV"
+    >
+      {formatHighlightCountdown(left)}
+    </p>
+  );
 }
 
 function StudentPhoto({
