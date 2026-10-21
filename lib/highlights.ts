@@ -2,7 +2,7 @@ import { isStaffId, isUnitId, kidName, unitById, type StaffId, type UnitId } fro
 import { studentById } from "@/lib/students";
 
 /** Spotlights leave the TV after this long. */
-export const HIGHLIGHT_TTL_MS = 30 * 60 * 60 * 1000;
+export const HIGHLIGHT_TTL_MS = 26 * 60 * 60 * 1000;
 /** How many spotlights stay in the durable store for download history. */
 export const HIGHLIGHT_STORE_LIMIT = 250;
 /** Max live spotlights the kiosk will cycle. */
@@ -57,7 +57,7 @@ export function sanitizeHighlights(raw: unknown, now = Date.now()): HighlightEnt
       return [{ id: known.id, unitId: known.unitId }];
     });
     if (students.length === 0) continue;
-    // Cap at 30h from creation so older 48h (2-day) rows adopt the new default.
+    // Cap at TTL from creation so older longer rows adopt the current default.
     const rawExpires =
       typeof row.expiresAt === "number" && Number.isFinite(row.expiresAt)
         ? row.expiresAt

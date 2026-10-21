@@ -219,7 +219,7 @@ function SpotlightCountdown({ expiresAt }: { expiresAt: number }) {
   const left = Math.max(0, expiresAt - now);
   if (left <= 0) {
     return (
-      <p className="absolute right-3 bottom-3 text-[11px] font-extrabold tracking-wide text-[#8a5a00] uppercase sm:right-4 sm:bottom-4 sm:text-xs">
+      <p className="absolute right-3 bottom-3 rounded-xl bg-[#0d7a64] px-2.5 py-1.5 text-xs font-extrabold tracking-wide text-white uppercase sm:right-4 sm:bottom-4 sm:px-3 sm:py-2 sm:text-sm">
         Ending
       </p>
     );
@@ -227,7 +227,7 @@ function SpotlightCountdown({ expiresAt }: { expiresAt: number }) {
 
   return (
     <p
-      className="absolute right-3 bottom-3 rounded-lg bg-[#2a1c04]/8 px-2 py-1 font-display text-sm leading-none tabular-nums text-[#5a3208] sm:right-4 sm:bottom-4 sm:text-base"
+      className="absolute right-3 bottom-3 rounded-xl bg-[#0d7a64] px-2.5 py-1.5 font-display text-base leading-none tabular-nums text-white shadow-[0_2px_0_#0a5a4a] sm:right-4 sm:bottom-4 sm:px-3 sm:py-2 sm:text-lg"
       aria-label={`${formatHighlightCountdown(left)} left on this spotlight`}
       title="Time left before this spotlight leaves the TV"
     >
