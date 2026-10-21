@@ -174,6 +174,10 @@ function Stop({
   const aiming = next?.points === milestone.points;
   const takedownLocked = Boolean(reveal && !reveal.wide && !named);
   const showPicture = Boolean(art);
+  // Mystery faces are square cutouts on charcoal — match that fill and fade
+  // the square edges so they blend into the circle instead of reading as a stamp.
+  const blendSquare = Boolean(reveal && !reveal.wide && showPicture);
+  const circleFill = !showPicture ? "#2a1c04" : takedownLocked ? "#5a524f" : "#efe6d6";
 
   return (
     <li className="flex w-[var(--stop)] flex-col items-center text-center">
@@ -182,14 +186,22 @@ function Stop({
         style={{
           width: NODE,
           height: NODE,
-          background: showPicture ? "#efe6d6" : "#2a1c04",
+          background: circleFill,
           color: showPicture ? unit.ink : "#ffe08a",
           borderColor: aiming ? unit.deep : reached && named ? unit.deep : "rgba(42,34,24,0.12)",
           boxShadow: aiming ? `0 0 0 4px ${unit.color}` : undefined,
         }}
       >
         {showPicture ? (
-          <img src={art} alt="" className="size-full object-cover" />
+          <img
+            src={art}
+            alt=""
+            className={
+              blendSquare
+                ? "size-full scale-[1.08] object-cover [mask-image:radial-gradient(circle_closest-side_at_center,#000_52%,transparent_100%)] [-webkit-mask-image:radial-gradient(circle_closest-side_at_center,#000_52%,transparent_100%)]"
+                : "size-full object-cover"
+            }
+          />
         ) : (
           <LockKeyhole className="size-4 lg:size-9" />
         )}

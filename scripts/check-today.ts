@@ -153,6 +153,7 @@ assert.match(
   withHighlight[0]?.text ?? "",
   /Mr C · highlighted Tjmara & Keshy · Helped pack the sports shed/,
 );
+assert.equal(withHighlight[0]?.points, 2);
 assert.equal(
   withHighlight.some((item) => item.kind === "tick"),
   false,
