@@ -142,7 +142,17 @@ export function TodayColumn({
               <KindMark kind={item.kind} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm leading-snug font-bold sm:text-base">{item.text}</p>
+                  <p className="text-sm leading-snug font-bold sm:text-base">
+                    {item.text}
+                    {item.kind === "highlight" && item.points ? (
+                      <span
+                        className="ml-1.5 inline-block translate-y-[-1px] rounded-md bg-[#0d7a64] px-1.5 py-0.5 align-middle text-[10px] font-black tracking-wide text-white"
+                        aria-label={`Plus ${item.points} ${item.points === 1 ? "point" : "points"}`}
+                      >
+                        +{item.points}
+                      </span>
+                    ) : null}
+                  </p>
                   <p className="shrink-0 pt-0.5 text-[10px] font-bold text-muted-foreground sm:text-xs">
                     {eventTime(item.at)}
                   </p>

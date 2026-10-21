@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { kidName, unitById } from "@/lib/game";
-import type { HighlightEntry } from "@/lib/highlights";
+import { formatHighlightCountdown, type HighlightEntry } from "@/lib/highlights";
 import { studentById } from "@/lib/students";
 import { Button } from "@/components/ui/button";
 
@@ -38,6 +38,7 @@ export function HighlightView({
   const columns = count === 1 ? 1 : count === 2 ? 2 : count <= 4 ? 2 : 3;
   const canCycle = total > 1 && Boolean(onPrev && onNext);
   const solo = count === 1;
+  const nameLine = nameList(students.map((student) => student.name));
 
   return (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-[32px] border-4 border-[#5a3208] bg-[radial-gradient(circle_at_center,#ffe08a_0%,#f5b942_42%,#8a3b12_100%)] p-3 lg:p-5">
@@ -100,12 +101,6 @@ export function HighlightView({
                   : count <= 4
                     ? "w-[min(100%,15rem)]"
                     : "w-[min(100%,12rem)]";
-            const nameClass =
-              count === 1
-                ? "text-3xl sm:text-5xl lg:text-6xl"
-                : count === 2
-                  ? "text-2xl sm:text-3xl"
-                  : "text-xl sm:text-2xl";
             return (
               <motion.article
                 key={student.id}
@@ -117,7 +112,7 @@ export function HighlightView({
                 <div
                   className={
                     solo
-                      ? "flex h-full max-h-full w-full flex-col overflow-hidden rounded-[28px] border-4 border-[#fff8df] bg-[#fff8df] p-2.5 sm:p-3"
+                      ? "flex h-full max-h-full w-full overflow-hidden rounded-[28px] border-4 border-[#fff8df] bg-[#fff8df] p-2 sm:p-2.5"
                       : "overflow-hidden rounded-[28px] border-4 border-[#fff8df] bg-[#fff8df] p-2"
                   }
                   style={{ boxShadow: `0 14px 0 rgba(42,28,4,0.28), 0 0 0 6px ${unit.color}` }}
@@ -128,31 +123,27 @@ export function HighlightView({
                     color={unit.color}
                     solo={solo}
                   />
-                  <div className="shrink-0 px-2 pt-2 pb-1 text-center">
-                    <p className={`font-display leading-none text-[#2a1c04] ${nameClass}`}>
-                      {student.name}
-                    </p>
-                    <p
-                      className={`mt-1 font-extrabold tracking-[0.16em] uppercase ${solo ? "text-sm sm:text-base" : "text-xs"}`}
-                      style={{ color: unit.deep }}
-                    >
-                      {unit.code}
-                    </p>
-                  </div>
                 </div>
               </motion.article>
             );
           })}
         </div>
 
-        <div className="relative flex min-h-0 flex-col items-center justify-center rounded-[28px] border-4 border-[#2a1c04] bg-[#fff8df]/92 px-5 py-6 text-center shadow-[0_10px_0_#6b5844] lg:px-8 lg:py-8">
+        <div className="relative flex min-h-0 flex-col items-center justify-center rounded-[28px] border-4 border-[#2a1c04] bg-[#fff8df]/92 px-5 py-6 pb-12 text-center shadow-[0_10px_0_#6b5844] lg:px-8 lg:py-8 lg:pb-14">
           <p className="text-sm font-extrabold tracking-[0.28em] text-[#8a5a00] uppercase sm:text-base">
             Student spotlight
           </p>
           <h2 className="mt-2 font-display text-5xl leading-none text-[#2a1c04] sm:text-6xl lg:text-7xl">
             Highlighted!
           </h2>
-          <p className="mt-3 text-base font-extrabold text-[#5a3208] sm:text-xl">Spotted by {who}</p>
+          <p
+            className={`mt-4 font-display leading-tight text-[#2a1c04] ${
+              solo ? "text-4xl sm:text-5xl lg:text-6xl" : "text-3xl sm:text-4xl lg:text-5xl"
+            }`}
+          >
+            {nameLine}
+          </p>
+          <p className="mt-2 text-base font-extrabold text-[#5a3208] sm:text-xl">Spotted by {who}</p>
           <div className="mt-6 w-full max-w-xl">
             <p className="text-sm font-extrabold tracking-[0.2em] text-[#8a5a00] uppercase sm:text-base">
               Why they shone
@@ -202,9 +193,46 @@ export function HighlightView({
               )}
             </div>
           ) : null}
+
+          <SpotlightCountdown expiresAt={entry.expiresAt} />
         </div>
       </div>
     </div>
+  );
+}
+
+function nameList(names: string[]) {
+  if (names.length === 0) return "Students";
+  if (names.length === 1) return names[0]!;
+  if (names.length === 2) return `${names[0]} & ${names[1]}`;
+  return `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`;
+}
+
+function SpotlightCountdown({ expiresAt }: { expiresAt: number }) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const left = Math.max(0, expiresAt - now);
+  if (left <= 0) {
+    return (
+      <p className="absolute right-3 bottom-3 text-[11px] font-extrabold tracking-wide text-[#8a5a00] uppercase sm:right-4 sm:bottom-4 sm:text-xs">
+        Ending
+      </p>
+    );
+  }
+
+  return (
+    <p
+      className="absolute right-3 bottom-3 rounded-lg bg-[#2a1c04]/8 px-2 py-1 font-display text-sm leading-none tabular-nums text-[#5a3208] sm:right-4 sm:bottom-4 sm:text-base"
+      aria-label={`${formatHighlightCountdown(left)} left on this spotlight`}
+      title="Time left before this spotlight leaves the TV"
+    >
+      {formatHighlightCountdown(left)}
+    </p>
   );
 }
 
@@ -220,15 +248,15 @@ function StudentPhoto({
   solo?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
-  // Solo fills the spotlight column; groups stay a compact wide crop for the grid.
+  // Full portrait — frame hugs the image so nothing is cropped or letterboxed away.
   const frame = solo
-    ? "relative min-h-0 w-full flex-1 overflow-hidden rounded-[22px] bg-[#efe6d6]"
-    : "relative aspect-[4/3] overflow-hidden rounded-[22px] bg-[#efe6d6]";
+    ? "relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden rounded-[22px] bg-[#efe6d6]"
+    : "relative w-full overflow-hidden rounded-[22px] bg-[#efe6d6]";
 
   if (failed) {
     return (
       <div
-        className={`grid place-items-center p-4 text-center ${solo ? "min-h-0 w-full flex-1" : "aspect-[4/3]"}`}
+        className={`grid place-items-center p-4 text-center ${solo ? "min-h-0 w-full flex-1" : "aspect-[3/4]"}`}
         style={{ background: color }}
       >
         <div>
@@ -248,7 +276,11 @@ function StudentPhoto({
       <img
         src={image}
         alt={name}
-        className="size-full object-cover object-top"
+        className={
+          solo
+            ? "max-h-full max-w-full object-contain object-center"
+            : "block h-auto w-full object-contain object-center"
+        }
         onError={() => setFailed(true)}
       />
     </div>
