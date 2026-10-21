@@ -90,13 +90,14 @@ export function YardBoard() {
   const [reasonPrompt, setReasonPrompt] = useState<{ id: string; line: string } | null>(null);
 
   const displaySyncKey = data?.displayUpdatedAt
-    ? `${data.displayUpdatedAt}:${data.cricketCode}:${JSON.stringify(data.shown)}:${data.newsLayout}:${JSON.stringify(data.cricketPanels)}`
+    ? `${data.displayUpdatedAt}:${data.cricketCode}:${JSON.stringify(data.shown)}:${data.newsLayout}:${JSON.stringify(data.cricketPanels)}:${data.finishAt ?? ""}`
     : "";
   useEffect(() => {
     if (!data?.displayUpdatedAt) return;
     hydrateDisplay(data.shown, data.cricketCode, {
       newsLayout: data.newsLayout,
       cricketPanels: data.cricketPanels,
+      finishAt: data.finishAt,
     });
   }, [displaySyncKey, data]);
 

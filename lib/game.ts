@@ -98,6 +98,8 @@ export type PublicBoard = {
   newsLayout: import("@/lib/site-display").NewsLayoutId;
   /** Which cricket panels are on for every visitor. */
   cricketPanels: import("@/lib/site-display").CricketPanels;
+  /** Shared prize-path finish countdown for every TV (ms), or null. */
+  finishAt: number | null;
 };
 
 export type Milestone = {

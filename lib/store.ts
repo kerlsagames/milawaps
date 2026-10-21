@@ -275,6 +275,7 @@ export function toPublic(blob: FileBlob): PublicBoard {
     displayUpdatedAt: display.updatedAt,
     newsLayout: display.newsLayout,
     cricketPanels: display.cricketPanels,
+    finishAt: display.finishAt,
   };
 }
 

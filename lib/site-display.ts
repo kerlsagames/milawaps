@@ -41,6 +41,8 @@ export type SiteDisplay = {
   updatedAt: number;
   newsLayout: NewsLayoutId;
   cricketPanels: CricketPanels;
+  /** Shared prize-path finish countdown (ms since epoch), or null if unset. */
+  finishAt: number | null;
 };
 
 export function emptySiteDisplay(): SiteDisplay {
@@ -50,7 +52,14 @@ export function emptySiteDisplay(): SiteDisplay {
     updatedAt: 0,
     newsLayout: "split",
     cricketPanels: { ...DEFAULT_CRICKET_PANELS },
+    finishAt: null,
   };
+}
+
+function sanitizeFinishAt(value: unknown): number | null {
+  if (value === null) return null;
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) return null;
+  return Math.floor(value);
 }
 
 function sanitizeNewsLayout(value: unknown): NewsLayoutId {
@@ -80,6 +89,7 @@ export function sanitizeSiteDisplay(raw: unknown): SiteDisplay {
     updatedAt?: unknown;
     newsLayout?: unknown;
     cricketPanels?: unknown;
+    finishAt?: unknown;
   };
   const shown = { ...DEFAULT_SHOWN };
   if (record.shown && typeof record.shown === "object") {
@@ -101,6 +111,7 @@ export function sanitizeSiteDisplay(raw: unknown): SiteDisplay {
     updatedAt,
     newsLayout: sanitizeNewsLayout(record.newsLayout),
     cricketPanels: sanitizeCricketPanels(record.cricketPanels),
+    finishAt: sanitizeFinishAt(record.finishAt),
   };
 }
 
@@ -112,11 +123,13 @@ export function siteDisplayFromInput(raw: unknown, current: SiteDisplay): SiteDi
     cricketCode?: unknown;
     newsLayout?: unknown;
     cricketPanels?: unknown;
+    finishAt?: unknown;
   };
   const nextShown = { ...current.shown };
   let cricketCode = current.cricketCode;
   let newsLayout = current.newsLayout;
   let cricketPanels = { ...current.cricketPanels };
+  let finishAt = current.finishAt;
 
   if (typeof record.cricketCode === "string") {
     cricketCode = record.cricketCode.trim().slice(0, 300);
@@ -132,6 +145,9 @@ export function siteDisplayFromInput(raw: unknown, current: SiteDisplay): SiteDi
   }
   if (record.cricketPanels !== undefined) {
     cricketPanels = sanitizeCricketPanels({ ...cricketPanels, ...(record.cricketPanels as object) });
+  }
+  if ("finishAt" in record) {
+    finishAt = sanitizeFinishAt(record.finishAt);
   }
 
   const cricketPatched =
@@ -150,6 +166,7 @@ export function siteDisplayFromInput(raw: unknown, current: SiteDisplay): SiteDi
     cricketCode,
     newsLayout,
     cricketPanels,
+    finishAt,
     updatedAt: Date.now(),
   });
 }

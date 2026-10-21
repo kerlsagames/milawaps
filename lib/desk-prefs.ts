@@ -299,7 +299,11 @@ export function setCricketPanelsLocal(panels: CricketPanels) {
 export function hydrateDisplay(
   shown: ShownMap,
   cricketCode: string,
-  extras?: { newsLayout?: NewsLayoutId; cricketPanels?: CricketPanels },
+  extras?: {
+    newsLayout?: NewsLayoutId;
+    cricketPanels?: CricketPanels;
+    finishAt?: number | null;
+  },
 ) {
   const code = cricketCode.trim().slice(0, 300);
   window.localStorage.setItem("ott-kiosk-shown", JSON.stringify(shown));
@@ -311,12 +315,20 @@ export function hydrateDisplay(
   if (extras?.cricketPanels) {
     window.localStorage.setItem("ott-cricket-panels", JSON.stringify(extras.cricketPanels));
   }
+  if (extras && "finishAt" in extras) {
+    if (extras.finishAt == null || !Number.isFinite(extras.finishAt)) {
+      window.localStorage.removeItem("ott-finish-at");
+    } else {
+      window.localStorage.setItem("ott-finish-at", String(extras.finishAt));
+    }
+  }
   publish({
     ...readPrefs(),
     shown: { ...shown },
     cricketCode: code,
     newsLayout: extras?.newsLayout ?? readNewsLayout(),
     cricketPanels: extras?.cricketPanels ?? readCricketPanels(),
+    finishAt: extras && "finishAt" in extras ? (extras.finishAt ?? null) : readFinish(),
   });
 }
 
@@ -327,6 +339,7 @@ export async function saveSiteDisplay(
     cricketCode?: string;
     newsLayout?: NewsLayoutId;
     cricketPanels?: Partial<CricketPanels>;
+    finishAt?: number | null;
   },
   adminToken: string,
 ): Promise<{ ok: true; board: import("@/lib/game").PublicBoard } | { ok: false; error: string }> {
@@ -348,6 +361,7 @@ export async function saveSiteDisplay(
     hydrateDisplay(body.shown, body.cricketCode, {
       newsLayout: body.newsLayout,
       cricketPanels: body.cricketPanels,
+      finishAt: body.finishAt,
     });
     return { ok: true, board: body };
   } catch {
