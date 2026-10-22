@@ -121,7 +121,7 @@ export function HighlightView({
                   transition={{ delay: studentIndex * 0.08, type: "spring", stiffness: 120, damping: 14 }}
                   className={
                     pair
-                      ? "flex min-h-0 w-full flex-1 items-stretch justify-stretch"
+                      ? "flex min-h-0 w-full flex-1 items-center justify-center"
                       : "flex min-h-0 max-w-full items-center justify-center"
                   }
                   style={
@@ -138,10 +138,13 @@ export function HighlightView({
                   <div
                     className={
                       pair
-                        ? "flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[20px] border-[3px] border-[#fff8df] bg-[#fff8df] p-0.5"
+                        ? "flex h-full min-h-0 flex-col overflow-hidden rounded-[20px] border-[3px] border-[#fff8df] bg-[#fff8df] p-0.5"
                         : "flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[28px] border-4 border-[#fff8df] bg-[#fff8df] p-1.5 sm:p-2"
                     }
-                    style={{ boxShadow: `0 5px 0 rgba(42,28,4,0.28), 0 0 0 4px ${unit.color}` }}
+                    style={{
+                      boxShadow: `0 5px 0 rgba(42,28,4,0.28), 0 0 0 4px ${unit.color}`,
+                      ...(pair ? { aspectRatio: "3 / 4", width: "auto", maxWidth: "100%" } : {}),
+                    }}
                   >
                     <StudentPhoto
                       name={student.name}
