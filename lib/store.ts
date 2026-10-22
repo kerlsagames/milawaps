@@ -361,12 +361,13 @@ export function commitHighlight(
   students: HighlightStudent[],
   reason: string,
   staffId: StaffId,
+  points?: number,
 ): Promise<{ board: PublicBoard; events: ReturnType<typeof applyAction>["events"] }> {
   return serialized(async () => {
     const blob = await readBlob();
-    const entry = createHighlight(students, reason, staffId);
+    const entry = createHighlight(students, reason, staffId, Date.now(), points);
     const highlights = sanitizeHighlights([entry, ...blob.highlights]);
-    // Award the highlight's point value (legacy: +1 per student, max three).
+    // Award the teacher-chosen point total (0–3), distributed round-robin by class.
     const unitIds = highlightSpotUnits(entry.students, entry.points);
     let scores = blob.scores;
     const events: ReturnType<typeof applyAction>["events"] = [];

@@ -2,7 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { UNITS, type PublicBoard, type UnitId } from "@/lib/game";
-import { HIGHLIGHT_POINT_MAX, type HighlightStudent } from "@/lib/highlights";
+import {
+  HIGHLIGHT_POINT_MAX,
+  HIGHLIGHT_STUDENT_MAX,
+  type HighlightStudent,
+} from "@/lib/highlights";
 import { studentById, studentsForUnit } from "@/lib/students";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +16,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
+const POINT_CHOICES = [0, 1, 2, 3] as const;
 
 export function HighlightDialog({
   open,
@@ -28,6 +34,7 @@ export function HighlightDialog({
 }) {
   const [unitId, setUnitId] = useState<UnitId | null>(null);
   const [picked, setPicked] = useState<HighlightStudent[]>([]);
+  const [points, setPoints] = useState(1);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -44,6 +51,7 @@ export function HighlightDialog({
   function reset(nextUnit: UnitId | null = null) {
     setUnitId(nextUnit);
     setPicked([]);
+    setPoints(1);
     setReason("");
     setMessage("");
     setBusy(false);
@@ -57,8 +65,8 @@ export function HighlightDialog({
     setPicked((current) => {
       const on = current.some((item) => item.id === student.id);
       if (on) return current.filter((item) => item.id !== student.id);
-      if (current.length >= HIGHLIGHT_POINT_MAX) {
-        setMessage(`Pick up to ${HIGHLIGHT_POINT_MAX} students — one point each.`);
+      if (current.length >= HIGHLIGHT_STUDENT_MAX) {
+        setMessage(`Pick up to ${HIGHLIGHT_STUDENT_MAX} students.`);
         return current;
       }
       setMessage("");
@@ -80,6 +88,7 @@ export function HighlightDialog({
         body: JSON.stringify({
           reason,
           students: picked,
+          points,
         }),
       });
       const body = (await response.json().catch(() => ({}))) as PublicBoard & { error?: string };
@@ -109,9 +118,9 @@ export function HighlightDialog({
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">Student highlight</DialogTitle>
           <DialogDescription>
-            Pick up to {HIGHLIGHT_POINT_MAX} students across classes, tap who shone, and write why. Each
-            student earns +1 for their class (max {HIGHLIGHT_POINT_MAX}). Picks stay when you switch
-            classes. The spotlight page stays on the TV for 24 hours.
+            Pick up to {HIGHLIGHT_STUDENT_MAX} students across classes, choose 0 to +
+            {HIGHLIGHT_POINT_MAX} for their class(es), and write why. Picks stay when you switch
+            classes. The spotlight stays on the TV for 24 hours.
           </DialogDescription>
         </DialogHeader>
 
@@ -202,6 +211,38 @@ export function HighlightDialog({
             )}
           </div>
         ) : null}
+
+        <div className="grid gap-2">
+          <p className="text-sm font-bold">Points for their class</p>
+          <div className="grid grid-cols-4 gap-2" role="group" aria-label="Highlight points">
+            {POINT_CHOICES.map((value) => {
+              const label = value === 0 ? "0" : `+${value}`;
+              const on = points === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setPoints(value)}
+                  className={
+                    on
+                      ? "h-12 rounded-xl bg-[#2a1c04] text-lg font-black text-[#ffe08a]"
+                      : "h-12 rounded-xl border-2 border-[#2a1c04] bg-white text-lg font-black text-[#2a1c04]"
+                  }
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs font-semibold text-[#8a5a00]">
+            {points === 0
+              ? "Spotlight only — no class ticks."
+              : points === 1
+                ? "One +1 tick shared across the selected class(es)."
+                : `${points} ticks shared across the selected class(es).`}
+          </p>
+        </div>
 
         <label className="grid gap-1">
           <span className="text-sm font-bold">Reason</span>

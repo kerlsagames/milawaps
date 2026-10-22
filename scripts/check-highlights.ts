@@ -83,10 +83,11 @@ assert.deepEqual(
 assert.equal(mixed.students.find((student) => student.id === "234-tjmara")?.unitId, "234");
 assert.equal(mixed.students.find((student) => student.id === "56-keshy")?.unitId, "56");
 
-// Highlight save awards +1 (spot) per student (max 3), even in the same class.
+// Legacy (no points arg): +1 spot per student (max 3), even in the same class.
 assert.equal(HIGHLIGHT_POINT_MAX, 3);
 assert.deepEqual(highlightSpotUnits(mixed.students), ["234", "56"]);
 assert.equal(highlightPointTotal(mixed.students), 2);
+assert.equal(mixed.points, 2);
 
 const sameClass = createHighlight(
   [
@@ -108,6 +109,36 @@ for (const unitId of highlightSpotUnits(sameClass.students)) {
 }
 assert.equal(scores.units["56"], 2);
 assert.equal(scores.units["234"], 0);
+
+// Teacher-chosen total: 0 = spotlight only; 3 ticks round-robin across classes.
+const zeroPoints = createHighlight(
+  [{ id: "f1-will", unitId: "f1" }],
+  "Photo only",
+  "jess",
+  6_000,
+  0,
+);
+assert.equal(zeroPoints.points, 0);
+assert.deepEqual(highlightSpotUnits(zeroPoints.students, zeroPoints.points), []);
+assert.equal(highlightPointTotal(zeroPoints), 0);
+
+const threeShared = createHighlight(
+  [
+    { id: "234-tjmara", unitId: "234" },
+    { id: "56-keshy", unitId: "56" },
+  ],
+  "Huge help",
+  "ash",
+  6_100,
+  3,
+);
+assert.equal(threeShared.points, 3);
+assert.deepEqual(highlightSpotUnits(threeShared.students, threeShared.points), [
+  "234",
+  "56",
+  "234",
+]);
+assert.equal(highlightPointTotal(threeShared), 3);
 
 const fourKids = [
   { id: "56-zach", unitId: "56" as const },

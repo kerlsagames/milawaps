@@ -43,6 +43,10 @@ export async function POST(request: Request) {
     payload && typeof payload === "object" && "students" in payload
       ? (payload as { students?: unknown }).students
       : undefined;
+  const pointsRaw =
+    payload && typeof payload === "object" && "points" in payload
+      ? (payload as { points?: unknown }).points
+      : undefined;
 
   if (typeof reason !== "string") {
     return json({ error: "Write why they shone." }, 400);
@@ -62,8 +66,11 @@ export async function POST(request: Request) {
     return json({ error: "Pick at least one student." }, 400);
   }
 
+  const points =
+    typeof pointsRaw === "number" && Number.isFinite(pointsRaw) ? pointsRaw : undefined;
+
   try {
-    const result = await commitHighlight(students, reason, staffId);
+    const result = await commitHighlight(students, reason, staffId, points);
     return json({ ...result.board, events: result.events });
   } catch (error) {
     const message = error instanceof Error ? error.message : "That highlight did not save.";
