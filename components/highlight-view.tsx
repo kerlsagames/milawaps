@@ -88,52 +88,40 @@ export function HighlightView({
       <div
         className={
           solo
-            ? "relative z-10 grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)] gap-3 overflow-hidden lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-stretch lg:gap-4"
+            ? "relative z-10 grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)] gap-3 overflow-hidden lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:items-stretch lg:gap-4"
             : pair
-              ? "relative z-10 grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)] gap-3 overflow-hidden lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.75fr)] lg:items-stretch lg:gap-4"
+              ? "relative z-10 grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)] gap-3 overflow-hidden lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:items-stretch lg:gap-4"
               : "relative z-10 grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)] gap-3 overflow-hidden lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-stretch lg:gap-4"
         }
       >
-        {/*
-          Stage is absolute (definite height). Pair uses a diagonal stack so both
-          portraits stay large; vertical flex was leaving empty border bands.
-        */}
         <div className="relative min-h-0 overflow-hidden">
           {pair ? (
-            <div className="absolute inset-0 overflow-hidden">
+            <div
+              className={
+                // Landscape F/1: side by side. Portrait grades: stack so cards stay wide.
+                students.every((student) => student.unitId === "f1")
+                  ? "absolute inset-0 grid grid-cols-2 gap-3 p-2 sm:gap-4 sm:p-3"
+                  : "absolute inset-0 grid grid-rows-2 gap-3 p-2 sm:gap-4 sm:p-3"
+              }
+            >
               {students.map((student, studentIndex) => {
                 const unit = unitById(student.unitId);
-                const topLeft = studentIndex === 0;
-                const angle = topLeft ? -4 : 5;
-                const landscape = student.unitId === "f1";
                 return (
                   <motion.article
                     key={student.id}
-                    initial={{ opacity: 0, y: 18, rotate: angle - 8 }}
-                    animate={{ opacity: 1, y: 0, rotate: angle }}
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
                     transition={{
                       delay: studentIndex * 0.08,
                       type: "spring",
                       stiffness: 120,
-                      damping: 14,
+                      damping: 16,
                     }}
-                    // Fixed corner slots (not aspect boxes) so both stay big and use the stage.
-                    className={
-                      topLeft
-                        ? "absolute top-0 left-0 z-10 h-[70%] w-[82%] origin-top-left"
-                        : "absolute right-0 bottom-0 z-20 h-[70%] w-[82%] origin-bottom-right"
-                    }
+                    className="relative h-full min-h-0 w-full overflow-hidden"
                   >
-                    <PortraitFrame color={unit.color} tight>
-                      <StudentPhoto
-                        name={student.name}
-                        image={student.image}
-                        color={unit.color}
-                        cover
-                        // F/1 polaroid mattes + letterboxing — zoom so the face fills the slot.
-                        zoom={landscape ? 1.22 : 1.06}
-                      />
-                    </PortraitFrame>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <PairPhoto name={student.name} image={student.image} color={unit.color} />
+                    </div>
                   </motion.article>
                 );
               })}
@@ -157,7 +145,6 @@ export function HighlightView({
               {students.map((student, studentIndex) => {
                 const unit = unitById(student.unitId);
                 const angle = solo ? -2 : (ANGLES[studentIndex % ANGLES.length] ?? 0);
-                const aspect = photoAspect(student.unitId);
                 return (
                   <motion.article
                     key={student.id}
@@ -171,20 +158,18 @@ export function HighlightView({
                     }}
                     className="flex min-h-0 max-w-full items-center justify-center"
                     style={{
-                      height: solo ? "92%" : "80%",
+                      height: solo ? "90%" : "78%",
                       maxHeight: "100%",
                       width: "auto",
-                      aspectRatio: aspect,
+                      aspectRatio: photoAspect(student.unitId),
                     }}
                   >
-                    <PortraitFrame color={unit.color} tight={false}>
+                    <PortraitFrame color={unit.color}>
                       <StudentPhoto
                         name={student.name}
                         image={student.image}
                         color={unit.color}
                         solo={solo}
-                        cover
-                        zoom={student.unitId === "f1" ? 1.14 : 1}
                       />
                     </PortraitFrame>
                   </motion.article>
@@ -268,22 +253,18 @@ export function HighlightView({
 
 function PortraitFrame({
   color,
-  tight,
   children,
+  className = "h-full w-full",
 }: {
   color: string;
-  tight: boolean;
   children: ReactNode;
+  className?: string;
 }) {
   return (
     <div
-      className={
-        tight
-          ? "flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[16px] border-2 border-[#2a1c04] bg-[#2a1c04]"
-          : "flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[20px] border-[3px] border-[#2a1c04] bg-[#2a1c04]"
-      }
+      className={`flex min-h-0 min-w-0 flex-col overflow-hidden rounded-[18px] border-[3px] border-[#fff8df] bg-[#fff8df] p-1 ${className}`}
       style={{
-        boxShadow: `0 5px 0 rgba(42,28,4,0.35), 0 0 0 3px ${color}`,
+        boxShadow: `0 4px 0 rgba(42,28,4,0.28), 0 0 0 3px ${color}`,
       }}
     >
       {children}
@@ -326,22 +307,49 @@ function SpotlightCountdown({ expiresAt }: { expiresAt: number }) {
   );
 }
 
+function PairPhoto({
+  name,
+  image,
+  color,
+}: {
+  name: string;
+  image: string;
+  color: string;
+}) {
+  const [failed, setFailed] = useState(false);
+
+  if (failed) {
+    return (
+      <div
+        className="grid max-h-full max-w-full place-items-center rounded-[16px] border-[3px] border-[#fff8df] px-6 py-10 text-center"
+        style={{ background: color, boxShadow: `0 4px 0 rgba(42,28,4,0.28), 0 0 0 3px ${color}` }}
+      >
+        <p className="font-display text-3xl leading-none text-[#2a1c04]">{name}</p>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={image}
+      alt={name}
+      className="max-h-full max-w-full rounded-[16px] border-[3px] border-[#fff8df] object-contain"
+      style={{ boxShadow: `0 4px 0 rgba(42,28,4,0.28), 0 0 0 3px ${color}` }}
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 function StudentPhoto({
   name,
   image,
   color,
   solo = false,
-  cover = false,
-  zoom = 1,
 }: {
   name: string;
   image: string;
   color: string;
   solo?: boolean;
-  /** Fill the frame instead of letterboxing. */
-  cover?: boolean;
-  /** >1 crops polaroid mattes / empty edges. */
-  zoom?: number;
 }) {
   const [failed, setFailed] = useState(false);
 
@@ -361,16 +369,11 @@ function StudentPhoto({
   }
 
   return (
-    <div className="h-full min-h-0 w-full overflow-hidden rounded-[12px] bg-[#efe6d6]">
+    <div className="flex h-full min-h-0 w-full items-center justify-center overflow-hidden rounded-[12px] bg-[#efe6d6]">
       <img
         src={image}
         alt={name}
-        className={
-          cover
-            ? "h-full w-full object-cover object-center"
-            : "h-full w-full object-contain object-center"
-        }
-        style={zoom !== 1 ? { transform: `scale(${zoom})` } : undefined}
+        className="max-h-full max-w-full object-contain object-center"
         onError={() => setFailed(true)}
       />
     </div>
