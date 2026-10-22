@@ -61,7 +61,7 @@ function nameList(entry: HighlightEntry): string {
 }
 
 function highlightPoints(entry: HighlightEntry): number {
-  return Math.max(1, highlightPointTotal(entry.students));
+  return highlightPointTotal(entry);
 }
 
 function highlightLine(entry: HighlightEntry): string {

@@ -777,7 +777,7 @@ function HighlightPagePanel({
       </Button>
       <div className="rounded-2xl border border-black/10 bg-[#fff8df] px-3 py-3">
         <p className="mt-1 text-xs font-semibold text-muted-foreground">
-          Each spotlight stays on the TV for 25 hours, then leaves on its own.
+          Each spotlight stays on the TV for 24 hours, then leaves on its own.
         </p>
         <p className="mt-3 text-sm font-extrabold text-[#2a1c04]">Shout-out spreadsheet</p>
         <p className="mt-1 text-xs font-semibold text-muted-foreground">

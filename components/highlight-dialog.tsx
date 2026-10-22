@@ -111,7 +111,7 @@ export function HighlightDialog({
           <DialogDescription>
             Pick up to {HIGHLIGHT_POINT_MAX} students across classes, tap who shone, and write why. Each
             student earns +1 for their class (max {HIGHLIGHT_POINT_MAX}). Picks stay when you switch
-            classes. The spotlight page stays on the TV for two days.
+            classes. The spotlight page stays on the TV for 24 hours.
           </DialogDescription>
         </DialogHeader>
 

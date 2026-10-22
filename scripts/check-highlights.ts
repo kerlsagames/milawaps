@@ -64,7 +64,7 @@ const first = createHighlight(
   1_000,
 );
 assert.equal(first.students.length, 2);
-assert.equal(first.expiresAt, 1_000 + 25 * 60 * 60 * 1000);
+assert.equal(first.expiresAt, 1_000 + 24 * 60 * 60 * 1000);
 
 const mixed = createHighlight(
   [
@@ -140,17 +140,21 @@ assert.equal(wrongClassDropped[0]?.students.length, 1);
 assert.equal(wrongClassDropped[0]?.students[0]?.id, "234-tjmara");
 
 const second = createHighlight([{ id: "f1-will", unitId: "f1" }], "Led the line", "craig", 2_000);
-const kept = sanitizeHighlights([first, second, { ...first, id: "old-ended", expiresAt: 500 }], 1_500);
-// Expired rows stay in storage for spreadsheet download.
+const endedAt = 1_500 - HIGHLIGHT_TTL_MS - 1;
+const kept = sanitizeHighlights(
+  [first, second, { ...first, id: "old-ended", at: endedAt, expiresAt: endedAt + 500 }],
+  1_500,
+);
+// Ended rows stay in storage for spreadsheet download — TV drops them.
 assert.equal(kept.length, 3);
 assert.equal(activeHighlights(kept, 1_500).length, 2);
 assert.equal(activeHighlights(kept, first.expiresAt + 1).length, 1);
 
-assert.equal(HIGHLIGHT_TTL_MS, 25 * 60 * 60 * 1000);
-assert.equal(formatHighlightCountdown(25 * 60 * 60 * 1000), "25:00:00");
+assert.equal(HIGHLIGHT_TTL_MS, 24 * 60 * 60 * 1000);
+assert.equal(formatHighlightCountdown(24 * 60 * 60 * 1000), "24:00:00");
 assert.equal(formatHighlightCountdown(65_000), "1:05");
 
-// Older longer spotlights clamp down to the 25h default.
+// Older longer spotlights clamp down to the 24h default.
 const legacy48 = sanitizeHighlights(
   [
     {
@@ -165,6 +169,7 @@ const legacy48 = sanitizeHighlights(
   10_000,
 );
 assert.equal(legacy48[0]?.expiresAt, 10_000 + HIGHLIGHT_TTL_MS);
+assert.equal(activeHighlights(legacy48, 10_000 + HIGHLIGHT_TTL_MS + 1).length, 0);
 
 const csv = highlightsToCsv(kept);
 assert.match(csv, /When,Staff,Student,Class,Reason,Expires,Status/);

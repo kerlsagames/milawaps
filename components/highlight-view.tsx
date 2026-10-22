@@ -35,9 +35,11 @@ export function HighlightView({
     .filter((student): student is NonNullable<typeof student> => Boolean(student));
   const count = Math.max(1, students.length);
   const who = kidName(entry.staffId);
-  const columns = count === 1 ? 1 : count === 2 ? 2 : count <= 4 ? 2 : 3;
+  // Pair stacks vertically so each portrait stays large; 3+ use a grid.
+  const columns = count <= 2 ? 1 : count <= 4 ? 2 : 3;
   const canCycle = total > 1 && Boolean(onPrev && onNext);
   const solo = count === 1;
+  const pair = count === 2;
   const nameLine = nameList(students.map((student) => student.name));
 
   return (
@@ -95,10 +97,12 @@ export function HighlightView({
             className={
               solo
                 ? "absolute inset-0 flex items-center justify-center overflow-hidden px-2 py-3 sm:px-3 sm:py-4"
-                : "absolute inset-0 grid items-center justify-items-center gap-2 overflow-hidden px-2 py-3 sm:px-3 sm:py-4"
+                : pair
+                  ? "absolute inset-0 flex flex-col items-center justify-center gap-2 overflow-hidden px-2 py-2 sm:gap-3 sm:px-3 sm:py-3"
+                  : "absolute inset-0 grid items-center justify-items-center gap-2 overflow-hidden px-2 py-3 sm:px-3 sm:py-4"
             }
             style={
-              solo
+              solo || pair
                 ? undefined
                 : {
                     gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
@@ -108,8 +112,8 @@ export function HighlightView({
           >
             {students.map((student, studentIndex) => {
               const unit = unitById(student.unitId);
-              const angle = solo ? -2 : (ANGLES[studentIndex % ANGLES.length] ?? 0);
-              const cardHeight = solo ? "86%" : count === 2 ? "82%" : "78%";
+              const angle = solo ? -2 : pair ? (studentIndex === 0 ? -2 : 2) : (ANGLES[studentIndex % ANGLES.length] ?? 0);
+              const cardHeight = solo ? "86%" : pair ? "47%" : "78%";
               return (
                 <motion.article
                   key={student.id}
@@ -119,8 +123,9 @@ export function HighlightView({
                   className="flex min-h-0 max-w-full items-center justify-center"
                   style={{
                     height: cardHeight,
-                    maxHeight: "100%",
+                    maxHeight: pair ? "47%" : "100%",
                     width: "auto",
+                    maxWidth: pair ? "min(100%, 20rem)" : undefined,
                     aspectRatio: "3 / 4",
                   }}
                 >

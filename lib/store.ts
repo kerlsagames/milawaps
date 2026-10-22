@@ -366,8 +366,8 @@ export function commitHighlight(
     const blob = await readBlob();
     const entry = createHighlight(students, reason, staffId);
     const highlights = sanitizeHighlights([entry, ...blob.highlights]);
-    // One +1 (spot) per student, max three — same-class kids each still earn a tick.
-    const unitIds = highlightSpotUnits(entry.students);
+    // Award the highlight's point value (legacy: +1 per student, max three).
+    const unitIds = highlightSpotUnits(entry.students, entry.points);
     let scores = blob.scores;
     const events: ReturnType<typeof applyAction>["events"] = [];
     let tick = Date.now();
