@@ -283,6 +283,7 @@ export function toPublic(blob: FileBlob): PublicBoard {
     newsLayout: display.newsLayout,
     cricketPanels: display.cricketPanels,
     finishAt: display.finishAt,
+    dwells: display.dwells,
   };
 }
 

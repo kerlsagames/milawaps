@@ -11,6 +11,7 @@ assert.equal(empty.shown.cricket, false);
 assert.equal(empty.newsLayout, "split");
 assert.equal(empty.cricketPanels.ladder, true);
 assert.equal(empty.finishAt, null);
+assert.equal(empty.dwells, null);
 
 const withCode = siteDisplayFromInput({ cricketCode: "BQWA8Z" }, empty);
 assert.equal(withCode.cricketCode, "BQWA8Z");
@@ -54,5 +55,16 @@ assert.equal(
   sanitizeSiteDisplay({ finishAt: "nope", cricketCode: "x" }).finishAt,
   null,
 );
+
+// Older blobs without dwells must not invent shared defaults (would wipe TV local times).
+assert.equal(sanitizeSiteDisplay({ cricketCode: "x", updatedAt: 9 }).dwells, null);
+
+const withDwells = siteDisplayFromInput({ dwells: { highlight: 40, board: 20 } }, withFinish);
+assert.equal(withDwells.dwells?.highlight, 40);
+assert.equal(withDwells.dwells?.board, 20);
+assert.equal(withDwells.dwells?.news, 18);
+const dwellPatch = siteDisplayFromInput({ dwells: { highlight: 55 } }, withDwells);
+assert.equal(dwellPatch.dwells?.highlight, 55);
+assert.equal(dwellPatch.dwells?.board, 20);
 
 console.log("site display checks passed");

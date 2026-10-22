@@ -12,10 +12,23 @@ import {
 } from "@/lib/reveals";
 import {
   DEFAULT_CRICKET_PANELS,
+  DEFAULT_DWELLS,
+  MIN_DWELL_SECONDS,
+  MAX_DWELL_SECONDS,
+  clampDwell,
+  sanitizeDwells,
   type CricketPanels,
+  type DwellMap,
   type NewsLayoutId,
 } from "@/lib/site-display";
 import { staffFromToken } from "@/lib/who";
+
+export {
+  DEFAULT_DWELLS,
+  MIN_DWELL_SECONDS,
+  MAX_DWELL_SECONDS,
+  type DwellMap,
+} from "@/lib/site-display";
 
 function revealDefaultLabel(reveal: (typeof REVEALS)[number]) {
   return reveal.title;
@@ -23,8 +36,6 @@ function revealDefaultLabel(reveal: (typeof REVEALS)[number]) {
 
 const TOKEN_KEY = "ott-token";
 const TOKEN_EXP_KEY = "ott-token-exp";
-
-export type DwellMap = Record<FixedScreenId, number>;
 
 export type RevealPrefs = {
   at: number | null;
@@ -48,24 +59,6 @@ export type DeskPrefs = {
   cricketCode: string;
   newsLayout: NewsLayoutId;
   cricketPanels: CricketPanels;
-};
-
-export const MIN_DWELL_SECONDS = 5;
-export const MAX_DWELL_SECONDS = 60;
-
-export const DEFAULT_DWELLS: DwellMap = {
-  board: 14,
-  prizes: 12,
-  yard: 12,
-  "reveal-game": 12,
-  "reveal-1": 12,
-  "reveal-laser": 12,
-  "reveal-2": 12,
-  cricket: 16,
-  news: 18,
-  highlight: 16,
-  today: 12,
-  edit: 12,
 };
 
 function defaultReveals(): RevealMap {
@@ -110,11 +103,6 @@ function readToken(): string | null {
   return null;
 }
 
-function clampDwell(value: number, fallback: number) {
-  if (!Number.isFinite(value)) return fallback;
-  return Math.max(MIN_DWELL_SECONDS, Math.min(MAX_DWELL_SECONDS, Math.round(value)));
-}
-
 function readDwells(): DwellMap {
   const legacyRaw = window.localStorage.getItem("ott-kiosk-seconds");
   const legacy = legacyRaw == null ? null : Number(legacyRaw);
@@ -125,13 +113,12 @@ function readDwells(): DwellMap {
   } catch {
     stored = {};
   }
-  const dwells = { ...DEFAULT_DWELLS };
-  for (const id of SCREEN_IDS) {
-    const saved = stored[id];
-    const previous = id === "yard" && typeof saved !== "number" ? stored.map ?? stored.rules : saved;
-    if (typeof previous === "number") dwells[id] = clampDwell(previous, DEFAULT_DWELLS[id]);
-    else if (legacy != null && Number.isFinite(legacy) && VIEWS.some((view) => view.id === id)) {
-      dwells[id] = clampDwell(legacy, DEFAULT_DWELLS[id]);
+  const dwells = sanitizeDwells(stored);
+  if (legacy != null && Number.isFinite(legacy)) {
+    for (const view of VIEWS) {
+      if (typeof stored[view.id] !== "number") {
+        dwells[view.id] = clampDwell(legacy, DEFAULT_DWELLS[view.id]);
+      }
     }
   }
   return dwells;
@@ -304,6 +291,7 @@ export function hydrateDisplay(
     newsLayout?: NewsLayoutId;
     cricketPanels?: CricketPanels;
     finishAt?: number | null;
+    dwells?: DwellMap | null;
   },
 ) {
   const code = cricketCode.trim().slice(0, 300);
@@ -323,6 +311,9 @@ export function hydrateDisplay(
       window.localStorage.setItem("ott-finish-at", String(extras.finishAt));
     }
   }
+  if (extras?.dwells) {
+    window.localStorage.setItem("ott-kiosk-dwells", JSON.stringify(extras.dwells));
+  }
   publish({
     ...readPrefs(),
     shown: { ...shown },
@@ -330,6 +321,7 @@ export function hydrateDisplay(
     newsLayout: extras?.newsLayout ?? readNewsLayout(),
     cricketPanels: extras?.cricketPanels ?? readCricketPanels(),
     finishAt: extras && "finishAt" in extras ? (extras.finishAt ?? null) : readFinish(),
+    dwells: extras?.dwells ?? readDwells(),
   });
 }
 
@@ -341,6 +333,7 @@ export async function saveSiteDisplay(
     newsLayout?: NewsLayoutId;
     cricketPanels?: Partial<CricketPanels>;
     finishAt?: number | null;
+    dwells?: Partial<DwellMap>;
   },
   adminToken: string,
 ): Promise<{ ok: true; board: import("@/lib/game").PublicBoard } | { ok: false; error: string }> {
@@ -363,6 +356,7 @@ export async function saveSiteDisplay(
       newsLayout: body.newsLayout,
       cricketPanels: body.cricketPanels,
       finishAt: body.finishAt,
+      dwells: body.dwells,
     });
     return { ok: true, board: body };
   } catch {

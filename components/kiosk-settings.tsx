@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   Gift,
@@ -146,6 +146,7 @@ export function KioskSettings({
       newsLayout?: NewsLayoutId;
       cricketPanels?: Partial<CricketPanels>;
       finishAt?: number | null;
+      dwells?: Partial<Record<FixedScreenId, number>>;
     },
     okNote: string,
   ) {
@@ -1050,6 +1051,29 @@ function DwellSlider({
   label: string;
   seconds: number;
 }) {
+  const saveTimer = useRef<number | null>(null);
+  const [needsAdmin, setNeedsAdmin] = useState(false);
+
+  useEffect(() => {
+    setNeedsAdmin(!window.sessionStorage.getItem(ADMIN_KEY));
+    return () => {
+      if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    };
+  }, []);
+
+  function onSeconds(next: number) {
+    setViewDwell(id, next);
+    // With admin unlocked, park the time on the shared board so every TV keeps it
+    // after a reload — local-only saves were resetting overnight on the kids' screen.
+    const token = window.sessionStorage.getItem(ADMIN_KEY);
+    setNeedsAdmin(!token);
+    if (!token) return;
+    if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    saveTimer.current = window.setTimeout(() => {
+      void saveSiteDisplay({ dwells: { [id]: next } }, token);
+    }, 400);
+  }
+
   return (
     <div className="grid gap-1.5">
       <div className="flex items-center justify-between gap-2">
@@ -1063,9 +1087,14 @@ function DwellSlider({
         step={1}
         value={seconds}
         aria-label={`${label} seconds`}
-        onChange={(event) => setViewDwell(id, Number(event.target.value))}
+        onChange={(event) => onSeconds(Number(event.target.value))}
         className="accent-[#e2a01a]"
       />
+      {needsAdmin ? (
+        <p className="text-xs font-semibold text-muted-foreground">
+          Unlock Settings with the admin code so this time sticks on every TV.
+        </p>
+      ) : null}
     </div>
   );
 }

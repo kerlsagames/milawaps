@@ -102,6 +102,8 @@ export type PublicBoard = {
   cricketPanels: import("@/lib/site-display").CricketPanels;
   /** Shared prize-path finish countdown for every TV (ms), or null. */
   finishAt: number | null;
+  /** Shared seconds-per-slide for every TV, or null if never saved. */
+  dwells: import("@/lib/site-display").DwellMap | null;
 };
 
 export type Milestone = {
