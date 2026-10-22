@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Undo2 } from "lucide-react";
+import { Pencil, Undo2 } from "lucide-react";
 import { UNITS, type PublicBoard, type ScoreAction, type UnitId } from "@/lib/game";
 import { UnitCard } from "@/components/unit-card";
 import { VaultMeter } from "@/components/vault-meter";
@@ -17,6 +17,7 @@ export function LeaderboardView({
   canUndo = false,
   onHighlight,
   onUndo,
+  onChangeScores,
   reasonSlot,
 }: {
   board: PublicBoard;
@@ -28,11 +29,12 @@ export function LeaderboardView({
   canUndo?: boolean;
   onHighlight?: (unitId: UnitId) => void;
   onUndo?: () => void;
+  onChangeScores?: () => void;
   /** Reason chip sits in the bar under the class cards (right side). */
   reasonSlot?: ReactNode;
 }) {
   const compact = Boolean(showScores);
-  const showBar = teacherMode && Boolean(onUndo);
+  const showBar = teacherMode && Boolean(onUndo || onChangeScores);
 
   return (
     <div
@@ -71,18 +73,34 @@ export function LeaderboardView({
       </div>
       {showBar ? (
         <div className="flex shrink-0 items-stretch justify-between gap-2 border-t border-black/10 pt-1 pb-[max(0.2rem,env(safe-area-inset-bottom))] lg:pt-2 lg:pb-[max(0.35rem,env(safe-area-inset-bottom))]">
-          <Button
-            type="button"
-            variant="outline"
-            aria-label="Undo last click"
-            disabled={!canUndo}
-            onClick={onUndo}
-            className="h-9 rounded-xl border-2 border-[#2a1c04] bg-[#fffdf8] px-2.5 text-xs font-extrabold shadow-[0_3px_0_#2a1c04] sm:h-12 sm:rounded-2xl sm:px-4 sm:text-base sm:shadow-[0_4px_0_#2a1c04]"
-          >
-            <Undo2 className="size-4" aria-hidden="true" />
-            <span className="sm:hidden">Undo</span>
-            <span className="hidden sm:inline">Undo last click</span>
-          </Button>
+          <div className="flex shrink-0 items-stretch gap-2">
+            {onChangeScores ? (
+              <Button
+                type="button"
+                aria-label="Change scores"
+                onClick={onChangeScores}
+                className="h-9 rounded-xl px-2.5 text-xs font-extrabold sm:h-12 sm:rounded-2xl sm:px-4 sm:text-base"
+              >
+                <Pencil className="size-4" aria-hidden="true" />
+                <span className="sm:hidden">Scores</span>
+                <span className="hidden sm:inline">Change scores</span>
+              </Button>
+            ) : null}
+            {onUndo ? (
+              <Button
+                type="button"
+                variant="outline"
+                aria-label="Undo last click"
+                disabled={!canUndo}
+                onClick={onUndo}
+                className="h-9 rounded-xl border-2 border-[#2a1c04] bg-[#fffdf8] px-2.5 text-xs font-extrabold shadow-[0_3px_0_#2a1c04] sm:h-12 sm:rounded-2xl sm:px-4 sm:text-base sm:shadow-[0_4px_0_#2a1c04]"
+              >
+                <Undo2 className="size-4" aria-hidden="true" />
+                <span className="sm:hidden">Undo</span>
+                <span className="hidden sm:inline">Undo last click</span>
+              </Button>
+            ) : null}
+          </div>
           <div className="flex min-w-0 flex-1 items-stretch justify-end">{reasonSlot}</div>
         </div>
       ) : null}

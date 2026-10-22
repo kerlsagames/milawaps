@@ -89,6 +89,7 @@ export function YardBoard() {
   const [highlightUnit, setHighlightUnit] = useState<UnitId | null>(null);
   const [removingHighlight, setRemovingHighlight] = useState(false);
   const [editBusyId, setEditBusyId] = useState<string | null>(null);
+  const [pendingEdit, setPendingEdit] = useState(false);
   const [deskError, setDeskError] = useState<string | null>(null);
   const [reasonPrompt, setReasonPrompt] = useState<{ id: string; line: string } | null>(null);
 
@@ -304,10 +305,23 @@ export function YardBoard() {
     [liveHighlights, goToScreen],
   );
 
+  const openChangeScores = useCallback(() => {
+    if (!token) {
+      setPendingEdit(true);
+      setPinOpen(true);
+      return;
+    }
+    setHudOpen(false);
+    goToScreen("edit");
+  }, [token, goToScreen]);
+
   const chooseView = useCallback(
     (next: ScreenId) => {
       if (next === "news" && !shown.news && !deskBrowse) return;
-      if (next === "edit" && !deskTeacher) return;
+      if (next === "edit") {
+        openChangeScores();
+        return;
+      }
       if (next === "highlight") {
         if (!shown.highlight && !deskBrowse) return;
         // Tapping the Highlights tab again moves to the next live star.
@@ -321,7 +335,15 @@ export function YardBoard() {
       if (parseHighlightScreen(next) && !shown.highlight && !deskBrowse) return;
       goToScreen(next);
     },
-    [shown.news, shown.highlight, deskBrowse, deskTeacher, liveHighlights, goToScreen, stepHighlight],
+    [
+      shown.news,
+      shown.highlight,
+      deskBrowse,
+      liveHighlights,
+      goToScreen,
+      stepHighlight,
+      openChangeScores,
+    ],
   );
 
   // Arrow keys cycle highlights whenever a highlight page is open.
@@ -443,13 +465,16 @@ export function YardBoard() {
       chain.current = chain.current
         .then(async () => {
           if (item.kind === "highlight") {
+            const highlightId = item.id.startsWith("highlight:")
+              ? item.id.slice("highlight:".length)
+              : item.id;
             const response = await fetch("/api/highlight", {
               method: "DELETE",
               headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`,
               },
-              body: JSON.stringify({ id: item.id }),
+              body: JSON.stringify({ id: highlightId }),
             });
             const body = (await response.json().catch(() => ({}))) as PublicBoard & {
               error?: string;
@@ -554,16 +579,12 @@ export function YardBoard() {
                   short: "Feed",
                   open: deskBrowse,
                 },
-                ...(deskTeacher
-                  ? [
-                      {
-                        id: "edit" as const,
-                        label: "Edit points",
-                        short: "Edit",
-                        open: true,
-                      },
-                    ]
-                  : []),
+                {
+                  id: "edit" as const,
+                  label: "Change scores",
+                  short: "Scores",
+                  open: deskBrowse,
+                },
               ];
             }),
             {
@@ -597,6 +618,7 @@ export function YardBoard() {
             if (token) setHudOpen(true);
             else setPinOpen(true);
           }}
+          onChangeScores={openChangeScores}
           live={isLoading && !data ? "loading" : live}
           onStartKiosk={enterKiosk}
         />
@@ -813,6 +835,7 @@ export function YardBoard() {
                       )}
                       onHighlight={(unitId) => setHighlightUnit(unitId)}
                       onUndo={deskTeacher ? () => scoreOrUnlock("undo") : undefined}
+                      onChangeScores={deskTeacher ? openChangeScores : undefined}
                       reasonSlot={
                         reasonPrompt && token ? (
                           <ReasonPrompt
@@ -888,12 +911,20 @@ export function YardBoard() {
 
       <PinDialog
         open={pinOpen}
-        onOpenChange={setPinOpen}
+        onOpenChange={(next) => {
+          setPinOpen(next);
+          if (!next) setPendingEdit(false);
+        }}
         onSuccess={(next, expiresAt) => {
           saveToken(next, expiresAt);
           setPinOpen(false);
-          setView("board");
           setDeskError(null);
+          if (pendingEdit) {
+            setPendingEdit(false);
+            goToScreen("edit");
+            return;
+          }
+          setView("board");
         }}
       />
       <StaffHud
@@ -908,6 +939,7 @@ export function YardBoard() {
           setHudOpen(false);
           setHighlightUnit(unitId);
         }}
+        onChangeScores={openChangeScores}
         onBoard={(board) => {
           void mutate(board, { revalidate: false });
         }}

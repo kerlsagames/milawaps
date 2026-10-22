@@ -6,6 +6,7 @@ import {
   Gift,
   Map,
   Newspaper,
+  Pencil,
   Settings,
   Sparkles,
   Trophy,
@@ -81,10 +82,13 @@ export function KioskSettings({
   onPreview,
   news,
   onBoard,
+  onChangeScores,
 }: {
   onPreview: (screen: ScreenId) => void;
   news?: DailyNews;
   onBoard?: (board: PublicBoard) => void;
+  /** Opens the teacher Change scores screen (feed remove + ±1 tallies). */
+  onChangeScores?: () => void;
 }) {
   const prefs = useDeskPrefs();
   const [open, setOpen] = useState(false);
@@ -340,6 +344,14 @@ export function KioskSettings({
               }}
               onConfirmReset={setConfirmReset}
               onReset={() => void resetBoard()}
+              onChangeScores={
+                onChangeScores
+                  ? () => {
+                      setOpen(false);
+                      onChangeScores();
+                    }
+                  : undefined
+              }
             />
           ) : null}
 
@@ -504,6 +516,7 @@ function HomePanel({
   onFinish,
   onConfirmReset,
   onReset,
+  onChangeScores,
 }: {
   admin: boolean;
   asking: boolean;
@@ -521,9 +534,28 @@ function HomePanel({
   onFinish: (at: number | null) => void;
   onConfirmReset: (value: boolean) => void;
   onReset: () => void;
+  onChangeScores?: () => void;
 }) {
   return (
     <div className="grid gap-4">
+      {onChangeScores ? (
+        <button
+          type="button"
+          onClick={onChangeScores}
+          className="flex items-center gap-3 rounded-2xl border-2 border-[#e2a01a] bg-[#fff8df] p-3 text-left shadow-[0_3px_0_#c48a16]"
+        >
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#e2a01a] text-[#2a1c04]">
+            <Pencil className="size-5" />
+          </span>
+          <span className="min-w-0">
+            <span className="block font-display text-xl leading-none">Change scores</span>
+            <span className="mt-1 block text-xs font-semibold text-muted-foreground">
+              See recent ticks, remove mistakes, and nudge class totals ±1.
+            </span>
+          </span>
+        </button>
+      ) : null}
+
       <div className="grid gap-2">
         <p className="text-sm font-bold">Pages</p>
         <div className="grid grid-cols-2 gap-2">

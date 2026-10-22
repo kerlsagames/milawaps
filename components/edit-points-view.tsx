@@ -65,7 +65,7 @@ export function EditPointsView({
     <div className="flex h-full min-h-0 flex-col gap-3 overflow-hidden lg:flex-row lg:gap-4">
       <section className="flex shrink-0 flex-col gap-2 rounded-[28px] border-4 border-[#2a1c04] bg-[#fffdf8] p-3 lg:w-[22rem] lg:p-4">
         <div>
-          <h2 className="font-display text-3xl leading-none">Edit points</h2>
+          <h2 className="font-display text-3xl leading-none">Change scores</h2>
           <p className="mt-1 text-sm font-bold text-muted-foreground">
             Fix a mistaken tally without adding a strike. −1 only lowers the score.
           </p>

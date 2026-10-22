@@ -1,7 +1,7 @@
 "use client";
 
 import { type CSSProperties } from "react";
-import { Sparkles, Undo2 } from "lucide-react";
+import { Pencil, Sparkles, Undo2 } from "lucide-react";
 import {
   ACTION_COPY,
   UNIT_MAX,
@@ -36,6 +36,7 @@ export function StaffHud({
   error,
   onScore,
   onHighlight,
+  onChangeScores,
   onBoard: _onBoard,
   onLogout,
 }: {
@@ -47,6 +48,7 @@ export function StaffHud({
   error: string | null;
   onScore: (action: ActionId, unitId?: UnitId) => void;
   onHighlight: (unitId: UnitId) => void;
+  onChangeScores?: () => void;
   onBoard: (board: PublicBoard) => void;
   onLogout: () => void;
 }) {
@@ -155,6 +157,16 @@ export function StaffHud({
         </div>
 
         <SheetFooter className="shrink-0 gap-2 border-t border-black/10 bg-[#fffdf8] p-3">
+          {onChangeScores ? (
+            <Button
+              type="button"
+              className="h-12 w-full rounded-2xl text-base font-extrabold"
+              onClick={onChangeScores}
+            >
+              <Pencil className="size-4" aria-hidden="true" />
+              Change scores
+            </Button>
+          ) : null}
           <Button
             type="button"
             variant="outline"

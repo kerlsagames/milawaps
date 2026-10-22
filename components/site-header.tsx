@@ -46,6 +46,7 @@ export function SiteHeader({
   news,
   onBoard,
   onLockClick,
+  onChangeScores,
   live,
   onStartKiosk,
 }: {
@@ -57,6 +58,7 @@ export function SiteHeader({
   news: DailyNews;
   onBoard: (board: PublicBoard) => void;
   onLockClick: () => void;
+  onChangeScores?: () => void;
   live: "loading" | "live" | "offline";
   onStartKiosk: () => void;
 }) {
@@ -103,7 +105,12 @@ export function SiteHeader({
           />
           {live === "live" ? "Live" : live === "loading" ? "Linking" : "Offline"}
         </span>
-        <KioskSettings onPreview={onView} news={news} onBoard={onBoard} />
+        <KioskSettings
+          onPreview={onView}
+          news={news}
+          onBoard={onBoard}
+          onChangeScores={onChangeScores}
+        />
         <Button type="button" className="h-9 rounded-xl px-2 text-sm sm:h-10 sm:px-3" onClick={onStartKiosk}>
           Start Kiosk
         </Button>

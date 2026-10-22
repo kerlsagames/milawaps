@@ -98,7 +98,7 @@ export function HighlightView({
               solo
                 ? "absolute inset-0 flex items-center justify-center overflow-hidden px-2 py-3 sm:px-3 sm:py-4"
                 : pair
-                  ? "absolute inset-0 flex flex-col items-center justify-center gap-2 overflow-hidden px-2 py-2 sm:gap-3 sm:px-3 sm:py-3"
+                  ? "absolute inset-0 flex flex-col items-stretch justify-center gap-1.5 overflow-hidden p-1.5 sm:gap-2 sm:p-2"
                   : "absolute inset-0 grid items-center justify-items-center gap-2 overflow-hidden px-2 py-3 sm:px-3 sm:py-4"
             }
             style={
@@ -112,32 +112,43 @@ export function HighlightView({
           >
             {students.map((student, studentIndex) => {
               const unit = unitById(student.unitId);
-              const angle = solo ? -2 : pair ? (studentIndex === 0 ? -2 : 2) : (ANGLES[studentIndex % ANGLES.length] ?? 0);
-              const cardHeight = solo ? "86%" : pair ? "47%" : "78%";
+              const angle = solo ? -2 : pair ? (studentIndex === 0 ? -1.5 : 1.5) : (ANGLES[studentIndex % ANGLES.length] ?? 0);
               return (
                 <motion.article
                   key={student.id}
                   initial={{ opacity: 0, y: 18, rotate: angle - 8 }}
                   animate={{ opacity: 1, y: 0, rotate: angle }}
                   transition={{ delay: studentIndex * 0.08, type: "spring", stiffness: 120, damping: 14 }}
-                  className="flex min-h-0 max-w-full items-center justify-center"
-                  style={{
-                    height: cardHeight,
-                    maxHeight: pair ? "47%" : "100%",
-                    width: "auto",
-                    maxWidth: pair ? "min(100%, 20rem)" : undefined,
-                    aspectRatio: "3 / 4",
-                  }}
+                  className={
+                    pair
+                      ? "flex min-h-0 w-full flex-1 items-center justify-center"
+                      : "flex min-h-0 max-w-full items-center justify-center"
+                  }
+                  style={
+                    pair
+                      ? { minHeight: 0 }
+                      : {
+                          height: solo ? "86%" : "78%",
+                          maxHeight: "100%",
+                          width: "auto",
+                          aspectRatio: "3 / 4",
+                        }
+                  }
                 >
                   <div
-                    className="flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[28px] border-4 border-[#fff8df] bg-[#fff8df] p-1.5 sm:p-2"
-                    style={{ boxShadow: `0 8px 0 rgba(42,28,4,0.28), 0 0 0 5px ${unit.color}` }}
+                    className={
+                      pair
+                        ? "flex h-full w-full min-h-0 max-w-[min(100%,26rem)] flex-col overflow-hidden rounded-[22px] border-[3px] border-[#fff8df] bg-[#fff8df] p-1"
+                        : "flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[28px] border-4 border-[#fff8df] bg-[#fff8df] p-1.5 sm:p-2"
+                    }
+                    style={{ boxShadow: `0 6px 0 rgba(42,28,4,0.28), 0 0 0 4px ${unit.color}` }}
                   >
                     <StudentPhoto
                       name={student.name}
                       image={student.image}
                       color={unit.color}
                       solo={solo}
+                      cover={pair}
                     />
                   </div>
                 </motion.article>
@@ -258,11 +269,14 @@ function StudentPhoto({
   image,
   color,
   solo = false,
+  cover = false,
 }: {
   name: string;
   image: string;
   color: string;
   solo?: boolean;
+  /** Fill the frame (pair stack) instead of letterboxing. */
+  cover?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
 
@@ -282,11 +296,15 @@ function StudentPhoto({
   }
 
   return (
-    <div className="h-full min-h-0 w-full overflow-hidden rounded-[22px] bg-[#efe6d6]">
+    <div className="h-full min-h-0 w-full overflow-hidden rounded-[18px] bg-[#efe6d6]">
       <img
         src={image}
         alt={name}
-        className="h-full w-full object-contain object-center"
+        className={
+          cover
+            ? "h-full w-full object-cover object-center"
+            : "h-full w-full object-contain object-center"
+        }
         onError={() => setFailed(true)}
       />
     </div>
