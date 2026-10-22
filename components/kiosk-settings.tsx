@@ -26,6 +26,7 @@ import {
   MIN_DWELL_SECONDS,
   resetReveals,
   saveSiteDisplay,
+  setAllViewDwells,
   setCricketPanelsLocal,
   setFinishAt,
   setNewsLayoutLocal,
@@ -45,6 +46,7 @@ import { compressPrizeImage } from "@/lib/prize-image";
 import { REVEALS, type FixedScreenId, type ScreenId } from "@/lib/reveals";
 import {
   NEWS_LAYOUTS,
+  dwellsForEveryScreen,
   type CricketPanels,
   type NewsLayoutId,
 } from "@/lib/site-display";
@@ -1085,6 +1087,7 @@ function DwellSlider({
 }) {
   const saveTimer = useRef<number | null>(null);
   const [needsAdmin, setNeedsAdmin] = useState(false);
+  const [savedNote, setSavedNote] = useState("");
 
   useEffect(() => {
     setNeedsAdmin(!window.sessionStorage.getItem(ADMIN_KEY));
@@ -1094,16 +1097,23 @@ function DwellSlider({
   }, []);
 
   function onSeconds(next: number) {
-    setViewDwell(id, next);
-    // With admin unlocked, park the time on the shared board so every TV keeps it
-    // after a reload — local-only saves were resetting overnight on the kids' screen.
     const token = window.sessionStorage.getItem(ADMIN_KEY);
     setNeedsAdmin(!token);
-    if (!token) return;
-    if (saveTimer.current) window.clearTimeout(saveTimer.current);
-    saveTimer.current = window.setTimeout(() => {
-      void saveSiteDisplay({ dwells: { [id]: next } }, token);
-    }, 400);
+    setSavedNote("");
+    if (token) {
+      // Admin: one slider sets every kiosk slide on every milawaps TV.
+      setAllViewDwells(next);
+      if (saveTimer.current) window.clearTimeout(saveTimer.current);
+      saveTimer.current = window.setTimeout(() => {
+        void saveSiteDisplay({ dwells: dwellsForEveryScreen(next) }, token).then((result) => {
+          if (result.ok) setSavedNote("Saved — every slide on every TV uses this time.");
+          else setSavedNote(result.error);
+        });
+      }, 400);
+      return;
+    }
+    // Without admin, only this page changes on this computer.
+    setViewDwell(id, next);
   }
 
   return (
@@ -1118,13 +1128,22 @@ function DwellSlider({
         max={MAX_DWELL_SECONDS}
         step={1}
         value={seconds}
-        aria-label={`${label} seconds`}
+        aria-label={`${label} seconds on every slide`}
         onChange={(event) => onSeconds(Number(event.target.value))}
         className="accent-[#e2a01a]"
       />
       {needsAdmin ? (
         <p className="text-xs font-semibold text-muted-foreground">
-          Unlock Settings with the admin code so this time sticks on every TV.
+          Unlock Settings with the admin code so this time applies to every slide on every TV.
+        </p>
+      ) : (
+        <p className="text-xs font-semibold text-muted-foreground">
+          Changes every kiosk slide (Board, Prizes, News, Stars, reveals…) on every TV.
+        </p>
+      )}
+      {savedNote ? (
+        <p className="text-xs font-semibold" role="status">
+          {savedNote}
         </p>
       ) : null}
     </div>

@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { DEFAULT_SHOWN } from "../lib/reveals";
-import { emptySiteDisplay, sanitizeSiteDisplay, siteDisplayFromInput } from "../lib/site-display";
+import {
+  dwellsForEveryScreen,
+  emptySiteDisplay,
+  sanitizeSiteDisplay,
+  siteDisplayFromInput,
+} from "../lib/site-display";
+import { SCREEN_IDS } from "../lib/reveals";
 
 const empty = emptySiteDisplay();
 assert.equal(empty.cricketCode, "");
@@ -66,5 +72,13 @@ assert.equal(withDwells.dwells?.news, 18);
 const dwellPatch = siteDisplayFromInput({ dwells: { highlight: 55 } }, withDwells);
 assert.equal(dwellPatch.dwells?.highlight, 55);
 assert.equal(dwellPatch.dwells?.board, 20);
+
+// Admin “time per slide” applies the same seconds to every screen.
+const every = dwellsForEveryScreen(30);
+for (const id of SCREEN_IDS) assert.equal(every[id], 30);
+const sharedAll = siteDisplayFromInput({ dwells: every }, withDwells);
+assert.equal(sharedAll.dwells?.board, 30);
+assert.equal(sharedAll.dwells?.highlight, 30);
+assert.equal(sharedAll.dwells?.["reveal-game"], 30);
 
 console.log("site display checks passed");

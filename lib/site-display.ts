@@ -38,6 +38,14 @@ export function sanitizeDwells(raw: unknown): DwellMap {
   return dwells;
 }
 
+/** One seconds value for every kiosk / desk slide (admin “time per slide”). */
+export function dwellsForEveryScreen(seconds: number): DwellMap {
+  const value = clampDwell(seconds, DEFAULT_DWELLS.board);
+  const dwells = { ...DEFAULT_DWELLS };
+  for (const id of SCREEN_IDS) dwells[id] = value;
+  return dwells;
+}
+
 export const NEWS_LAYOUTS = [
   {
     id: "split",

@@ -737,9 +737,10 @@ export function YardBoard() {
                   view === "edit" ||
                   view === "cricket" ||
                   view === "news" ||
-                  Boolean(activeHighlightId)) &&
+                  Boolean(activeHighlightId) ||
+                  Boolean(activeReveal)) &&
                   "h-full",
-                Boolean(activeHighlightId) && "overflow-hidden",
+                (Boolean(activeHighlightId) || Boolean(activeReveal)) && "overflow-hidden",
               )}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}

@@ -16,6 +16,7 @@ import {
   MIN_DWELL_SECONDS,
   MAX_DWELL_SECONDS,
   clampDwell,
+  dwellsForEveryScreen,
   sanitizeDwells,
   type CricketPanels,
   type DwellMap,
@@ -263,6 +264,13 @@ export function setViewDwell(view: FixedScreenId, seconds: number) {
     ...readDwells(),
     [view]: clampDwell(seconds, DEFAULT_DWELLS[view]),
   };
+  window.localStorage.setItem("ott-kiosk-dwells", JSON.stringify(dwells));
+  publish({ ...readPrefs(), dwells });
+}
+
+/** Set the same slide length on every page (local + ready to save school-wide). */
+export function setAllViewDwells(seconds: number) {
+  const dwells = dwellsForEveryScreen(seconds);
   window.localStorage.setItem("ott-kiosk-dwells", JSON.stringify(dwells));
   publish({ ...readPrefs(), dwells });
 }

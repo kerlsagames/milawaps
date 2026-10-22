@@ -43,14 +43,15 @@ export function RevealView({
   const spoken = label.trim() || reveal.title;
   const name = due ? spoken : reveal.mask;
 
+  // Same stack on desk + student screens: title → countdown → “to go until…”, then the card.
   return (
-    <div className="flex h-full min-h-0 flex-col items-center justify-center gap-6 lg:flex-row lg:gap-10">
-      <div className="min-w-0 flex-1 text-center lg:text-left">
+    <div className="flex h-full min-h-0 flex-col items-center justify-center gap-5 overflow-y-auto px-2 py-3 sm:gap-6">
+      <div className="w-full max-w-4xl shrink-0 text-center">
         <p className="text-[11px] font-bold tracking-[0.22em] text-ink-gold uppercase">Prize reveal</p>
         {count ? (
           <>
             <div
-              className="mt-3 flex justify-center gap-3 sm:gap-6 lg:justify-start"
+              className="mt-3 flex justify-center gap-3 sm:gap-6"
               aria-label={`${remainLabel(count)} until ${name} is revealed`}
             >
               <RevealTick n={count.days} label={count.days === 1 ? "day" : "days"} />
@@ -67,7 +68,9 @@ export function RevealView({
             <p className="mt-2 text-[11px] font-bold tracking-[0.22em] text-ink-gold uppercase">It is time</p>
             <h2 className="mt-2 font-display text-4xl leading-tight sm:text-6xl">{spoken}</h2>
             {flipped && line ? (
-              <p className="mt-4 max-w-3xl text-2xl leading-snug font-extrabold sm:text-4xl">{line}</p>
+              <p className="mx-auto mt-4 max-w-3xl text-2xl leading-snug font-extrabold sm:text-4xl">
+                {line}
+              </p>
             ) : null}
           </>
         ) : (
