@@ -93,7 +93,7 @@ export function YardBoard() {
   const [reasonPrompt, setReasonPrompt] = useState<{ id: string; line: string } | null>(null);
 
   const displaySyncKey = data?.displayUpdatedAt
-    ? `${data.displayUpdatedAt}:${data.cricketCode}:${JSON.stringify(data.shown)}:${data.newsLayout}:${JSON.stringify(data.cricketPanels)}:${data.finishAt ?? ""}`
+    ? `${data.displayUpdatedAt}:${data.cricketCode}:${JSON.stringify(data.shown)}:${data.newsLayout}:${JSON.stringify(data.cricketPanels)}:${data.finishAt ?? ""}:${JSON.stringify(data.dwells)}`
     : "";
   useEffect(() => {
     if (!data?.displayUpdatedAt) return;
@@ -101,6 +101,7 @@ export function YardBoard() {
       newsLayout: data.newsLayout,
       cricketPanels: data.cricketPanels,
       finishAt: data.finishAt,
+      dwells: data.dwells,
     });
   }, [displaySyncKey, data]);
 
@@ -716,6 +717,7 @@ export function YardBoard() {
                   view === "news" ||
                   Boolean(activeHighlightId)) &&
                   "h-full",
+                Boolean(activeHighlightId) && "overflow-hidden",
               )}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -737,58 +739,61 @@ export function YardBoard() {
               ) : view === "news" ? (
                 <NewsView news={data.news ?? emptyNews()} layout={prefs.newsLayout} />
               ) : activeHighlight ? (
-                <HighlightView
-                  entry={activeHighlight}
-                  index={Math.max(
-                    0,
-                    liveHighlights.findIndex((entry) => entry.id === activeHighlight.id),
-                  )}
-                  total={liveHighlights.length}
-                  onPrev={liveHighlights.length > 1 ? () => stepHighlight(-1) : undefined}
-                  onNext={liveHighlights.length > 1 ? () => stepHighlight(1) : undefined}
-                  canRemove={Boolean(token) && !kiosk}
-                  removing={removingHighlight}
-                  onRemove={() => {
-                    if (!token || removingHighlight) return;
-                    setRemovingHighlight(true);
-                    setDeskError(null);
-                    void fetch("/api/highlight", {
-                      method: "DELETE",
-                      headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                      },
-                      body: JSON.stringify({ id: activeHighlight.id }),
-                    })
-                      .then(async (response) => {
-                        const body = (await response.json().catch(() => ({}))) as PublicBoard & {
-                          error?: string;
-                        };
-                        if (response.status === 401) {
-                          clearToken();
-                          setPinOpen(true);
-                          setDeskError("The desk locked itself. Enter the PIN again.");
-                          return;
-                        }
-                        if (!response.ok) {
-                          setDeskError(body.error ?? "That highlight did not remove.");
-                          return;
-                        }
-                        await mutate(body, { revalidate: false });
-                        const remaining = activeHighlights(body.highlights ?? []).filter(
-                          (entry) => entry.id !== activeHighlight.id,
-                        );
-                        if (remaining[0]) goToScreen(highlightScreenId(remaining[0].id));
-                        else goToScreen("board");
+                // Absolute fill — percentage height alone still let portraits grow past the TV.
+                <div className="absolute inset-0 min-h-0 overflow-hidden">
+                  <HighlightView
+                    entry={activeHighlight}
+                    index={Math.max(
+                      0,
+                      liveHighlights.findIndex((entry) => entry.id === activeHighlight.id),
+                    )}
+                    total={liveHighlights.length}
+                    onPrev={liveHighlights.length > 1 ? () => stepHighlight(-1) : undefined}
+                    onNext={liveHighlights.length > 1 ? () => stepHighlight(1) : undefined}
+                    canRemove={Boolean(token) && !kiosk}
+                    removing={removingHighlight}
+                    onRemove={() => {
+                      if (!token || removingHighlight) return;
+                      setRemovingHighlight(true);
+                      setDeskError(null);
+                      void fetch("/api/highlight", {
+                        method: "DELETE",
+                        headers: {
+                          "Content-Type": "application/json",
+                          Authorization: `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({ id: activeHighlight.id }),
                       })
-                      .catch(() => {
-                        setDeskError("That highlight did not remove. Try again.");
-                      })
-                      .finally(() => {
-                        setRemovingHighlight(false);
-                      });
-                  }}
-                />
+                        .then(async (response) => {
+                          const body = (await response.json().catch(() => ({}))) as PublicBoard & {
+                            error?: string;
+                          };
+                          if (response.status === 401) {
+                            clearToken();
+                            setPinOpen(true);
+                            setDeskError("The desk locked itself. Enter the PIN again.");
+                            return;
+                          }
+                          if (!response.ok) {
+                            setDeskError(body.error ?? "That highlight did not remove.");
+                            return;
+                          }
+                          await mutate(body, { revalidate: false });
+                          const remaining = activeHighlights(body.highlights ?? []).filter(
+                            (entry) => entry.id !== activeHighlight.id,
+                          );
+                          if (remaining[0]) goToScreen(highlightScreenId(remaining[0].id));
+                          else goToScreen("board");
+                        })
+                        .catch(() => {
+                          setDeskError("That highlight did not remove. Try again.");
+                        })
+                        .finally(() => {
+                          setRemovingHighlight(false);
+                        });
+                    }}
+                  />
+                </div>
               ) : (
                 // TV kiosk scales to fit the screen; the teacher desk keeps natural layout
                 // so +1 / highlight controls are not crushed over the score grids.

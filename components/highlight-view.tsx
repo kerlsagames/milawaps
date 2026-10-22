@@ -41,7 +41,7 @@ export function HighlightView({
   const nameLine = nameList(students.map((student) => student.name));
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-[32px] border-4 border-[#5a3208] bg-[radial-gradient(circle_at_center,#ffe08a_0%,#f5b942_42%,#8a3b12_100%)] p-3 lg:p-5">
+    <div className="relative flex h-full max-h-full min-h-0 flex-col overflow-hidden rounded-[32px] border-4 border-[#5a3208] bg-[radial-gradient(circle_at_center,#ffe08a_0%,#f5b942_42%,#8a3b12_100%)] p-2 sm:p-3 lg:p-4">
       <div
         className="pointer-events-none absolute inset-0 opacity-40"
         style={{
@@ -82,40 +82,51 @@ export function HighlightView({
       <div
         className={
           solo
-            ? "relative z-10 grid min-h-0 flex-1 gap-3 overflow-hidden lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:items-stretch lg:gap-5"
-            : "relative z-10 grid min-h-0 flex-1 gap-3 overflow-hidden lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-stretch lg:gap-5"
+            ? "relative z-10 grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)] gap-3 overflow-hidden lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-stretch lg:gap-4"
+            : "relative z-10 grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)] gap-3 overflow-hidden lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-stretch lg:gap-4"
         }
       >
-        {/* Absolute inset so portraits size to the panel, not intrinsic image height. */}
-        <div className="relative min-h-0 h-full overflow-hidden">
+        {/*
+          Stage is absolute (definite height). Use flex so height % on cards resolves —
+          CSS grid rows of `auto` treat max-height % as none, which blew past the TV.
+        */}
+        <div className="relative min-h-0 overflow-hidden">
           <div
-            className="absolute inset-0 grid content-center items-center justify-items-center gap-2 overflow-hidden p-1"
-            style={{
-              gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
-              gridAutoRows: "minmax(0, 1fr)",
-            }}
+            className={
+              solo
+                ? "absolute inset-0 flex items-center justify-center overflow-hidden px-2 py-3 sm:px-3 sm:py-4"
+                : "absolute inset-0 grid items-center justify-items-center gap-2 overflow-hidden px-2 py-3 sm:px-3 sm:py-4"
+            }
+            style={
+              solo
+                ? undefined
+                : {
+                    gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+                    gridTemplateRows: "minmax(0, 1fr)",
+                  }
+            }
           >
             {students.map((student, studentIndex) => {
               const unit = unitById(student.unitId);
-              const angle = solo ? -3 : (ANGLES[studentIndex % ANGLES.length] ?? 0);
-              const width = solo
-                ? "flex h-full min-h-0 max-h-full w-full max-w-[min(100%,34rem)] items-center justify-center overflow-hidden"
-                : count === 2
-                  ? "flex h-full min-h-0 w-full max-w-[min(100%,18rem)] items-center justify-center overflow-hidden"
-                  : count <= 4
-                    ? "flex h-full min-h-0 w-full max-w-[min(100%,14rem)] items-center justify-center overflow-hidden"
-                    : "flex h-full min-h-0 w-full max-w-[min(100%,11rem)] items-center justify-center overflow-hidden";
+              const angle = solo ? -2 : (ANGLES[studentIndex % ANGLES.length] ?? 0);
+              const cardHeight = solo ? "86%" : count === 2 ? "82%" : "78%";
               return (
                 <motion.article
                   key={student.id}
                   initial={{ opacity: 0, y: 18, rotate: angle - 8 }}
                   animate={{ opacity: 1, y: 0, rotate: angle }}
                   transition={{ delay: studentIndex * 0.08, type: "spring", stiffness: 120, damping: 14 }}
-                  className={width}
+                  className="flex min-h-0 max-w-full items-center justify-center"
+                  style={{
+                    height: cardHeight,
+                    maxHeight: "100%",
+                    width: "auto",
+                    aspectRatio: "3 / 4",
+                  }}
                 >
                   <div
-                    className="flex h-full min-h-0 w-full max-h-full overflow-hidden rounded-[28px] border-4 border-[#fff8df] bg-[#fff8df] p-1.5 sm:p-2"
-                    style={{ boxShadow: `0 14px 0 rgba(42,28,4,0.28), 0 0 0 6px ${unit.color}` }}
+                    className="flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[28px] border-4 border-[#fff8df] bg-[#fff8df] p-1.5 sm:p-2"
+                    style={{ boxShadow: `0 8px 0 rgba(42,28,4,0.28), 0 0 0 5px ${unit.color}` }}
                   >
                     <StudentPhoto
                       name={student.name}
@@ -252,10 +263,7 @@ function StudentPhoto({
 
   if (failed) {
     return (
-      <div
-        className={`grid place-items-center p-4 text-center ${solo ? "min-h-0 w-full flex-1" : "aspect-[3/4] w-full"}`}
-        style={{ background: color }}
-      >
+      <div className="grid h-full w-full place-items-center p-4 text-center" style={{ background: color }}>
         <div>
           <p
             className={`font-display leading-none text-[#2a1c04] ${solo ? "text-4xl sm:text-5xl" : "text-3xl sm:text-4xl"}`}
@@ -268,13 +276,12 @@ function StudentPhoto({
     );
   }
 
-  // Fill the available frame; never grow past it (was overflowing the TV).
   return (
-    <div className="relative h-full min-h-0 w-full overflow-hidden rounded-[22px] bg-[#efe6d6]">
+    <div className="h-full min-h-0 w-full overflow-hidden rounded-[22px] bg-[#efe6d6]">
       <img
         src={image}
         alt={name}
-        className="absolute inset-0 m-auto h-full w-full object-contain object-center"
+        className="h-full w-full object-contain object-center"
         onError={() => setFailed(true)}
       />
     </div>
