@@ -51,7 +51,14 @@ export const REVEALS = [
 export type RevealId = (typeof REVEALS)[number]["id"];
 export type RevealDef = (typeof REVEALS)[number];
 export type HighlightScreenId = `highlight:${string}`;
-export type FixedScreenId = ViewId | RevealId | "cricket" | "news" | "highlight" | "today";
+export type FixedScreenId =
+  | ViewId
+  | RevealId
+  | "cricket"
+  | "news"
+  | "highlight"
+  | "today"
+  | "edit";
 export type ScreenId = FixedScreenId | HighlightScreenId;
 
 export type ShownMap = Record<FixedScreenId, boolean>;
@@ -63,6 +70,7 @@ export const SCREEN_IDS: FixedScreenId[] = [
   "news",
   "highlight",
   "today",
+  "edit",
 ];
 
 export const DEFAULT_SHOWN: ShownMap = {
@@ -78,6 +86,8 @@ export const DEFAULT_SHOWN: ShownMap = {
   highlight: false,
   // Desk-only feed for teachers — never part of the TV loop.
   today: false,
+  // Desk-only corrections screen — never part of the TV loop.
+  edit: false,
 };
 
 export function revealById(id: string): RevealDef | null {
@@ -112,7 +122,7 @@ export function kioskScreens(
   now = Date.now(),
 ): ScreenId[] {
   const visible: ScreenId[] = SCREEN_IDS.filter(
-    (id) => id !== "highlight" && id !== "today" && shown[id],
+    (id) => id !== "highlight" && id !== "today" && id !== "edit" && shown[id],
   );
   if (shown.highlight) {
     for (const entry of activeHighlights(highlights, now)) {

@@ -65,6 +65,7 @@ export const DEFAULT_DWELLS: DwellMap = {
   news: 18,
   highlight: 16,
   today: 12,
+  edit: 12,
 };
 
 function defaultReveals(): RevealMap {

@@ -18,7 +18,7 @@ export const VIEWS = [
 export type ViewId = (typeof VIEWS)[number]["id"];
 
 export type ScoreAction = "spot" | "surge" | "strike" | "teamwork";
-export type ActionId = ScoreAction | "reset" | "undo";
+export type ActionId = ScoreAction | "reset" | "undo" | "adjust";
 
 export const STAFF = [
   { id: "jess", name: "Jess", kid: "Miss B" },
@@ -50,6 +50,8 @@ export type ScoreLogEntry = {
   at: number;
   staffId: StaffId;
   reason: string | null;
+  /** Present on manual "adjust" edits — the points added (or removed if negative). */
+  delta?: number;
 };
 
 export type ReasonRecord = {
@@ -275,7 +277,7 @@ export function isScoreAction(value: unknown): value is ScoreAction {
 }
 
 export function isActionId(value: unknown): value is ActionId {
-  return isScoreAction(value) || value === "reset" || value === "undo";
+  return isScoreAction(value) || value === "reset" || value === "undo" || value === "adjust";
 }
 
 export function unitById(id: UnitId): UnitTheme {
@@ -316,7 +318,14 @@ export function actionLabel(action: LastAction): string {
 export function scoreLogLabel(entry: ScoreLogEntry): string {
   const who = staffName(entry.staffId) ?? "Someone";
   if (entry.action === "reset") return `${who} cleared the board`;
-  if (entry.action === "undo" || !isScoreAction(entry.action)) return `${who} undid a tick`;
+  if (entry.action === "undo") return `${who} undid a tick`;
+  if (entry.action === "adjust") {
+    const where = entry.unitId === "all" ? "all units" : unitById(entry.unitId as UnitId).code;
+    const delta = entry.delta ?? 0;
+    const signed = delta > 0 ? `+${delta}` : `${delta}`;
+    return `${who} · edited ${where} ${signed}`;
+  }
+  if (!isScoreAction(entry.action)) return `${who} undid a tick`;
   const copy = ACTION_COPY[entry.action];
   const where = entry.unitId === "all" ? "all units" : unitById(entry.unitId).code;
   const because = entry.reason ? ` · ${entry.reason}` : "";

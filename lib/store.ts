@@ -22,7 +22,14 @@ import {
   type HighlightStudent,
 } from "@/lib/highlights";
 import { emptyNews, newsFromInput, sanitizeNews, type DailyNews } from "@/lib/news";
-import { applyAction, attachReason, sanitizeScores, undoLastTick } from "@/lib/scoring";
+import {
+  adjustUnitScore,
+  applyAction,
+  attachReason,
+  sanitizeScores,
+  undoLastTick,
+  undoLogEntryById,
+} from "@/lib/scoring";
 import {
   emptySiteDisplay,
   sanitizeSiteDisplay,
@@ -299,14 +306,26 @@ export function commitAction(
   action: ActionId,
   unitId: UnitId | undefined,
   staffId: StaffId,
+  options?: { logId?: string; delta?: number },
 ): Promise<{ board: PublicBoard; events: ReturnType<typeof applyAction>["events"] }> {
   return serialized(async () => {
     const blob = await readBlob();
     if (action === "undo") {
-      const scores = undoLastTick(blob.scores);
+      const scores = options?.logId
+        ? undoLogEntryById(blob.scores, options.logId)
+        : undoLastTick(blob.scores);
       const next = { ...blob, scores };
       await writeBlob(next);
       return { board: toPublic(next), events: [] };
+    }
+    if (action === "adjust") {
+      if (!unitId) throw new Error("Choose F/1, 2/3/4, or 5/6.");
+      const delta = options?.delta;
+      if (delta !== 1 && delta !== -1) throw new Error("Adjust by one point at a time.");
+      const result = adjustUnitScore(blob.scores, unitId, delta, staffId);
+      const next = { ...blob, scores: result.state };
+      await writeBlob(next);
+      return { board: toPublic(next), events: result.events };
     }
     const result = applyAction(blob.scores, action, unitId, staffId);
     const next = { ...blob, scores: result.state };

@@ -82,79 +82,80 @@ export function HighlightView({
       <div
         className={
           solo
-            ? "relative z-10 grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)] lg:items-stretch lg:gap-6"
-            : "relative z-10 grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-stretch lg:gap-6"
+            ? "relative z-10 grid min-h-0 flex-1 gap-3 overflow-hidden lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:items-stretch lg:gap-5"
+            : "relative z-10 grid min-h-0 flex-1 gap-3 overflow-hidden lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-stretch lg:gap-5"
         }
       >
-        <div
-          className="grid min-h-0 content-center items-center justify-items-center gap-3 overflow-hidden py-1"
-          style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
-        >
-          {students.map((student, studentIndex) => {
-            const unit = unitById(student.unitId);
-            const angle = solo ? -3 : (ANGLES[studentIndex % ANGLES.length] ?? 0);
-            const width =
-              count === 1
-                ? "flex h-full max-h-full w-[min(100%,40rem)] items-center justify-center"
+        {/* Absolute inset so portraits size to the panel, not intrinsic image height. */}
+        <div className="relative min-h-0 h-full overflow-hidden">
+          <div
+            className="absolute inset-0 grid content-center items-center justify-items-center gap-2 overflow-hidden p-1"
+            style={{
+              gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+              gridAutoRows: "minmax(0, 1fr)",
+            }}
+          >
+            {students.map((student, studentIndex) => {
+              const unit = unitById(student.unitId);
+              const angle = solo ? -3 : (ANGLES[studentIndex % ANGLES.length] ?? 0);
+              const width = solo
+                ? "flex h-full min-h-0 max-h-full w-full max-w-[min(100%,34rem)] items-center justify-center overflow-hidden"
                 : count === 2
-                  ? "w-[min(100%,20rem)]"
+                  ? "flex h-full min-h-0 w-full max-w-[min(100%,18rem)] items-center justify-center overflow-hidden"
                   : count <= 4
-                    ? "w-[min(100%,15rem)]"
-                    : "w-[min(100%,12rem)]";
-            return (
-              <motion.article
-                key={student.id}
-                initial={{ opacity: 0, y: 18, rotate: angle - 8 }}
-                animate={{ opacity: 1, y: 0, rotate: angle }}
-                transition={{ delay: studentIndex * 0.08, type: "spring", stiffness: 120, damping: 14 }}
-                className={width}
-              >
-                <div
-                  className={
-                    solo
-                      ? "flex h-full max-h-full w-full overflow-hidden rounded-[28px] border-4 border-[#fff8df] bg-[#fff8df] p-2 sm:p-2.5"
-                      : "overflow-hidden rounded-[28px] border-4 border-[#fff8df] bg-[#fff8df] p-2"
-                  }
-                  style={{ boxShadow: `0 14px 0 rgba(42,28,4,0.28), 0 0 0 6px ${unit.color}` }}
+                    ? "flex h-full min-h-0 w-full max-w-[min(100%,14rem)] items-center justify-center overflow-hidden"
+                    : "flex h-full min-h-0 w-full max-w-[min(100%,11rem)] items-center justify-center overflow-hidden";
+              return (
+                <motion.article
+                  key={student.id}
+                  initial={{ opacity: 0, y: 18, rotate: angle - 8 }}
+                  animate={{ opacity: 1, y: 0, rotate: angle }}
+                  transition={{ delay: studentIndex * 0.08, type: "spring", stiffness: 120, damping: 14 }}
+                  className={width}
                 >
-                  <StudentPhoto
-                    name={student.name}
-                    image={student.image}
-                    color={unit.color}
-                    solo={solo}
-                  />
-                </div>
-              </motion.article>
-            );
-          })}
+                  <div
+                    className="flex h-full min-h-0 w-full max-h-full overflow-hidden rounded-[28px] border-4 border-[#fff8df] bg-[#fff8df] p-1.5 sm:p-2"
+                    style={{ boxShadow: `0 14px 0 rgba(42,28,4,0.28), 0 0 0 6px ${unit.color}` }}
+                  >
+                    <StudentPhoto
+                      name={student.name}
+                      image={student.image}
+                      color={unit.color}
+                      solo={solo}
+                    />
+                  </div>
+                </motion.article>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="relative flex min-h-0 flex-col items-center justify-center rounded-[28px] border-4 border-[#2a1c04] bg-[#fff8df]/92 px-5 py-6 pb-12 text-center shadow-[0_10px_0_#6b5844] lg:px-8 lg:py-8 lg:pb-14">
+        <div className="relative flex min-h-0 flex-col items-center justify-center overflow-y-auto rounded-[28px] border-4 border-[#2a1c04] bg-[#fff8df]/92 px-5 py-5 pb-12 text-center shadow-[0_10px_0_#6b5844] lg:px-7 lg:py-7 lg:pb-14">
           <p className="text-sm font-extrabold tracking-[0.28em] text-[#8a5a00] uppercase sm:text-base">
             Student spotlight
           </p>
-          <h2 className="mt-2 font-display text-5xl leading-none text-[#2a1c04] sm:text-6xl lg:text-7xl">
+          <h2 className="mt-2 font-display text-4xl leading-none text-[#2a1c04] sm:text-5xl lg:text-6xl">
             Highlighted!
           </h2>
           <p
-            className={`mt-4 font-display leading-tight text-[#2a1c04] ${
-              solo ? "text-4xl sm:text-5xl lg:text-6xl" : "text-3xl sm:text-4xl lg:text-5xl"
+            className={`mt-3 font-display leading-tight text-[#2a1c04] ${
+              solo ? "text-3xl sm:text-4xl lg:text-5xl" : "text-2xl sm:text-3xl lg:text-4xl"
             }`}
           >
             {nameLine}
           </p>
           <p className="mt-2 text-base font-extrabold text-[#5a3208] sm:text-xl">Spotted by {who}</p>
-          <div className="mt-6 w-full max-w-xl">
+          <div className="mt-4 w-full max-w-xl">
             <p className="text-sm font-extrabold tracking-[0.2em] text-[#8a5a00] uppercase sm:text-base">
               Why they shone
             </p>
-            <p className="mt-2 font-display text-3xl leading-tight text-[#2a1c04] sm:text-4xl lg:text-5xl xl:text-6xl">
+            <p className="mt-2 font-display text-2xl leading-tight text-[#2a1c04] sm:text-3xl lg:text-4xl xl:text-5xl">
               {entry.reason}
             </p>
           </div>
 
           {canRemove && onRemove ? (
-            <div className="mt-6 w-full max-w-md">
+            <div className="mt-5 w-full max-w-md">
               {confirm ? (
                 <div className="rounded-2xl border-2 border-[#c23b3b]/40 bg-[#fff5f3] px-4 py-3 text-left">
                   <p className="text-sm font-extrabold text-[#8d1f1f]">Remove this highlight?</p>
@@ -248,15 +249,11 @@ function StudentPhoto({
   solo?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
-  // Full portrait — frame hugs the image so nothing is cropped or letterboxed away.
-  const frame = solo
-    ? "relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden rounded-[22px] bg-[#efe6d6]"
-    : "relative w-full overflow-hidden rounded-[22px] bg-[#efe6d6]";
 
   if (failed) {
     return (
       <div
-        className={`grid place-items-center p-4 text-center ${solo ? "min-h-0 w-full flex-1" : "aspect-[3/4]"}`}
+        className={`grid place-items-center p-4 text-center ${solo ? "min-h-0 w-full flex-1" : "aspect-[3/4] w-full"}`}
         style={{ background: color }}
       >
         <div>
@@ -271,16 +268,13 @@ function StudentPhoto({
     );
   }
 
+  // Fill the available frame; never grow past it (was overflowing the TV).
   return (
-    <div className={frame}>
+    <div className="relative h-full min-h-0 w-full overflow-hidden rounded-[22px] bg-[#efe6d6]">
       <img
         src={image}
         alt={name}
-        className={
-          solo
-            ? "max-h-full max-w-full object-contain object-center"
-            : "block h-auto w-full object-contain object-center"
-        }
+        className="absolute inset-0 m-auto h-full w-full object-contain object-center"
         onError={() => setFailed(true)}
       />
     </div>

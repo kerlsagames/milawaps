@@ -192,9 +192,11 @@ assert.equal(screens.includes("highlight"), false);
 const off = kioskScreens({ ...DEFAULT_SHOWN, highlight: false }, [first], 1_500);
 assert.equal(off.some((id) => String(id).startsWith("highlight:")), false);
 
-// Today is a teacher-desk feed — never enter the TV kiosk loop.
+// Today / Edit points are teacher-desk only — never enter the TV kiosk loop.
 const withToday = kioskScreens({ ...DEFAULT_SHOWN, today: true }, [], 1_500);
 assert.equal(withToday.includes("today"), false);
+const withEdit = kioskScreens({ ...DEFAULT_SHOWN, edit: true }, [], 1_500);
+assert.equal(withEdit.includes("edit"), false);
 
 const afterRemove = removeHighlightById(kept, first.id, 1_500);
 assert.equal(afterRemove?.length, 2);

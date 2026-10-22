@@ -22,8 +22,14 @@ function pointPhrase(delta: number) {
 
 export function tickerLine(entry: ScoreLogEntry): string | null {
   if (entry.action === "reset" || entry.action === "undo") return null;
-  if (!(entry.action in ACTION_COPY)) return null;
   const who = kidName(entry.staffId);
+  if (entry.action === "adjust") {
+    const phrase = pointPhrase(entry.delta ?? 0);
+    if (entry.unitId === "all") return null;
+    const code = unitById(entry.unitId).code;
+    return `${code} ${phrase} from ${who} · manual edit`;
+  }
+  if (!(entry.action in ACTION_COPY)) return null;
   const phrase = pointPhrase(ACTION_COPY[entry.action as keyof typeof ACTION_COPY].delta);
   const reason = entry.reason?.trim();
   if (entry.unitId === "all") {

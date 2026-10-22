@@ -37,8 +37,12 @@ function pointPhrase(delta: number) {
 }
 
 function columnLine(entry: ScoreLogEntry): string | null {
-  if (!isScoreAction(entry.action)) return null;
   const who = kidName(entry.staffId);
+  if (entry.action === "adjust" && isUnitId(entry.unitId)) {
+    const phrase = pointPhrase(entry.delta ?? 0);
+    return `${who} · ${unitById(entry.unitId).code} ${phrase} · manual edit`;
+  }
+  if (!isScoreAction(entry.action)) return null;
   const phrase = pointPhrase(ACTION_COPY[entry.action].delta);
   const where = entry.unitId === "all" ? "all classes" : unitById(entry.unitId).code;
   const reason = entry.reason?.trim();
@@ -92,6 +96,10 @@ function undoAction(
   if (entry.action === "reset") return null;
   const units = { ...after };
   const nextCrosses = { ...crosses };
+  if (entry.action === "adjust" && isUnitId(entry.unitId)) {
+    units[entry.unitId] = clampScore(units[entry.unitId] - (entry.delta ?? 0));
+    return { units, crosses: nextCrosses };
+  }
   if (entry.action === "teamwork") {
     for (const id of UNIT_IDS) {
       units[id] = clampScore(units[id] - ACTION_COPY.teamwork.delta);
@@ -180,10 +188,14 @@ export function todayFeed(
     if (!isHighlightCompanionSpot(entry, feedHighlights)) {
       const line = columnLine(entry);
       if (line) {
+        const kind =
+          entry.action === "strike" || (entry.action === "adjust" && (entry.delta ?? 0) < 0)
+            ? "strike"
+            : "tick";
         items.push({
           id: entry.id,
           at: entry.at,
-          kind: entry.action === "strike" ? "strike" : "tick",
+          kind,
           text: line,
         });
       }

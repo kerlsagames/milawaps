@@ -42,6 +42,14 @@ export async function POST(request: Request) {
     payload && typeof payload === "object" && "unitId" in payload
       ? (payload as { unitId?: unknown }).unitId
       : undefined;
+  const logId =
+    payload && typeof payload === "object" && "logId" in payload
+      ? (payload as { logId?: unknown }).logId
+      : undefined;
+  const deltaRaw =
+    payload && typeof payload === "object" && "delta" in payload
+      ? (payload as { delta?: unknown }).delta
+      : undefined;
 
   if (!isActionId(action)) {
     return json({ error: "Unknown scoring action." }, 400);
@@ -64,14 +72,26 @@ export async function POST(request: Request) {
     unitId = unitValue;
   }
 
+  const options: { logId?: string; delta?: number } = {};
+  if (action === "undo" && typeof logId === "string" && logId.trim()) {
+    options.logId = logId.trim();
+  }
+  if (action === "adjust") {
+    if (deltaRaw !== 1 && deltaRaw !== -1) {
+      return json({ error: "Adjust by one point at a time." }, 400);
+    }
+    options.delta = deltaRaw;
+  }
+
   try {
-    const result = await commitAction(action, unitId, staffId);
+    const result = await commitAction(action, unitId, staffId, options);
     return json({ ...result.board, events: result.events });
   } catch (error) {
-    if (action === "undo" && error instanceof Error) {
+    if ((action === "undo" || action === "adjust") && error instanceof Error) {
       return json({ error: error.message }, 400);
     }
-    const message = error instanceof Error ? error.message : "The score did not save. Try the tick again.";
+    const message =
+      error instanceof Error ? error.message : "The score did not save. Try the tick again.";
     const status =
       message.includes("durable store") || message.includes("Upstash Redis") ? 503 : 500;
     return json({ error: message }, status);

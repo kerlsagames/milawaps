@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { STRIKE_MAX, UNIT_MAX, VAULT_TARGET, emptyScores, vaultTotal } from "../lib/game";
-import { applyAction, attachReason, undoLastTick } from "../lib/scoring";
+import {
+  adjustUnitScore,
+  applyAction,
+  attachReason,
+  undoLastTick,
+  undoLogEntryById,
+} from "../lib/scoring";
 import { tickerLine } from "../lib/ticker";
 
 const start = emptyScores(1_000);
@@ -129,5 +135,25 @@ const undone = undoLastTick(forUndo.state, 14_000);
 assert.equal(undone.units["56"], 0);
 assert.equal(undone.log.length, 0);
 assert.equal(undone.lastAction, null);
+
+const bumped = adjustUnitScore(start, "f1", 1, "craig", 15_000);
+assert.equal(bumped.state.units.f1, 1);
+assert.equal(bumped.state.log[0]?.action, "adjust");
+assert.equal(bumped.state.log[0]?.delta, 1);
+assert.equal(tickerLine(bumped.state.log[0]!), "F/1 +1 point from Mr Kerlin · manual edit");
+
+const lowered = adjustUnitScore(bumped.state, "f1", -1, "craig", 16_000);
+assert.equal(lowered.state.units.f1, 0);
+assert.equal(lowered.state.log[0]?.delta, -1);
+assert.equal(lowered.state.crosses.f1, 0);
+
+const first = applyAction(start, "spot", "234", "jess", 17_000);
+const second = applyAction(first.state, "surge", "234", "jess", 18_000);
+assert.equal(second.state.units["234"], 3);
+const olderId = first.state.log[0]!.id;
+const removedOlder = undoLogEntryById(second.state, olderId, 19_000);
+assert.equal(removedOlder.units["234"], 2);
+assert.equal(removedOlder.log.length, 1);
+assert.equal(removedOlder.log[0]?.action, "surge");
 
 console.log("scoring checks passed");

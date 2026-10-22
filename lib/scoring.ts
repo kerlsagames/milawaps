@@ -91,6 +91,12 @@ export function sanitizeScores(raw: unknown): ScoreState {
         typeof entry.id === "string" && entry.id.length > 0 && entry.id.length <= 80
           ? entry.id
           : `legacy-${entry.at}-${entry.staffId}-${log.length}`;
+      const delta =
+        entry.action === "adjust" && (entry.delta === 1 || entry.delta === -1)
+          ? entry.delta
+          : undefined;
+      if (entry.action === "adjust" && delta == null) continue;
+      if (entry.action === "adjust" && entry.unitId === "all") continue;
       log.push({
         id,
         action: entry.action,
@@ -98,6 +104,7 @@ export function sanitizeScores(raw: unknown): ScoreState {
         at: entry.at,
         staffId: entry.staffId,
         reason: cleanReason(entry.reason),
+        ...(delta != null ? { delta } : {}),
       });
       if (log.length === LOG_LIMIT) break;
     }
@@ -180,8 +187,8 @@ export function applyAction(
     };
   }
 
-  if (action === "undo" || !isScoreAction(action)) {
-    throw new Error("Use undoLastTick for undo.");
+  if (action === "undo" || action === "adjust" || !isScoreAction(action)) {
+    throw new Error("Use undoLastTick or adjustUnitScore for that action.");
   }
 
   if (action !== "teamwork" && !unitId) {
@@ -261,6 +268,60 @@ export function attachReason(
   return { ...state, log, reasons, updatedAt: now };
 }
 
+function reverseEntry(
+  units: Record<UnitId, number>,
+  crosses: Record<UnitId, number>,
+  entry: ScoreLogEntry,
+): { units: Record<UnitId, number>; crosses: Record<UnitId, number> } {
+  const nextUnits = { ...units };
+  const nextCrosses = { ...crosses };
+  if (entry.action === "adjust" && isUnitId(entry.unitId)) {
+    nextUnits[entry.unitId] = clampScore(nextUnits[entry.unitId] - (entry.delta ?? 0));
+    return { units: nextUnits, crosses: nextCrosses };
+  }
+  if (entry.action === "teamwork") {
+    for (const id of UNIT_IDS) {
+      nextUnits[id] = clampScore(nextUnits[id] - ACTION_COPY.teamwork.delta);
+    }
+    return { units: nextUnits, crosses: nextCrosses };
+  }
+  if (!isUnitId(entry.unitId) || !isScoreAction(entry.action)) {
+    return { units: nextUnits, crosses: nextCrosses };
+  }
+  if (entry.action === "strike") {
+    if (nextCrosses[entry.unitId] > 0) {
+      nextUnits[entry.unitId] = clampScore(nextUnits[entry.unitId] + 1);
+      nextCrosses[entry.unitId] = clampStrike(nextCrosses[entry.unitId] - 1);
+    }
+    return { units: nextUnits, crosses: nextCrosses };
+  }
+  nextUnits[entry.unitId] = clampScore(nextUnits[entry.unitId] - ACTION_COPY[entry.action].delta);
+  return { units: nextUnits, crosses: nextCrosses };
+}
+
+function lastActionFromLog(log: ScoreLogEntry[]): ScoreState["lastAction"] {
+  const previous = log.find(
+    (item) => isScoreAction(item.action) || (item.action === "adjust" && isUnitId(item.unitId)),
+  );
+  if (!previous) return null;
+  if (previous.action === "adjust" && isUnitId(previous.unitId)) {
+    // lastAction only stores score actions — map adjust to spot/strike for display.
+    return {
+      action: (previous.delta ?? 0) < 0 ? "strike" : "spot",
+      unitId: previous.unitId,
+      at: previous.at,
+      staffId: previous.staffId,
+    };
+  }
+  if (!isScoreAction(previous.action)) return null;
+  return {
+    action: previous.action,
+    unitId: previous.unitId,
+    at: previous.at,
+    staffId: previous.staffId,
+  };
+}
+
 /** Reverse the most recent non-reset tick and drop it from the log. */
 export function undoLastTick(state: ScoreState, now = Date.now()): ScoreState {
   const log = state.log ?? [];
@@ -268,41 +329,84 @@ export function undoLastTick(state: ScoreState, now = Date.now()): ScoreState {
   if (!entry || entry.action === "reset" || entry.action === "undo") {
     throw new Error("Nothing to undo.");
   }
-  if (!isScoreAction(entry.action)) {
+  if (!isScoreAction(entry.action) && entry.action !== "adjust") {
     throw new Error("Nothing to undo.");
   }
+  return undoLogEntryById(state, entry.id, now);
+}
 
-  const units = { ...state.units };
-  const crosses = { ...(state.crosses ?? { f1: 0, "234": 0, "56": 0 }) };
-
-  if (entry.action === "teamwork") {
-    for (const id of UNIT_IDS) {
-      units[id] = clampScore(units[id] - ACTION_COPY.teamwork.delta);
-    }
-  } else if (isUnitId(entry.unitId) && entry.action === "strike") {
-    if (crosses[entry.unitId] > 0) {
-      units[entry.unitId] = clampScore(units[entry.unitId] + 1);
-      crosses[entry.unitId] = clampStrike(crosses[entry.unitId] - 1);
-    }
-  } else if (isUnitId(entry.unitId)) {
-    units[entry.unitId] = clampScore(units[entry.unitId] - ACTION_COPY[entry.action].delta);
+/** Reverse any logged tick/adjust by id (for Edit points on the desk). */
+export function undoLogEntryById(state: ScoreState, id: string, now = Date.now()): ScoreState {
+  const trimmed = id.trim();
+  if (!trimmed) throw new Error("Choose a tick to remove.");
+  const log = state.log ?? [];
+  const index = log.findIndex((item) => item.id === trimmed);
+  if (index < 0) throw new Error("That tick is already gone.");
+  const entry = log[index]!;
+  if (entry.action === "reset" || entry.action === "undo") {
+    throw new Error("That entry cannot be removed.");
+  }
+  if (!isScoreAction(entry.action) && entry.action !== "adjust") {
+    throw new Error("That entry cannot be removed.");
   }
 
-  const nextLog = log.slice(1);
-  const previous = nextLog.find((item) => isScoreAction(item.action));
+  const reversed = reverseEntry(
+    state.units,
+    state.crosses ?? { f1: 0, "234": 0, "56": 0 },
+    entry,
+  );
+  const nextLog = log.filter((item) => item.id !== trimmed);
   return {
-    units,
-    crosses,
+    units: reversed.units,
+    crosses: reversed.crosses,
     updatedAt: now,
-    lastAction: previous
-      ? {
-          action: previous.action as ScoreAction,
-          unitId: previous.unitId,
-          at: previous.at,
-          staffId: previous.staffId,
-        }
-      : null,
+    lastAction: lastActionFromLog(nextLog),
     log: nextLog,
     reasons: (state.reasons ?? []).filter((item) => item.id !== entry.id),
+  };
+}
+
+/** Manual tally edit — changes the class score without adding a strike mark. */
+export function adjustUnitScore(
+  state: ScoreState,
+  unitId: UnitId,
+  delta: number,
+  staffId: StaffId,
+  now = Date.now(),
+): { state: ScoreState; events: MilestoneEvent[] } {
+  if (delta !== 1 && delta !== -1) {
+    throw new Error("Adjust by one point at a time.");
+  }
+  const before = state.units[unitId];
+  const nextValue = clampScore(before + delta);
+  if (nextValue === before) {
+    if (delta < 0) throw new Error("That class is already at zero.");
+    throw new Error("That class is already full.");
+  }
+  const units = { ...state.units, [unitId]: nextValue };
+  const entry: ScoreLogEntry = {
+    id: nextEntryId(now, staffId),
+    action: "adjust",
+    unitId,
+    at: now,
+    staffId,
+    reason: "Manual edit",
+    delta,
+  };
+  return {
+    state: {
+      units,
+      crosses: state.crosses ?? { f1: 0, "234": 0, "56": 0 },
+      updatedAt: now,
+      lastAction: {
+        action: delta < 0 ? "strike" : "spot",
+        unitId,
+        at: now,
+        staffId,
+      },
+      log: pushLog(state, entry),
+      reasons: state.reasons ?? [],
+    },
+    events: milestonesBetween({ ...state.units }, units),
   };
 }

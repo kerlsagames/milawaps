@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import useSWR from "swr";
 import { AnimatePresence, motion } from "framer-motion";
 import { CricketView } from "@/components/cricket-view";
+import { EditPointsView } from "@/components/edit-points-view";
 import { HighlightView } from "@/components/highlight-view";
 import { LeaderboardView } from "@/components/leaderboard-view";
 import { NewsView } from "@/components/news-view";
@@ -32,6 +33,7 @@ import {
   type ScreenId,
 } from "@/lib/reveals";
 import { tickerLine } from "@/lib/ticker";
+import { type TodayItem } from "@/lib/today";
 import { cn } from "@/lib/utils";
 import {
   UNIT_IDS,
@@ -86,6 +88,7 @@ export function YardBoard() {
   const [hudOpen, setHudOpen] = useState(false);
   const [highlightUnit, setHighlightUnit] = useState<UnitId | null>(null);
   const [removingHighlight, setRemovingHighlight] = useState(false);
+  const [editBusyId, setEditBusyId] = useState<string | null>(null);
   const [deskError, setDeskError] = useState<string | null>(null);
   const [reasonPrompt, setReasonPrompt] = useState<{ id: string; line: string } | null>(null);
 
@@ -110,10 +113,20 @@ export function YardBoard() {
     if (view === "cricket" && (!cricketCode || !shown.cricket)) setView("board");
     if (view === "news" && !shown.news && !deskBrowse) setView("board");
     if (view === "highlight" && !shown.highlight && !deskBrowse) setView("board");
+    if (view === "edit" && !deskTeacher) setView("board");
     const highlightId = parseHighlightScreen(view);
     if (highlightId && !shown.highlight && !deskBrowse) setView("board");
     if (highlightId && !liveHighlights.some((entry) => entry.id === highlightId)) setView("board");
-  }, [view, cricketCode, shown.cricket, shown.news, shown.highlight, liveHighlights, deskBrowse]);
+  }, [
+    view,
+    cricketCode,
+    shown.cricket,
+    shown.news,
+    shown.highlight,
+    liveHighlights,
+    deskBrowse,
+    deskTeacher,
+  ]);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const startedRef = useRef(0);
@@ -293,6 +306,7 @@ export function YardBoard() {
   const chooseView = useCallback(
     (next: ScreenId) => {
       if (next === "news" && !shown.news && !deskBrowse) return;
+      if (next === "edit" && !deskTeacher) return;
       if (next === "highlight") {
         if (!shown.highlight && !deskBrowse) return;
         // Tapping the Highlights tab again moves to the next live star.
@@ -306,7 +320,7 @@ export function YardBoard() {
       if (parseHighlightScreen(next) && !shown.highlight && !deskBrowse) return;
       goToScreen(next);
     },
-    [shown.news, shown.highlight, deskBrowse, liveHighlights, goToScreen, stepHighlight],
+    [shown.news, shown.highlight, deskBrowse, deskTeacher, liveHighlights, goToScreen, stepHighlight],
   );
 
   // Arrow keys cycle highlights whenever a highlight page is open.
@@ -358,7 +372,7 @@ export function YardBoard() {
             return;
           }
           const entry = body.log?.[0];
-          if (action !== "reset" && action !== "undo" && entry?.id) {
+          if (action !== "reset" && action !== "undo" && action !== "adjust" && entry?.id) {
             setReasonPrompt({ id: entry.id, line: tickerLine(entry) ?? "Points saved" });
           } else {
             setReasonPrompt(null);
@@ -367,6 +381,127 @@ export function YardBoard() {
         })
         .catch(() => {
           setDeskError("The yard desk lost the tick. Tap it again.");
+        });
+    },
+    [mutate, token],
+  );
+
+  const adjustPoints = useCallback(
+    (unitId: UnitId, delta: 1 | -1) => {
+      if (!token) {
+        setPinOpen(true);
+        return;
+      }
+      setDeskError(null);
+      setEditBusyId(`adjust:${unitId}:${delta}`);
+      chain.current = chain.current
+        .then(async () => {
+          const response = await fetch("/api/score", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ action: "adjust", unitId, delta }),
+          });
+          const body = (await response.json().catch(() => ({}))) as PublicBoard & {
+            error?: string;
+          };
+          if (response.status === 401) {
+            clearToken();
+            setHudOpen(false);
+            setPinOpen(true);
+            setDeskError("The desk locked itself. Enter the PIN again.");
+            return;
+          }
+          if (!response.ok) {
+            setDeskError(body.error ?? "That edit did not save.");
+            return;
+          }
+          setReasonPrompt(null);
+          await mutate(body, { revalidate: false });
+        })
+        .catch(() => {
+          setDeskError("That edit did not save. Try again.");
+        })
+        .finally(() => {
+          setEditBusyId(null);
+        });
+    },
+    [mutate, token],
+  );
+
+  const removeFeedItem = useCallback(
+    (item: TodayItem) => {
+      if (!token) {
+        setPinOpen(true);
+        return;
+      }
+      setDeskError(null);
+      setEditBusyId(item.id);
+      chain.current = chain.current
+        .then(async () => {
+          if (item.kind === "highlight") {
+            const response = await fetch("/api/highlight", {
+              method: "DELETE",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ id: item.id }),
+            });
+            const body = (await response.json().catch(() => ({}))) as PublicBoard & {
+              error?: string;
+            };
+            if (response.status === 401) {
+              clearToken();
+              setHudOpen(false);
+              setPinOpen(true);
+              setDeskError("The desk locked itself. Enter the PIN again.");
+              return;
+            }
+            if (!response.ok) {
+              setDeskError(body.error ?? "That highlight did not remove.");
+              return;
+            }
+            await mutate(body, { revalidate: false });
+            return;
+          }
+
+          const response = await fetch("/api/score", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ action: "undo", logId: item.id }),
+          });
+          const body = (await response.json().catch(() => ({}))) as PublicBoard & {
+            error?: string;
+          };
+          if (response.status === 401) {
+            clearToken();
+            setHudOpen(false);
+            setPinOpen(true);
+            setDeskError("The desk locked itself. Enter the PIN again.");
+            return;
+          }
+          if (!response.ok) {
+            setDeskError(body.error ?? "Those points did not remove.");
+            return;
+          }
+          setReasonPrompt(null);
+          await mutate(body, { revalidate: false });
+        })
+        .catch(() => {
+          setDeskError(
+            item.kind === "highlight"
+              ? "That highlight did not remove. Try again."
+              : "Those points did not remove. Try again.",
+          );
+        })
+        .finally(() => {
+          setEditBusyId(null);
         });
     },
     [mutate, token],
@@ -418,6 +553,16 @@ export function YardBoard() {
                   short: "Feed",
                   open: deskBrowse,
                 },
+                ...(deskTeacher
+                  ? [
+                      {
+                        id: "edit" as const,
+                        label: "Edit points",
+                        short: "Edit",
+                        open: true,
+                      },
+                    ]
+                  : []),
               ];
             }),
             {
@@ -525,6 +670,7 @@ export function YardBoard() {
           (view === "prizes" ||
             view === "board" ||
             view === "today" ||
+            view === "edit" ||
             view === "cricket" ||
             view === "news" ||
             Boolean(activeHighlightId)) &&
@@ -565,6 +711,7 @@ export function YardBoard() {
                 "relative min-h-0",
                 (view === "board" ||
                   view === "today" ||
+                  view === "edit" ||
                   view === "cricket" ||
                   view === "news" ||
                   Boolean(activeHighlightId)) &&
@@ -577,6 +724,14 @@ export function YardBoard() {
             >
               {view === "today" ? (
                 <TodayColumn board={data} live={live} variant="page" />
+              ) : view === "edit" && deskTeacher ? (
+                <EditPointsView
+                  board={data}
+                  busyId={editBusyId}
+                  error={deskError}
+                  onAdjust={adjustPoints}
+                  onRemoveFeedItem={removeFeedItem}
+                />
               ) : view === "cricket" ? (
                 <CricketView code={cricketCode} fill panels={prefs.cricketPanels} />
               ) : view === "news" ? (

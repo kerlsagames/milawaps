@@ -9,6 +9,7 @@ import {
   Map,
   Newspaper,
   PartyPopper,
+  Pencil,
   Sparkles,
   Trophy,
 } from "lucide-react";
@@ -22,6 +23,7 @@ import { cn } from "@/lib/utils";
 const icons = {
   board: Trophy,
   today: ListOrdered,
+  edit: Pencil,
   prizes: Gift,
   yard: Map,
   news: Newspaper,
