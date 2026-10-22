@@ -1,14 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
-import { kidName, unitById } from "@/lib/game";
+import { kidName, unitById, type UnitId } from "@/lib/game";
 import { formatHighlightCountdown, type HighlightEntry } from "@/lib/highlights";
 import { studentById } from "@/lib/students";
 import { Button } from "@/components/ui/button";
 
 const ANGLES = [-7, 5, -4, 8, -6, 3, -9, 6];
+
+/** F/1 campus shots are landscape; other grades are portrait. */
+function photoAspect(unitId: UnitId) {
+  return unitId === "f1" ? "4 / 3" : "3 / 4";
+}
 
 export function HighlightView({
   entry,
@@ -35,8 +40,7 @@ export function HighlightView({
     .filter((student): student is NonNullable<typeof student> => Boolean(student));
   const count = Math.max(1, students.length);
   const who = kidName(entry.staffId);
-  // Pair stacks vertically so each portrait stays large; 3+ use a grid.
-  const columns = count <= 2 ? 1 : count <= 4 ? 2 : 3;
+  const columns = count <= 4 ? 2 : 3;
   const canCycle = total > 1 && Boolean(onPrev && onNext);
   const solo = count === 1;
   const pair = count === 2;
@@ -85,79 +89,109 @@ export function HighlightView({
         className={
           solo
             ? "relative z-10 grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)] gap-3 overflow-hidden lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-stretch lg:gap-4"
-            : "relative z-10 grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)] gap-3 overflow-hidden lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-stretch lg:gap-4"
+            : pair
+              ? "relative z-10 grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)] gap-3 overflow-hidden lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.75fr)] lg:items-stretch lg:gap-4"
+              : "relative z-10 grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)] gap-3 overflow-hidden lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-stretch lg:gap-4"
         }
       >
         {/*
-          Stage is absolute (definite height). Use flex so height % on cards resolves —
-          CSS grid rows of `auto` treat max-height % as none, which blew past the TV.
+          Stage is absolute (definite height). Pair uses a diagonal stack so both
+          portraits stay large; vertical flex was leaving empty border bands.
         */}
         <div className="relative min-h-0 overflow-hidden">
-          <div
-            className={
-              solo
-                ? "absolute inset-0 flex items-center justify-center overflow-hidden px-2 py-3 sm:px-3 sm:py-4"
-                : pair
-                  ? "absolute inset-0 flex flex-col items-stretch gap-1 overflow-hidden p-1"
-                  : "absolute inset-0 grid items-center justify-items-center gap-2 overflow-hidden px-2 py-3 sm:px-3 sm:py-4"
-            }
-            style={
-              solo || pair
-                ? undefined
-                : {
-                    gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
-                    gridTemplateRows: "minmax(0, 1fr)",
-                  }
-            }
-          >
-            {students.map((student, studentIndex) => {
-              const unit = unitById(student.unitId);
-              const angle = solo ? -2 : pair ? (studentIndex === 0 ? -1.5 : 1.5) : (ANGLES[studentIndex % ANGLES.length] ?? 0);
-              return (
-                <motion.article
-                  key={student.id}
-                  initial={{ opacity: 0, y: 18, rotate: angle - 8 }}
-                  animate={{ opacity: 1, y: 0, rotate: angle }}
-                  transition={{ delay: studentIndex * 0.08, type: "spring", stiffness: 120, damping: 14 }}
-                  className={
-                    pair
-                      ? "flex min-h-0 w-full flex-1 items-center justify-center"
-                      : "flex min-h-0 max-w-full items-center justify-center"
-                  }
-                  style={
-                    pair
-                      ? { minHeight: 0 }
-                      : {
-                          height: solo ? "86%" : "78%",
-                          maxHeight: "100%",
-                          width: "auto",
-                          aspectRatio: "3 / 4",
-                        }
-                  }
-                >
-                  <div
+          {pair ? (
+            <div className="absolute inset-0 overflow-hidden">
+              {students.map((student, studentIndex) => {
+                const unit = unitById(student.unitId);
+                const topLeft = studentIndex === 0;
+                const angle = topLeft ? -4 : 5;
+                const landscape = student.unitId === "f1";
+                return (
+                  <motion.article
+                    key={student.id}
+                    initial={{ opacity: 0, y: 18, rotate: angle - 8 }}
+                    animate={{ opacity: 1, y: 0, rotate: angle }}
+                    transition={{
+                      delay: studentIndex * 0.08,
+                      type: "spring",
+                      stiffness: 120,
+                      damping: 14,
+                    }}
+                    // Fixed corner slots (not aspect boxes) so both stay big and use the stage.
                     className={
-                      pair
-                        ? "flex h-full min-h-0 flex-col overflow-hidden rounded-[20px] border-[3px] border-[#fff8df] bg-[#fff8df] p-0.5"
-                        : "flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[28px] border-4 border-[#fff8df] bg-[#fff8df] p-1.5 sm:p-2"
+                      topLeft
+                        ? "absolute top-0 left-0 z-10 h-[70%] w-[82%] origin-top-left"
+                        : "absolute right-0 bottom-0 z-20 h-[70%] w-[82%] origin-bottom-right"
                     }
+                  >
+                    <PortraitFrame color={unit.color} tight>
+                      <StudentPhoto
+                        name={student.name}
+                        image={student.image}
+                        color={unit.color}
+                        cover
+                        // F/1 polaroid mattes + letterboxing — zoom so the face fills the slot.
+                        zoom={landscape ? 1.22 : 1.06}
+                      />
+                    </PortraitFrame>
+                  </motion.article>
+                );
+              })}
+            </div>
+          ) : (
+            <div
+              className={
+                solo
+                  ? "absolute inset-0 flex items-center justify-center overflow-hidden px-2 py-2 sm:px-3 sm:py-3"
+                  : "absolute inset-0 grid items-center justify-items-center gap-2 overflow-hidden px-2 py-2 sm:px-3 sm:py-3"
+              }
+              style={
+                solo
+                  ? undefined
+                  : {
+                      gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+                      gridTemplateRows: "minmax(0, 1fr)",
+                    }
+              }
+            >
+              {students.map((student, studentIndex) => {
+                const unit = unitById(student.unitId);
+                const angle = solo ? -2 : (ANGLES[studentIndex % ANGLES.length] ?? 0);
+                const aspect = photoAspect(student.unitId);
+                return (
+                  <motion.article
+                    key={student.id}
+                    initial={{ opacity: 0, y: 18, rotate: angle - 8 }}
+                    animate={{ opacity: 1, y: 0, rotate: angle }}
+                    transition={{
+                      delay: studentIndex * 0.08,
+                      type: "spring",
+                      stiffness: 120,
+                      damping: 14,
+                    }}
+                    className="flex min-h-0 max-w-full items-center justify-center"
                     style={{
-                      boxShadow: `0 5px 0 rgba(42,28,4,0.28), 0 0 0 4px ${unit.color}`,
-                      ...(pair ? { aspectRatio: "3 / 4", width: "auto", maxWidth: "100%" } : {}),
+                      height: solo ? "92%" : "80%",
+                      maxHeight: "100%",
+                      width: "auto",
+                      aspectRatio: aspect,
                     }}
                   >
-                    <StudentPhoto
-                      name={student.name}
-                      image={student.image}
-                      color={unit.color}
-                      solo={solo}
-                      cover={pair}
-                    />
-                  </div>
-                </motion.article>
-              );
-            })}
-          </div>
+                    <PortraitFrame color={unit.color} tight={false}>
+                      <StudentPhoto
+                        name={student.name}
+                        image={student.image}
+                        color={unit.color}
+                        solo={solo}
+                        cover
+                        zoom={student.unitId === "f1" ? 1.14 : 1}
+                      />
+                    </PortraitFrame>
+                  </motion.article>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="relative flex min-h-0 flex-col items-center justify-center overflow-y-auto rounded-[28px] border-4 border-[#2a1c04] bg-[#fff8df]/92 px-5 py-5 pb-12 text-center shadow-[0_10px_0_#6b5844] lg:px-7 lg:py-7 lg:pb-14">
@@ -232,6 +266,31 @@ export function HighlightView({
   );
 }
 
+function PortraitFrame({
+  color,
+  tight,
+  children,
+}: {
+  color: string;
+  tight: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={
+        tight
+          ? "flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[16px] border-2 border-[#2a1c04] bg-[#2a1c04]"
+          : "flex h-full w-full min-h-0 flex-col overflow-hidden rounded-[20px] border-[3px] border-[#2a1c04] bg-[#2a1c04]"
+      }
+      style={{
+        boxShadow: `0 5px 0 rgba(42,28,4,0.35), 0 0 0 3px ${color}`,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 function nameList(names: string[]) {
   if (names.length === 0) return "Students";
   if (names.length === 1) return names[0]!;
@@ -273,13 +332,16 @@ function StudentPhoto({
   color,
   solo = false,
   cover = false,
+  zoom = 1,
 }: {
   name: string;
   image: string;
   color: string;
   solo?: boolean;
-  /** Fill the frame (pair stack) instead of letterboxing. */
+  /** Fill the frame instead of letterboxing. */
   cover?: boolean;
+  /** >1 crops polaroid mattes / empty edges. */
+  zoom?: number;
 }) {
   const [failed, setFailed] = useState(false);
 
@@ -299,7 +361,7 @@ function StudentPhoto({
   }
 
   return (
-    <div className="h-full min-h-0 w-full overflow-hidden rounded-[18px] bg-[#efe6d6]">
+    <div className="h-full min-h-0 w-full overflow-hidden rounded-[12px] bg-[#efe6d6]">
       <img
         src={image}
         alt={name}
@@ -308,6 +370,7 @@ function StudentPhoto({
             ? "h-full w-full object-cover object-center"
             : "h-full w-full object-contain object-center"
         }
+        style={zoom !== 1 ? { transform: `scale(${zoom})` } : undefined}
         onError={() => setFailed(true)}
       />
     </div>
