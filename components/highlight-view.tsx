@@ -8,11 +8,13 @@ import { formatHighlightCountdown, type HighlightEntry } from "@/lib/highlights"
 import { studentById } from "@/lib/students";
 import { Button } from "@/components/ui/button";
 
-const ANGLES = [-7, 5, -4, 8, -6, 3, -9, 6];
-
 /** F/1 campus shots are landscape; other grades are portrait. */
 function photoAspect(unitId: UnitId) {
   return unitId === "f1" ? "4 / 3" : "3 / 4";
+}
+
+function isLandscape(unitId: UnitId) {
+  return unitId === "f1";
 }
 
 export function HighlightView({
@@ -40,10 +42,12 @@ export function HighlightView({
     .filter((student): student is NonNullable<typeof student> => Boolean(student));
   const count = Math.max(1, students.length);
   const who = kidName(entry.staffId);
-  const columns = count <= 4 ? 2 : 3;
   const canCycle = total > 1 && Boolean(onPrev && onNext);
   const solo = count === 1;
   const pair = count === 2;
+  const trio = count === 3;
+  const quartet = count === 4;
+  const allLandscape = students.length > 0 && students.every((student) => isLandscape(student.unitId));
   const nameLine = nameList(students.map((student) => student.name));
 
   return (
@@ -89,93 +93,22 @@ export function HighlightView({
         className={
           solo
             ? "relative z-10 grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)] gap-3 overflow-hidden lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:items-stretch lg:gap-4"
-            : pair
-              ? "relative z-10 grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)] gap-3 overflow-hidden lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:items-stretch lg:gap-4"
+            : pair || trio || quartet
+              ? "relative z-10 grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)] gap-3 overflow-hidden lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)] lg:items-stretch lg:gap-4"
               : "relative z-10 grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)] gap-3 overflow-hidden lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-stretch lg:gap-4"
         }
       >
         <div className="relative min-h-0 overflow-hidden">
-          {pair ? (
-            <div
-              className={
-                // Landscape F/1: side by side. Portrait grades: stack so cards stay wide.
-                students.every((student) => student.unitId === "f1")
-                  ? "absolute inset-0 grid grid-cols-2 gap-3 p-2 sm:gap-4 sm:p-3"
-                  : "absolute inset-0 grid grid-rows-2 gap-3 p-2 sm:gap-4 sm:p-3"
-              }
-            >
-              {students.map((student, studentIndex) => {
-                const unit = unitById(student.unitId);
-                return (
-                  <motion.article
-                    key={student.id}
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{
-                      delay: studentIndex * 0.08,
-                      type: "spring",
-                      stiffness: 120,
-                      damping: 16,
-                    }}
-                    className="relative h-full min-h-0 w-full overflow-hidden"
-                  >
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <PairPhoto name={student.name} image={student.image} color={unit.color} />
-                    </div>
-                  </motion.article>
-                );
-              })}
-            </div>
+          {solo ? (
+            <SoloStage students={students} />
           ) : (
-            <div
-              className={
-                solo
-                  ? "absolute inset-0 flex items-center justify-center overflow-hidden px-2 py-2 sm:px-3 sm:py-3"
-                  : "absolute inset-0 grid items-center justify-items-center gap-2 overflow-hidden px-2 py-2 sm:px-3 sm:py-3"
-              }
-              style={
-                solo
-                  ? undefined
-                  : {
-                      gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
-                      gridTemplateRows: "minmax(0, 1fr)",
-                    }
-              }
-            >
-              {students.map((student, studentIndex) => {
-                const unit = unitById(student.unitId);
-                const angle = solo ? -2 : (ANGLES[studentIndex % ANGLES.length] ?? 0);
-                return (
-                  <motion.article
-                    key={student.id}
-                    initial={{ opacity: 0, y: 18, rotate: angle - 8 }}
-                    animate={{ opacity: 1, y: 0, rotate: angle }}
-                    transition={{
-                      delay: studentIndex * 0.08,
-                      type: "spring",
-                      stiffness: 120,
-                      damping: 14,
-                    }}
-                    className="flex min-h-0 max-w-full items-center justify-center"
-                    style={{
-                      height: solo ? "90%" : "78%",
-                      maxHeight: "100%",
-                      width: "auto",
-                      aspectRatio: photoAspect(student.unitId),
-                    }}
-                  >
-                    <PortraitFrame color={unit.color}>
-                      <StudentPhoto
-                        name={student.name}
-                        image={student.image}
-                        color={unit.color}
-                        solo={solo}
-                      />
-                    </PortraitFrame>
-                  </motion.article>
-                );
-              })}
-            </div>
+            <GroupStage
+              students={students}
+              pair={pair}
+              trio={trio}
+              quartet={quartet}
+              allLandscape={allLandscape}
+            />
           )}
         </div>
 
@@ -251,6 +184,108 @@ export function HighlightView({
   );
 }
 
+function SoloStage({
+  students,
+}: {
+  students: NonNullable<ReturnType<typeof studentById>>[];
+}) {
+  const student = students[0];
+  if (!student) return null;
+  const unit = unitById(student.unitId);
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden px-2 py-2 sm:px-3 sm:py-3">
+      <motion.article
+        initial={{ opacity: 0, y: 18, rotate: -10 }}
+        animate={{ opacity: 1, y: 0, rotate: -2 }}
+        transition={{ type: "spring", stiffness: 120, damping: 14 }}
+        className="flex min-h-0 max-w-full items-center justify-center"
+        style={{
+          height: "90%",
+          maxHeight: "100%",
+          width: "auto",
+          aspectRatio: photoAspect(student.unitId),
+        }}
+      >
+        <PortraitFrame color={unit.color}>
+          <StudentPhoto name={student.name} image={student.image} color={unit.color} solo />
+        </PortraitFrame>
+      </motion.article>
+    </div>
+  );
+}
+
+function GroupStage({
+  students,
+  pair,
+  trio,
+  quartet,
+  allLandscape,
+}: {
+  students: NonNullable<ReturnType<typeof studentById>>[];
+  pair: boolean;
+  trio: boolean;
+  quartet: boolean;
+  allLandscape: boolean;
+}) {
+  let gridClass = "absolute inset-0 grid gap-3 p-2 sm:gap-4 sm:p-3";
+
+  if (pair) {
+    // Landscape F/1: side by side. Portrait: stack so cards stay wide.
+    gridClass += allLandscape ? " grid-cols-2" : " grid-rows-2";
+  } else if (trio && allLandscape) {
+    // F/1 trio: two on top, one centred under.
+    gridClass +=
+      " grid-cols-2 grid-rows-2 [&>:nth-child(3)]:col-span-2 [&>:nth-child(3)]:justify-self-center [&>:nth-child(3)]:w-[50%]";
+  } else if (trio) {
+    // Portrait trio (e.g. Tom, Ryley, Keshy): equal row of three.
+    gridClass += " grid-cols-3";
+  } else if (quartet) {
+    // Four equal quarters.
+    gridClass += " grid-cols-2 grid-rows-2";
+  } else {
+    gridClass += " grid-cols-3";
+  }
+
+  // Same frame shape in a group so a square (Tom) doesn’t sit short next to tall portraits.
+  const frameAspect = allLandscape ? "4 / 3" : "3 / 4";
+
+  return (
+    <div className={gridClass}>
+      {students.map((student, studentIndex) => {
+        const unit = unitById(student.unitId);
+        return (
+          <motion.article
+            key={student.id}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              delay: studentIndex * 0.08,
+              type: "spring",
+              stiffness: 120,
+              damping: 16,
+            }}
+            className="relative h-full min-h-0 w-full overflow-hidden"
+          >
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div
+                className="flex max-h-full max-w-full flex-col overflow-hidden rounded-[16px] border-[3px] border-[#fff8df] bg-[#fff8df] p-1"
+                style={{
+                  aspectRatio: frameAspect,
+                  height: "100%",
+                  width: "auto",
+                  boxShadow: `0 4px 0 rgba(42,28,4,0.28), 0 0 0 3px ${unit.color}`,
+                }}
+              >
+                <GroupPhoto name={student.name} image={student.image} color={unit.color} framed />
+              </div>
+            </div>
+          </motion.article>
+        );
+      })}
+    </div>
+  );
+}
+
 function PortraitFrame({
   color,
   children,
@@ -307,25 +342,47 @@ function SpotlightCountdown({ expiresAt }: { expiresAt: number }) {
   );
 }
 
-function PairPhoto({
+function GroupPhoto({
   name,
   image,
   color,
+  framed = false,
 }: {
   name: string;
   image: string;
   color: string;
+  /** When true, the parent already drew the border — just fill it. */
+  framed?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
 
   if (failed) {
     return (
       <div
-        className="grid max-h-full max-w-full place-items-center rounded-[16px] border-[3px] border-[#fff8df] px-6 py-10 text-center"
-        style={{ background: color, boxShadow: `0 4px 0 rgba(42,28,4,0.28), 0 0 0 3px ${color}` }}
+        className={
+          framed
+            ? "grid h-full w-full place-items-center px-4 py-6 text-center"
+            : "grid max-h-full max-w-full place-items-center rounded-[16px] border-[3px] border-[#fff8df] px-6 py-10 text-center"
+        }
+        style={
+          framed
+            ? { background: color }
+            : { background: color, boxShadow: `0 4px 0 rgba(42,28,4,0.28), 0 0 0 3px ${color}` }
+        }
       >
         <p className="font-display text-3xl leading-none text-[#2a1c04]">{name}</p>
       </div>
+    );
+  }
+
+  if (framed) {
+    return (
+      <img
+        src={image}
+        alt={name}
+        className="h-full w-full rounded-[12px] object-contain object-center"
+        onError={() => setFailed(true)}
+      />
     );
   }
 
