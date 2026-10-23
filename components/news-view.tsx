@@ -25,21 +25,41 @@ export function NewsView({
           backgroundSize: "28px 28px, 42px 42px",
         }}
       />
-      <header className="relative shrink-0 text-center">
-        <h2
-          className={cn(
-            "font-display leading-none text-[#16384a]",
-            layout === "boards"
-              ? "text-[clamp(2.1rem,5.2vh,4.25rem)]"
-              : "text-[clamp(1.9rem,4.6vh,3.9rem)]",
-          )}
+      <header className="relative shrink-0">
+        <div
+          className="relative overflow-hidden rounded-2xl border-[3px] border-[#16384a] px-3 py-2 text-center shadow-[5px_5px_0_rgba(22,56,74,0.22)] sm:px-5 sm:py-2.5"
+          style={{
+            background:
+              "linear-gradient(105deg, #1f6f8b 0%, #2bb0c7 42%, #1f8a6a 78%, #1f6f8b 100%)",
+          }}
         >
-          <span className="line-clamp-2">{news.headline || "Daily News"}</span>
-        </h2>
+          <p className="text-[clamp(0.7rem,1.35vh,0.95rem)] font-extrabold tracking-[0.32em] text-[#ffe08a] uppercase">
+            Hot off the press
+          </p>
+          <h2
+            className={cn(
+              "mt-0.5 font-display leading-none tracking-tight text-white",
+              layout === "boards"
+                ? "text-[clamp(2.2rem,5.4vh,4.4rem)]"
+                : "text-[clamp(2rem,4.8vh,4rem)]",
+            )}
+            style={{
+              textShadow: "0 2px 0 rgba(0,0,0,0.28), 3px 3px 0 rgba(0,0,0,0.18)",
+            }}
+          >
+            <span className="line-clamp-2">{news.headline || "Daily News"}</span>
+          </h2>
+          <div
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-1 opacity-45"
+            style={{
+              background: "repeating-linear-gradient(90deg, #fff 0 8px, transparent 8px 14px)",
+            }}
+          />
+        </div>
         {news.blurb ? (
           <p
             className={cn(
-              "mx-auto mt-1 max-w-4xl font-bold leading-snug text-[#3d5f70]",
+              "mx-auto mt-1.5 max-w-4xl text-center font-bold leading-snug text-[#3d5f70]",
               layout === "boards"
                 ? "text-[clamp(1rem,2.2vh,1.45rem)]"
                 : "text-[clamp(0.95rem,1.9vh,1.3rem)]",
@@ -344,14 +364,18 @@ function PhotoPanel({ news, className }: { news: DailyNews; className?: string }
   return (
     <section
       className={cn(
-        "relative min-h-0 overflow-hidden rounded-[24px] border-4 border-[#16384a] bg-[#fffdf8] shadow-[0_8px_0_#0d2430]",
+        "relative flex min-h-0 items-center justify-center overflow-hidden rounded-[24px] border-4 border-[#16384a] bg-[#fffdf8] p-1.5 shadow-[0_8px_0_#0d2430] sm:p-2",
         className,
       )}
     >
       {news.picture ? (
-        <img src={news.picture} alt="" className="size-full object-cover" />
+        <img
+          src={news.picture}
+          alt=""
+          className="max-h-full max-w-full rounded-[16px] object-contain"
+        />
       ) : (
-        <div className="grid size-full place-items-center bg-[linear-gradient(135deg,#ffe08a,#8fdfff)] p-4 text-center">
+        <div className="grid size-full place-items-center rounded-[16px] bg-[linear-gradient(135deg,#ffe08a,#8fdfff)] p-4 text-center">
           <div>
             <p className="font-display text-3xl text-[#16384a]">Scoop!</p>
             <p className="mt-1 text-sm font-bold text-[#3d5f70]">
