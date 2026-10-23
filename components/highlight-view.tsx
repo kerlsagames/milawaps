@@ -230,8 +230,8 @@ function GroupStage({
   let gridClass = "absolute inset-0 grid gap-3 p-2 sm:gap-4 sm:p-3";
 
   if (pair) {
-    // Landscape F/1: side by side. Portrait: stack so cards stay wide.
-    gridClass += allLandscape ? " grid-cols-2" : " grid-rows-2";
+    // Always side-by-side so each portrait can use the full stage height.
+    gridClass += " grid-cols-2";
   } else if (trio && allLandscape) {
     // F/1 trio: two on top, one centred under.
     gridClass +=

@@ -63,7 +63,7 @@ export function NewsView({
 
 function SplitLayout({ news }: { news: DailyNews }) {
   return (
-    <div className="relative mt-2 grid min-h-0 flex-1 gap-2 overflow-hidden lg:mt-3 lg:grid-cols-[0.78fr_1.22fr] lg:gap-3">
+    <div className="relative mt-2 grid min-h-0 flex-1 gap-2 overflow-hidden lg:mt-3 lg:grid-cols-[0.95fr_1.05fr] lg:gap-3">
       <PhotoPanel news={news} className="min-h-[24%] lg:min-h-0" />
       <ScatterBoard news={news} />
     </div>
