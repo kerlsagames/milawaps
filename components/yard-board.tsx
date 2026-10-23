@@ -94,7 +94,7 @@ export function YardBoard() {
   const [reasonPrompt, setReasonPrompt] = useState<{ id: string; line: string } | null>(null);
 
   const displaySyncKey = data?.displayUpdatedAt
-    ? `${data.displayUpdatedAt}:${data.cricketCode}:${JSON.stringify(data.shown)}:${data.newsLayout}:${JSON.stringify(data.cricketPanels)}:${data.finishAt ?? ""}:${JSON.stringify(data.dwells)}`
+    ? `${data.displayUpdatedAt}:${data.cricketCode}:${JSON.stringify(data.shown)}:${data.newsLayout}:${JSON.stringify(data.cricketPanels)}:${data.finishAt ?? ""}:${JSON.stringify(data.dwells)}:${JSON.stringify(data.reveals)}`
     : "";
   useEffect(() => {
     if (!data?.displayUpdatedAt) return;
@@ -103,6 +103,7 @@ export function YardBoard() {
       cricketPanels: data.cricketPanels,
       finishAt: data.finishAt,
       dwells: data.dwells,
+      reveals: data.reveals,
     });
   }, [displaySyncKey, data]);
 

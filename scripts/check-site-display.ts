@@ -18,6 +18,7 @@ assert.equal(empty.newsLayout, "split");
 assert.equal(empty.cricketPanels.ladder, true);
 assert.equal(empty.finishAt, null);
 assert.equal(empty.dwells, null);
+assert.equal(empty.reveals, null);
 
 const withCode = siteDisplayFromInput({ cricketCode: "BQWA8Z" }, empty);
 assert.equal(withCode.cricketCode, "BQWA8Z");
@@ -80,5 +81,27 @@ const sharedAll = siteDisplayFromInput({ dwells: every }, withDwells);
 assert.equal(sharedAll.dwells?.board, 30);
 assert.equal(sharedAll.dwells?.highlight, 30);
 assert.equal(sharedAll.dwells?.["reveal-game"], 30);
+
+// Older blobs without reveals must not invent shared defaults.
+assert.equal(sanitizeSiteDisplay({ cricketCode: "x", updatedAt: 9 }).reveals, null);
+
+const revealAt = 1_900_000_000_000;
+const withReveals = siteDisplayFromInput(
+  {
+    reveals: {
+      "reveal-1": {
+        at: revealAt,
+        prize: "Movie afternoon",
+        label: "Takedown 1",
+        image: null,
+      },
+    },
+  },
+  withDwells,
+);
+assert.equal(withReveals.reveals?.["reveal-1"]?.at, revealAt);
+assert.equal(withReveals.reveals?.["reveal-1"]?.prize, "Movie afternoon");
+assert.equal(withReveals.reveals?.["reveal-game"]?.at, null);
+assert.ok(withReveals.reveals?.["reveal-laser"]?.prize);
 
 console.log("site display checks passed");

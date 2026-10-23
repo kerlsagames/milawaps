@@ -104,6 +104,8 @@ export type PublicBoard = {
   finishAt: number | null;
   /** Shared seconds-per-slide for every TV, or null if never saved. */
   dwells: import("@/lib/site-display").DwellMap | null;
+  /** Shared prize-reveal times/names for every TV, or null if never saved. */
+  reveals: import("@/lib/site-display").SharedRevealMap | null;
 };
 
 export type Milestone = {

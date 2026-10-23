@@ -21,6 +21,7 @@ import {
   type CricketPanels,
   type DwellMap,
   type NewsLayoutId,
+  type SharedRevealMap,
 } from "@/lib/site-display";
 import { staffFromToken } from "@/lib/who";
 
@@ -300,6 +301,7 @@ export function hydrateDisplay(
     cricketPanels?: CricketPanels;
     finishAt?: number | null;
     dwells?: DwellMap | null;
+    reveals?: SharedRevealMap | null;
   },
 ) {
   const code = cricketCode.trim().slice(0, 300);
@@ -322,6 +324,9 @@ export function hydrateDisplay(
   if (extras?.dwells) {
     window.localStorage.setItem("ott-kiosk-dwells", JSON.stringify(extras.dwells));
   }
+  if (extras?.reveals) {
+    window.localStorage.setItem("ott-reveals", JSON.stringify(extras.reveals));
+  }
   publish({
     ...readPrefs(),
     shown: { ...shown },
@@ -330,6 +335,7 @@ export function hydrateDisplay(
     cricketPanels: extras?.cricketPanels ?? readCricketPanels(),
     finishAt: extras && "finishAt" in extras ? (extras.finishAt ?? null) : readFinish(),
     dwells: extras?.dwells ?? readDwells(),
+    reveals: extras?.reveals ?? readReveals(),
   });
 }
 
@@ -342,6 +348,7 @@ export async function saveSiteDisplay(
     cricketPanels?: Partial<CricketPanels>;
     finishAt?: number | null;
     dwells?: Partial<DwellMap>;
+    reveals?: SharedRevealMap;
   },
   adminToken: string,
 ): Promise<{ ok: true; board: import("@/lib/game").PublicBoard } | { ok: false; error: string }> {
@@ -365,6 +372,7 @@ export async function saveSiteDisplay(
       cricketPanels: body.cricketPanels,
       finishAt: body.finishAt,
       dwells: body.dwells,
+      reveals: body.reveals,
     });
     return { ok: true, board: body };
   } catch {
@@ -372,7 +380,7 @@ export async function saveSiteDisplay(
   }
 }
 
-export function setRevealAt(id: RevealId, at: number | null) {
+export function setRevealAt(id: RevealId, at: number | null): RevealMap {
   const reveals = readReveals();
   reveals[id] = {
     ...reveals[id],
@@ -380,6 +388,7 @@ export function setRevealAt(id: RevealId, at: number | null) {
   };
   window.localStorage.setItem("ott-reveals", JSON.stringify(reveals));
   publish({ ...readPrefs(), reveals });
+  return reveals;
 }
 
 export function resetReveals() {
@@ -391,31 +400,33 @@ export function resetReveals() {
   publish({ ...readPrefs(), reveals, shown });
 }
 
-export function setRevealPrize(id: RevealId, prize: string) {
+export function setRevealPrize(id: RevealId, prize: string): RevealMap {
   const reveals = readReveals();
   reveals[id] = { ...reveals[id], prize };
   window.localStorage.setItem("ott-reveals", JSON.stringify(reveals));
   publish({ ...readPrefs(), reveals });
+  return reveals;
 }
 
-export function setRevealLabel(id: RevealId, label: string) {
+export function setRevealLabel(id: RevealId, label: string): RevealMap {
   const reveals = readReveals();
   reveals[id] = { ...reveals[id], label: label.trim().slice(0, 40) };
   window.localStorage.setItem("ott-reveals", JSON.stringify(reveals));
   publish({ ...readPrefs(), reveals });
+  return reveals;
 }
 
-export function setRevealImage(id: RevealId, image: string | null): boolean {
+export function setRevealImage(id: RevealId, image: string | null): RevealMap | null {
   const reveals = readReveals();
   const previous = reveals[id].image;
   reveals[id] = { ...reveals[id], image };
   try {
     window.localStorage.setItem("ott-reveals", JSON.stringify(reveals));
     publish({ ...readPrefs(), reveals });
-    return true;
+    return reveals;
   } catch {
     reveals[id] = { ...reveals[id], image: previous };
-    return false;
+    return null;
   }
 }
 

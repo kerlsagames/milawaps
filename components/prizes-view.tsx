@@ -27,7 +27,7 @@ export function PrizesView({ board }: { board: PublicBoard }) {
   const now = Date.now();
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3">
+    <div className="flex h-full min-h-0 flex-col gap-2 lg:gap-3">
       <header className="shrink-0">
         <p className="text-[11px] font-bold tracking-[0.22em] text-ink-gold uppercase">Follow the path</p>
         <h2 className="font-display text-3xl leading-none lg:text-5xl">Prizes</h2>
@@ -36,7 +36,7 @@ export function PrizesView({ board }: { board: PublicBoard }) {
         </p>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3">
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden lg:gap-3">
         {UNITS.map((unit) => (
           <ClassPath
             key={unit.id}
@@ -48,8 +48,8 @@ export function PrizesView({ board }: { board: PublicBoard }) {
         ))}
       </div>
 
-      {/* Kiosk/TV has spare room under the paths — park the clock dead-centre at the bottom. */}
-      <div className="mt-auto flex shrink-0 justify-center pt-1 lg:pt-2">
+      {/* Always keep the school finish clock on screen — paths shrink above it. */}
+      <div className="flex shrink-0 justify-center pt-1 lg:pt-2">
         <Countdown />
       </div>
     </div>
@@ -71,7 +71,7 @@ function ClassPath({
 
   return (
     <section
-      className="flex flex-1 items-center gap-1.5 rounded-2xl border-4 bg-card px-1.5 py-2 lg:gap-3 lg:rounded-[28px] lg:px-3 lg:py-3"
+      className="flex min-h-0 flex-1 items-center gap-1.5 rounded-2xl border-4 bg-card px-1.5 py-2 lg:gap-3 lg:rounded-[28px] lg:px-3 lg:py-3"
       style={{ borderColor: unit.color }}
     >
       <div

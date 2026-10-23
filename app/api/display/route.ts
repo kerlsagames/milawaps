@@ -22,6 +22,7 @@ export async function GET() {
       cricketPanels: board.cricketPanels,
       finishAt: board.finishAt,
       dwells: board.dwells,
+      reveals: board.reveals,
     });
   } catch {
     return json({ error: "The display desk is out of reach." }, 500);

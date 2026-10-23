@@ -1,4 +1,74 @@
-import { DEFAULT_SHOWN, SCREEN_IDS, type FixedScreenId, type ShownMap } from "@/lib/reveals";
+import {
+  DEFAULT_SHOWN,
+  REVEALS,
+  SCREEN_IDS,
+  type FixedScreenId,
+  type RevealId,
+  type ShownMap,
+} from "@/lib/reveals";
+
+/** Shared prize-reveal copy/time for every TV (same shape as desk localStorage). */
+export type SharedRevealPrefs = {
+  at: number | null;
+  prize: string;
+  label: string;
+  image: string | null;
+};
+
+export type SharedRevealMap = Record<RevealId, SharedRevealPrefs>;
+
+const MAX_REVEAL_IMAGE = 2_500_000;
+
+function defaultSharedReveals(): SharedRevealMap {
+  return Object.fromEntries(
+    REVEALS.map((reveal) => [
+      reveal.id,
+      { at: null, prize: reveal.prize, label: reveal.title, image: null },
+    ]),
+  ) as SharedRevealMap;
+}
+
+function sanitizeRevealImage(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  if (value.startsWith("data:image/")) return value.slice(0, MAX_REVEAL_IMAGE);
+  if (value.startsWith("/")) return value.slice(0, 400);
+  return null;
+}
+
+/** null = never saved school-wide; clients keep their own local reveals. */
+export function sanitizeSharedReveals(raw: unknown): SharedRevealMap | null {
+  if (!raw || typeof raw !== "object") return null;
+  const saved = raw as Record<string, unknown>;
+  const reveals = defaultSharedReveals();
+  let sawAny = false;
+  for (const reveal of REVEALS) {
+    const row = saved[reveal.id];
+    if (!row || typeof row !== "object") continue;
+    sawAny = true;
+    const record = row as {
+      at?: unknown;
+      prize?: unknown;
+      label?: unknown;
+      image?: unknown;
+    };
+    const at =
+      typeof record.at === "number" && Number.isFinite(record.at) && record.at > 0
+        ? Math.floor(record.at)
+        : null;
+    const prize = typeof record.prize === "string" ? record.prize.slice(0, 200) : reveal.prize;
+    const label =
+      typeof record.label === "string" && record.label.trim()
+        ? record.label.trim().slice(0, 40)
+        : reveal.title;
+    reveals[reveal.id] = {
+      at,
+      prize,
+      label,
+      image: sanitizeRevealImage(record.image),
+    };
+  }
+  return sawAny ? reveals : null;
+}
 
 export type DwellMap = Record<FixedScreenId, number>;
 
@@ -94,6 +164,11 @@ export type SiteDisplay = {
    * null = never saved on the server; clients keep their own local times.
    */
   dwells: DwellMap | null;
+  /**
+   * Shared prize-reveal times/names/pictures for every TV.
+   * null = never saved on the server; clients keep their own local reveals.
+   */
+  reveals: SharedRevealMap | null;
 };
 
 export function emptySiteDisplay(): SiteDisplay {
@@ -105,6 +180,7 @@ export function emptySiteDisplay(): SiteDisplay {
     cricketPanels: { ...DEFAULT_CRICKET_PANELS },
     finishAt: null,
     dwells: null,
+    reveals: null,
   };
 }
 
@@ -143,6 +219,7 @@ export function sanitizeSiteDisplay(raw: unknown): SiteDisplay {
     cricketPanels?: unknown;
     finishAt?: unknown;
     dwells?: unknown;
+    reveals?: unknown;
   };
   const shown = { ...DEFAULT_SHOWN };
   if (record.shown && typeof record.shown === "object") {
@@ -162,6 +239,7 @@ export function sanitizeSiteDisplay(raw: unknown): SiteDisplay {
   // older saves must not wipe each TV's local slide times.
   const dwells =
     record.dwells && typeof record.dwells === "object" ? sanitizeDwells(record.dwells) : null;
+  const reveals = sanitizeSharedReveals(record.reveals);
   return {
     shown,
     cricketCode,
@@ -170,6 +248,7 @@ export function sanitizeSiteDisplay(raw: unknown): SiteDisplay {
     cricketPanels: sanitizeCricketPanels(record.cricketPanels),
     finishAt: sanitizeFinishAt(record.finishAt),
     dwells,
+    reveals,
   };
 }
 
@@ -183,6 +262,7 @@ export function siteDisplayFromInput(raw: unknown, current: SiteDisplay): SiteDi
     cricketPanels?: unknown;
     finishAt?: unknown;
     dwells?: unknown;
+    reveals?: unknown;
   };
   const nextShown = { ...current.shown };
   let cricketCode = current.cricketCode;
@@ -190,6 +270,7 @@ export function siteDisplayFromInput(raw: unknown, current: SiteDisplay): SiteDi
   let cricketPanels = { ...current.cricketPanels };
   let finishAt = current.finishAt;
   let dwells = current.dwells;
+  let reveals = current.reveals;
 
   if (typeof record.cricketCode === "string") {
     cricketCode = record.cricketCode.trim().slice(0, 300);
@@ -212,6 +293,10 @@ export function siteDisplayFromInput(raw: unknown, current: SiteDisplay): SiteDi
   if (record.dwells !== undefined && record.dwells !== null && typeof record.dwells === "object") {
     dwells = sanitizeDwells({ ...(current.dwells ?? DEFAULT_DWELLS), ...record.dwells });
   }
+  if (record.reveals !== undefined && record.reveals !== null && typeof record.reveals === "object") {
+    const base = current.reveals ?? defaultSharedReveals();
+    reveals = sanitizeSharedReveals({ ...base, ...(record.reveals as object) });
+  }
 
   const cricketPatched =
     record.shown &&
@@ -231,6 +316,7 @@ export function siteDisplayFromInput(raw: unknown, current: SiteDisplay): SiteDi
     cricketPanels,
     finishAt,
     dwells,
+    reveals,
     updatedAt: Date.now(),
   });
 }

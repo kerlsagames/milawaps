@@ -284,6 +284,7 @@ export function toPublic(blob: FileBlob): PublicBoard {
     cricketPanels: display.cricketPanels,
     finishAt: display.finishAt,
     dwells: display.dwells,
+    reveals: display.reveals,
   };
 }
 

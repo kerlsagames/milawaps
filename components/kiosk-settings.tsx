@@ -153,6 +153,7 @@ export function KioskSettings({
       cricketPanels?: Partial<CricketPanels>;
       finishAt?: number | null;
       dwells?: Partial<Record<FixedScreenId, number>>;
+      reveals?: import("@/lib/desk-prefs").RevealMap;
     },
     okNote: string,
   ) {
@@ -477,6 +478,9 @@ export function KioskSettings({
             <RevealsPanel
               prefs={prefs}
               onShown={(id, next) => void saveShown(id, next)}
+              onSaveSchool={(reveals) => {
+                void patchDisplay({ reveals }, "Prize reveals saved for every TV.");
+              }}
               onPreview={(id) => {
                 setOpen(false);
                 onPreview(id);
@@ -1003,17 +1007,34 @@ function CricketPagePanel({
 function RevealsPanel({
   prefs,
   onShown,
+  onSaveSchool,
   onPreview,
 }: {
   prefs: ReturnType<typeof useDeskPrefs>;
   onShown: (id: FixedScreenId, next: boolean) => void;
+  /** Push a reveal map to every milawaps TV. */
+  onSaveSchool: (reveals: import("@/lib/desk-prefs").RevealMap) => void;
   onPreview: (id: FixedScreenId) => void;
 }) {
+  const textSaveTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (textSaveTimer.current) window.clearTimeout(textSaveTimer.current);
+    };
+  }, []);
+
+  function saveWordsSoon(reveals: import("@/lib/desk-prefs").RevealMap) {
+    if (textSaveTimer.current) window.clearTimeout(textSaveTimer.current);
+    textSaveTimer.current = window.setTimeout(() => onSaveSchool(reveals), 700);
+  }
+
   return (
     <section className="grid gap-3">
       <p className="text-xs font-semibold text-muted-foreground">
         Change what a prize says, and upload a picture if ice cream becomes movie day. Before the
-        date, prize stops show a lock. On the day, the card flips.
+        date, prize stops show a lock. On the day, the card flips. Saving here updates every TV —
+        laptop kiosk included.
       </p>
       {REVEALS.map((reveal) => {
         const saved = prefs.reveals[reveal.id];
@@ -1030,16 +1051,20 @@ function RevealsPanel({
               saveLabel="Save reveal time"
               dateLabel={`${reveal.title} date`}
               timeLabel={`${reveal.title} time`}
-              onSave={(at) => setRevealAt(reveal.id, at)}
+              onSave={(at) => onSaveSchool(setRevealAt(reveal.id, at))}
             />
             <PrizeWords
               reveal={reveal}
               says={saved.label}
               line={saved.prize}
               image={saved.image}
-              onSays={(value) => setRevealLabel(reveal.id, value)}
-              onLine={(value) => setRevealPrize(reveal.id, value)}
-              onImage={(image) => setRevealImage(reveal.id, image)}
+              onSays={(value) => saveWordsSoon(setRevealLabel(reveal.id, value))}
+              onLine={(value) => saveWordsSoon(setRevealPrize(reveal.id, value))}
+              onImage={(image) => {
+                const next = setRevealImage(reveal.id, image);
+                if (next) onSaveSchool(next);
+                return Boolean(next);
+              }}
             />
             <Button type="button" variant="outline" className="h-9 rounded-xl" onClick={() => onPreview(reveal.id)}>
               Preview
