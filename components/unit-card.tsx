@@ -136,21 +136,22 @@ export function UnitCard({
           />
         </div>
 
-        {/* Tick board fills leftover height; score buttons stay pinned under it. */}
+        {/*
+          Kiosk/TV: width-first 10×8 board (h-auto w-full) — height-first sizing
+          collapsed under transform:scale and left tiny grids.
+          Teacher desk: same fit, but strikes stay a header badge so +1 keeps room.
+        */}
         <div
           className={cn(
-            "mt-1 hidden min-h-0 flex-1 flex-col overflow-hidden lg:flex",
+            "mt-1.5 hidden min-h-0 flex-1 flex-col overflow-hidden lg:flex",
             deskControls ? "gap-0" : "gap-1.5",
           )}
         >
-          <div className="relative min-h-0 flex-1 overflow-hidden">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="aspect-[10/8] h-full max-h-full w-auto max-w-full">
-                <BlockMatrix score={score} color={unit.color} ink={unit.ink} label={unit.code} />
-              </div>
+          <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden">
+            <div className="aspect-[10/8] h-auto max-h-full w-full max-w-full">
+              <BlockMatrix score={score} color={unit.color} ink={unit.ink} label={unit.code} />
             </div>
           </div>
-          {/* Full strike board on TV; teacher desk uses the compact header badge. */}
           {!deskControls ? (
             <div className="max-h-[34%] min-h-0 w-full shrink-0 overflow-hidden">
               <StrikeMatrix count={crosses} label={unit.code} />

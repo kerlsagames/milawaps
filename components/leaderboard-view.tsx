@@ -39,8 +39,8 @@ export function LeaderboardView({
   return (
     <div
       className={cn(
-        "flex min-h-0 flex-col overflow-hidden",
-        compact ? "h-full gap-0.5 lg:gap-2" : "gap-2 lg:gap-3",
+        "flex h-full min-h-0 flex-col overflow-hidden",
+        compact ? "gap-0.5 lg:gap-2" : "gap-2 lg:gap-3",
       )}
     >
       <VaultMeter
@@ -58,8 +58,8 @@ export function LeaderboardView({
       )}
       <div
         className={cn(
-          "grid min-h-0 gap-1 lg:grid-cols-3 lg:gap-3",
-          compact && "flex-1 grid-rows-3 lg:grid-rows-1",
+          "grid min-h-0 flex-1 gap-1 lg:grid-cols-3 lg:grid-rows-1 lg:gap-3",
+          compact && "grid-rows-3",
         )}
       >
         {UNITS.map((unit, index) => (
