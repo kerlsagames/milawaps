@@ -60,7 +60,7 @@ export function UnitCard({
             className={cn(
               "font-display leading-none whitespace-nowrap",
               deskControls
-                ? "text-[1.55rem] lg:text-[length:min(3.5rem,calc((100cqi-5rem)/3))] lg:leading-[0.85]"
+                ? "text-[1.55rem] lg:text-[length:min(3.75rem,calc((100cqi-5rem)/3))] lg:leading-[0.85]"
                 : compact
                   ? "text-[1.55rem] lg:text-[length:min(8.5rem,calc((100cqi-8rem)/3))] lg:leading-[0.78]"
                   : "text-[2.65rem] lg:text-[length:min(8.5rem,calc((100cqi-8rem)/3))] lg:leading-[0.78]",
@@ -73,29 +73,36 @@ export function UnitCard({
             {unit.code}
           </p>
         </div>
-        <div
-          className={cn(
-            "grid shrink-0 place-items-center rounded-full bg-[#fffdf8]",
-            deskControls
-              ? "size-9 shadow-[0_2px_0_rgba(42,28,4,0.28)] lg:size-14 lg:shadow-[0_3px_0_rgba(42,28,4,0.28)]"
-              : compact
-                ? "size-9 shadow-[0_2px_0_rgba(42,28,4,0.28)] lg:size-24 lg:shadow-[0_4px_0_rgba(42,28,4,0.28)]"
-                : "size-14 shadow-[0_3px_0_rgba(42,28,4,0.28)] lg:size-24 lg:shadow-[0_4px_0_rgba(42,28,4,0.28)]",
-          )}
-          aria-label={`${unit.code} tally ${score}`}
-        >
-          <p
+        <div className="flex shrink-0 items-center gap-1.5">
+          {deskControls && crosses > 0 ? (
+            <p className="hidden rounded-md bg-[#fffdf8]/90 px-1.5 py-0.5 text-[10px] font-extrabold text-[#8d1f1f] lg:block">
+              {crosses} strike{crosses === 1 ? "" : "s"}
+            </p>
+          ) : null}
+          <div
             className={cn(
-              "font-display leading-none tabular-nums",
+              "grid shrink-0 place-items-center rounded-full bg-[#fffdf8]",
               deskControls
-                ? "text-xl lg:text-3xl"
+                ? "size-9 shadow-[0_2px_0_rgba(42,28,4,0.28)] lg:size-14 lg:shadow-[0_3px_0_rgba(42,28,4,0.28)]"
                 : compact
-                  ? "text-xl lg:text-5xl"
-                  : "text-3xl lg:text-5xl",
+                  ? "size-9 shadow-[0_2px_0_rgba(42,28,4,0.28)] lg:size-24 lg:shadow-[0_4px_0_rgba(42,28,4,0.28)]"
+                  : "size-14 shadow-[0_3px_0_rgba(42,28,4,0.28)] lg:size-24 lg:shadow-[0_4px_0_rgba(42,28,4,0.28)]",
             )}
+            aria-label={`${unit.code} tally ${score}`}
           >
-            {score}
-          </p>
+            <p
+              className={cn(
+                "font-display leading-none tabular-nums",
+                deskControls
+                  ? "text-xl lg:text-3xl"
+                  : compact
+                    ? "text-xl lg:text-5xl"
+                    : "text-3xl lg:text-5xl",
+              )}
+            >
+              {score}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -129,7 +136,39 @@ export function UnitCard({
           />
         </div>
 
-        {/* Score buttons before the grids so short laptops never clip +1 / highlight. */}
+        {/* Tick board fills leftover height; score buttons stay pinned under it. */}
+        <div
+          className={cn(
+            "mt-1 hidden min-h-0 flex-1 flex-col overflow-hidden lg:flex",
+            deskControls ? "gap-0" : "gap-1.5",
+          )}
+        >
+          <div className="relative min-h-0 flex-1 overflow-hidden">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="aspect-[10/8] h-full max-h-full w-auto max-w-full">
+                <BlockMatrix score={score} color={unit.color} ink={unit.ink} label={unit.code} />
+              </div>
+            </div>
+          </div>
+          {/* Full strike board on TV; teacher desk uses the compact header badge. */}
+          {!deskControls ? (
+            <div className="max-h-[34%] min-h-0 w-full shrink-0 overflow-hidden">
+              <StrikeMatrix count={crosses} label={unit.code} />
+            </div>
+          ) : null}
+        </div>
+
+        {crosses > 0 ? (
+          <p
+            className={cn(
+              "shrink-0 truncate text-muted-foreground lg:hidden",
+              compact ? "absolute top-1 right-1 rounded bg-white/90 px-1 text-[10px]" : "mt-1.5 text-xs",
+            )}
+          >
+            {crosses} strike{crosses === 1 ? "" : "s"}
+          </p>
+        ) : null}
+
         {(onScore || onHighlight) ? (
           <div
             className={cn(
@@ -151,7 +190,7 @@ export function UnitCard({
                   className={cn(
                     "rounded-xl",
                     fillActions
-                      ? "h-full min-h-0 text-base lg:h-11 lg:text-base"
+                      ? "h-full min-h-0 text-base lg:h-10 lg:text-base"
                       : "h-14 text-lg lg:h-12 lg:text-base",
                   )}
                   style={{ background: unit.color, color: unit.ink }}
@@ -165,7 +204,7 @@ export function UnitCard({
                   className={cn(
                     "rounded-xl",
                     fillActions
-                      ? "h-full min-h-0 text-base lg:h-11 lg:text-base"
+                      ? "h-full min-h-0 text-base lg:h-10 lg:text-base"
                       : "h-14 text-lg lg:h-12 lg:text-base",
                   )}
                   style={{ background: unit.deep, color: "#fff7ea" }}
@@ -180,7 +219,7 @@ export function UnitCard({
                   className={cn(
                     "rounded-xl border-[#c23b3b]/40 bg-[#c23b3b]/10 text-[#8d1f1f]",
                     fillActions
-                      ? "h-full min-h-0 text-base lg:h-11 lg:text-base"
+                      ? "h-full min-h-0 text-base lg:h-10 lg:text-base"
                       : "h-14 text-lg lg:h-12 lg:text-base",
                   )}
                   disabled={score <= 0}
@@ -198,7 +237,7 @@ export function UnitCard({
                 className={cn(
                   "w-full rounded-xl border-[#e2a01a] bg-[#fff8df] font-extrabold",
                   fillActions
-                    ? "h-auto min-h-0 flex-[1] px-1 text-[11px] lg:h-10 lg:flex-none lg:px-3 lg:text-sm"
+                    ? "h-auto min-h-0 flex-[1] px-1 text-[11px] lg:h-9 lg:flex-none lg:px-3 lg:text-sm"
                     : "h-12 text-sm lg:h-11",
                 )}
                 onClick={() => onHighlight(unit.id)}
@@ -208,37 +247,6 @@ export function UnitCard({
               </Button>
             ) : null}
           </div>
-        ) : null}
-
-        <div
-          className={cn(
-            "mt-1.5 hidden min-h-0 flex-1 flex-col gap-1 overflow-hidden lg:flex",
-            deskControls && "min-h-0",
-          )}
-        >
-          {/*
-            Size the 10×8 board from available height. Leftover space only —
-            score buttons above always keep their room.
-          */}
-          <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden">
-            <div className="aspect-[10/8] h-full w-auto max-w-full">
-              <BlockMatrix score={score} color={unit.color} ink={unit.ink} label={unit.code} />
-            </div>
-          </div>
-          <div className="max-h-[28%] min-h-0 w-full shrink-0 overflow-hidden">
-            <StrikeMatrix count={crosses} label={unit.code} />
-          </div>
-        </div>
-
-        {crosses > 0 ? (
-          <p
-            className={cn(
-              "shrink-0 truncate text-muted-foreground lg:hidden",
-              compact ? "absolute top-1 right-1 rounded bg-white/90 px-1 text-[10px]" : "mt-1.5 text-xs",
-            )}
-          >
-            {crosses} strike{crosses === 1 ? "" : "s"}
-          </p>
         ) : null}
       </div>
     </motion.article>
