@@ -14,6 +14,7 @@ import {
   buildHighlightWorkbook,
   classLabel,
   highlightsToCsv,
+  highlightsWorkbookBytes,
   shoutOutCounts,
 } from "../lib/highlight-spreadsheet";
 import { emptyNews, sanitizeNews } from "../lib/news";
@@ -232,6 +233,11 @@ assert.equal(classLabel("234"), "2-3-4");
 // Workbook covers full history + a tab per grade with every student.
 const book = buildHighlightWorkbook(kept, 1_500);
 assert.deepEqual(book.SheetNames, ["All shout-outs", "F-1", "2-3-4", "5-6"]);
+// Bytes must be a real ZIP (PK…) — empty Uint8Array(byteLength) broke Excel downloads.
+const xlsxBytes = highlightsWorkbookBytes(kept, 1_500);
+assert.ok(xlsxBytes instanceof Uint8Array);
+assert.ok(xlsxBytes.byteLength > 100);
+assert.equal(String.fromCharCode(xlsxBytes[0]!, xlsxBytes[1]!), "PK");
 const counts = shoutOutCounts(kept);
 // first + old-ended copy both include Abbey & Ada; Will is only on second.
 assert.equal(counts.get("f1-abbey"), 2);

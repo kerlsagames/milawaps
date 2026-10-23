@@ -98,10 +98,19 @@ export function buildHighlightWorkbook(entries: HighlightEntry[], now = Date.now
   return wb;
 }
 
+/** Normalize SheetJS write output (ArrayBuffer / Uint8Array / number[]) to bytes. */
+function asWorkbookBytes(raw: ArrayBuffer | Uint8Array | number[]): Uint8Array {
+  if (raw instanceof Uint8Array) return raw;
+  if (raw instanceof ArrayBuffer) return new Uint8Array(raw);
+  return Uint8Array.from(raw);
+}
+
 /** Browser-ready .xlsx bytes covering every stored shout-out plus per-grade tallies. */
 export function highlightsWorkbookBytes(entries: HighlightEntry[], now = Date.now()): Uint8Array {
   const workbook = buildHighlightWorkbook(entries, now);
-  return XLSX.write(workbook, { bookType: "xlsx", type: "array" }) as Uint8Array;
+  // SheetJS 0.18 often returns ArrayBuffer for type:"array" — not a Uint8Array.
+  // Callers must wrap with `new Uint8Array(buffer)`, not `new Uint8Array(buffer.byteLength)`.
+  return asWorkbookBytes(XLSX.write(workbook, { bookType: "xlsx", type: "array" }));
 }
 
 function csvEscape(value: string) {

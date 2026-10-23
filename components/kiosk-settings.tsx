@@ -770,9 +770,7 @@ function HighlightPagePanel({
       // Full stored history (live + ended) — not filtered to today.
       const rows = body.highlights ?? [];
       const bytes = highlightsWorkbookBytes(rows);
-      const copy = new Uint8Array(bytes.byteLength);
-      copy.set(bytes);
-      const blob = new Blob([copy], {
+      const blob = new Blob([bytes], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
       const url = URL.createObjectURL(blob);
