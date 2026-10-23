@@ -112,17 +112,18 @@ export function UnitCard({
           />
         </div>
 
-        <div className="mt-2 hidden min-h-0 flex-1 flex-col gap-2 overflow-hidden lg:flex">
+        <div className="mt-2 hidden min-h-0 flex-1 flex-col gap-1.5 overflow-hidden lg:flex">
           {/*
-            Fit the 10×8 board inside leftover height without container queries —
-            those collapse under the kiosk’s transform: scale and hide the grids.
+            Size the 10×8 board from available height (not width) so short laptop
+            screens keep +1 / highlight buttons instead of clipping them.
+            Avoid container queries here — they collapse under transform: scale.
           */}
           <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden">
-            <div className="aspect-[10/8] h-auto max-h-full w-full max-w-full">
+            <div className="aspect-[10/8] h-full w-auto max-w-full">
               <BlockMatrix score={score} color={unit.color} ink={unit.ink} label={unit.code} />
             </div>
           </div>
-          <div className="max-h-[34%] min-h-0 w-full shrink-0 overflow-hidden">
+          <div className="max-h-[30%] min-h-0 w-full shrink-0 overflow-hidden">
             <StrikeMatrix count={crosses} label={unit.code} />
           </div>
         </div>

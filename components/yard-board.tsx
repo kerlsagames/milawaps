@@ -818,8 +818,8 @@ export function YardBoard() {
                   />
                 </div>
               ) : (
-                // TV kiosk scales to fit the screen; the teacher desk keeps natural layout
-                // so +1 / highlight controls are not crushed over the score grids.
+                // TV + laptop desk both scale a fixed stage into the viewport so short
+                // screens keep the same layout (and +1 buttons) instead of clipping.
                 <DeskFit kiosk={kiosk}>
                   {view === "board" ? (
                     <LeaderboardView
@@ -1006,11 +1006,82 @@ async function celebrate(events: MilestoneEvent[]) {
   }
 }
 
+/** Big-monitor composition size for the teacher desk board (lg+). */
+const DESK_STAGE_W = 1440;
+const DESK_STAGE_H = 860;
+
 function DeskFit({ kiosk, children }: { kiosk: boolean; children: ReactNode }) {
-  if (!kiosk) {
-    return <div className="box-border h-full min-h-0 overflow-hidden p-2 lg:p-3">{children}</div>;
-  }
-  return <TvFit>{children}</TvFit>;
+  if (kiosk) return <TvFit>{children}</TvFit>;
+  return <DeskStage>{children}</DeskStage>;
+}
+
+/** Phone: natural stacked layout. Laptop/desktop: scale a fixed stage to fit. */
+function DeskStage({ children }: { children: ReactNode }) {
+  const frame = useRef<HTMLDivElement>(null);
+  const [box, setBox] = useState({ width: "100%", height: "100%", scale: 1, staged: false });
+
+  useEffect(() => {
+    const frameEl = frame.current;
+    if (!frameEl) return;
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const fit = () => {
+      if (!mq.matches) {
+        setBox({ width: "100%", height: "100%", scale: 1, staged: false });
+        return;
+      }
+      const availableH = Math.max(0, frameEl.clientHeight);
+      const availableW = Math.max(0, frameEl.clientWidth);
+      if (availableH <= 0 || availableW <= 0) return;
+      const next = Math.min(1, availableW / DESK_STAGE_W, availableH / DESK_STAGE_H);
+      setBox((prev) => {
+        if (
+          prev.staged &&
+          prev.width === `${DESK_STAGE_W}px` &&
+          Math.abs(prev.scale - next) < 0.001
+        ) {
+          return prev;
+        }
+        return {
+          width: `${DESK_STAGE_W}px`,
+          height: `${DESK_STAGE_H}px`,
+          scale: next,
+          staged: true,
+        };
+      });
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(frameEl);
+    mq.addEventListener("change", fit);
+    window.addEventListener("resize", fit);
+    return () => {
+      observer.disconnect();
+      mq.removeEventListener("change", fit);
+      window.removeEventListener("resize", fit);
+    };
+  }, []);
+
+  return (
+    <div
+      ref={frame}
+      className={cn(
+        "box-border h-full min-h-0 overflow-hidden p-2 lg:p-3",
+        box.staged && "grid place-items-center",
+      )}
+    >
+      <div
+        className="min-h-0"
+        style={{
+          width: box.width,
+          height: box.height,
+          transform: `scale(${box.scale})`,
+          transformOrigin: "center center",
+        }}
+      >
+        <div className="h-full min-h-0">{children}</div>
+      </div>
+    </div>
+  );
 }
 
 function TvFit({ children }: { children: ReactNode }) {
