@@ -53,6 +53,26 @@ assert.equal(news.challenge, "Find the hidden duck — 2+ points");
 assert.equal(news.reminders[0]?.text, "Hats on");
 assert.equal(emptyNews().reminders.length, 0);
 assert.equal(emptyNews().challenge, "");
+assert.equal(emptyNews().headline, "Daily News");
+assert.equal(emptyNews().blurb, "");
+
+// Old TV defaults migrate; dated coming-up sorts and drops past days.
+const migrated = sanitizeNews({
+  headline: "Today at Milawa",
+  blurb: "Check the board for reminders and what is coming up.",
+  upcoming: [
+    { id: "a", on: "2020-01-01", text: "Old sports day" },
+    { id: "b", on: "2099-12-01", text: "Future assembly" },
+    { id: "c", on: "2099-06-15", text: "Mid-year concert" },
+    { id: "d", when: "Soon", text: "Undated note" },
+  ],
+});
+assert.equal(migrated.headline, "Daily News");
+assert.equal(migrated.blurb, "");
+assert.deepEqual(
+  migrated.upcoming.map((item) => item.text),
+  ["Mid-year concert", "Future assembly", "Undated note"],
+);
 
 const first = createHighlight(
   [

@@ -1423,26 +1423,38 @@ function UpcomingList({
           type="button"
           className="text-xs font-bold underline"
           onClick={() =>
-            onChange([...rows, { id: `upcoming-${rows.length}`, when: "", text: "" }].slice(0, 8))
+            onChange(
+              [...rows, { id: `upcoming-${rows.length}`, on: null, when: "", text: "" }].slice(0, 8),
+            )
           }
         >
           Add
         </button>
       </div>
+      <p className="text-[11px] font-semibold text-muted-foreground">
+        Pick the date — they show soonest-first and drop off after that day.
+      </p>
       {rows.map((row, index) => (
         <div key={row.id} className="grid gap-1 rounded-xl bg-white/80 p-2">
-          <input
-            type="text"
-            value={row.when}
-            aria-label={`Coming up when ${index + 1}`}
-            placeholder="Fri recess"
-            onChange={(event) => {
-              const next = [...rows];
-              next[index] = { ...row, when: event.target.value.slice(0, 40) };
-              onChange(next);
-            }}
-            className="h-9 rounded-xl border border-input bg-transparent px-3 text-sm font-bold"
-          />
+          <label className="grid gap-1">
+            <span className="text-[11px] font-bold text-muted-foreground">Date</span>
+            <input
+              type="date"
+              value={row.on ?? ""}
+              aria-label={`Coming up date ${index + 1}`}
+              onChange={(event) => {
+                const next = [...rows];
+                const value = event.target.value;
+                next[index] = {
+                  ...row,
+                  on: value || null,
+                  when: "",
+                };
+                onChange(next);
+              }}
+              className="h-10 rounded-xl border border-input bg-transparent px-3 text-sm font-bold"
+            />
+          </label>
           <div className="flex gap-2">
             <input
               type="text"

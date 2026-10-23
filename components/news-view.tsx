@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { DailyNews } from "@/lib/news";
+import { activeUpcoming, formatUpcomingLabel, type DailyNews } from "@/lib/news";
 import type { NewsLayoutId } from "@/lib/site-display";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +12,9 @@ export function NewsView({
   news: DailyNews;
   layout?: NewsLayoutId;
 }) {
+  const upcoming = activeUpcoming(news.upcoming);
+  const board = { ...news, upcoming };
+
   return (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-[28px] border-4 border-[#1f6f8b] bg-[radial-gradient(circle_at_top_left,#ffe08a_0%,#fff8df_38%,#d9f4ff_100%)] p-2.5 sm:p-4">
       <div
@@ -23,9 +26,6 @@ export function NewsView({
         }}
       />
       <header className="relative shrink-0 text-center">
-        <p className="text-[10px] font-extrabold tracking-[0.28em] text-[#1f6f8b] uppercase sm:text-xs">
-          Daily Feed
-        </p>
         <h2
           className={cn(
             "font-display leading-none text-[#16384a]",
@@ -34,7 +34,7 @@ export function NewsView({
               : "text-[clamp(1.9rem,4.6vh,3.9rem)]",
           )}
         >
-          <span className="line-clamp-2">{news.headline}</span>
+          <span className="line-clamp-2">{news.headline || "Daily News"}</span>
         </h2>
         {news.blurb ? (
           <p
@@ -51,11 +51,11 @@ export function NewsView({
       </header>
 
       {layout === "stack" ? (
-        <StackLayout news={news} />
+        <StackLayout news={board} />
       ) : layout === "boards" ? (
-        <BoardsLayout news={news} />
+        <BoardsLayout news={board} />
       ) : (
-        <SplitLayout news={news} />
+        <SplitLayout news={board} />
       )}
     </div>
   );
@@ -63,8 +63,8 @@ export function NewsView({
 
 function SplitLayout({ news }: { news: DailyNews }) {
   return (
-    <div className="relative mt-2 grid min-h-0 flex-1 gap-2 overflow-hidden lg:mt-3 lg:grid-cols-[1.15fr_0.85fr] lg:gap-3">
-      <PhotoPanel news={news} className="min-h-[28%] lg:min-h-0" />
+    <div className="relative mt-2 grid min-h-0 flex-1 gap-2 overflow-hidden lg:mt-3 lg:grid-cols-[0.78fr_1.22fr] lg:gap-3">
+      <PhotoPanel news={news} className="min-h-[24%] lg:min-h-0" />
       <ScatterBoard news={news} />
     </div>
   );
@@ -73,7 +73,7 @@ function SplitLayout({ news }: { news: DailyNews }) {
 function StackLayout({ news }: { news: DailyNews }) {
   return (
     <div className="relative mt-2 flex min-h-0 flex-1 flex-col gap-2 overflow-hidden lg:mt-3">
-      <PhotoPanel news={news} className="h-[28%] max-h-48 shrink-0" />
+      <PhotoPanel news={news} className="h-[24%] max-h-40 shrink-0" />
       <div className="grid min-h-0 flex-1 gap-2 overflow-hidden lg:grid-cols-2">
         <RemindersPanel news={news} size="lg" />
         <div className="flex min-h-0 flex-col gap-2 overflow-hidden">
@@ -149,24 +149,27 @@ function ScatterBoard({ news }: { news: DailyNews }) {
             <Empty line="Nothing on the calendar yet." />
           ) : (
             <ul className="flex min-h-0 flex-1 flex-col justify-evenly gap-1.5 overflow-hidden">
-              {news.upcoming.map((item, index) => (
-                <li
-                  key={item.id}
-                  className={cn(
-                    "min-h-0 overflow-hidden rounded-lg border-2 border-[#0d7a64]/25 px-2.5 py-1.5 shadow-[2px_2px_0_rgba(13,122,100,0.14)]",
-                    UPCOMING_TONES[index % UPCOMING_TONES.length],
-                  )}
-                >
-                  {item.when ? (
-                    <p className="text-[clamp(0.8rem,1.5vh,1.05rem)] font-black tracking-[0.12em] text-[#0d5c4c] uppercase">
-                      {item.when}
+              {news.upcoming.map((item, index) => {
+                const when = formatUpcomingLabel(item);
+                return (
+                  <li
+                    key={item.id}
+                    className={cn(
+                      "min-h-0 overflow-hidden rounded-lg border-2 border-[#0d7a64]/25 px-2.5 py-1.5 shadow-[2px_2px_0_rgba(13,122,100,0.14)]",
+                      UPCOMING_TONES[index % UPCOMING_TONES.length],
+                    )}
+                  >
+                    {when ? (
+                      <p className="text-[clamp(0.8rem,1.5vh,1.05rem)] font-black tracking-[0.12em] text-[#0d5c4c] uppercase">
+                        {when}
+                      </p>
+                    ) : null}
+                    <p className="text-[clamp(1.2rem,2.7vh,2rem)] leading-snug font-black break-words text-[#102a36]">
+                      <span className={lineClampFor(news.upcoming.length)}>{item.text}</span>
                     </p>
-                  ) : null}
-                  <p className="text-[clamp(1.2rem,2.7vh,2rem)] leading-snug font-black break-words text-[#102a36]">
-                    <span className={lineClampFor(news.upcoming.length)}>{item.text}</span>
-                  </p>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </TiltCard>
@@ -295,24 +298,27 @@ function UpcomingPanel({ news, size }: { news: DailyNews; size: TextSize }) {
         <Empty line="Nothing on the calendar yet." />
       ) : (
         <ul className="flex min-h-0 flex-1 flex-col justify-evenly gap-1.5 overflow-hidden">
-          {news.upcoming.map((item, index) => (
-            <li
-              key={item.id}
-              className={cn(
-                "min-h-0 overflow-hidden rounded-lg border-2 border-[#0d7a64]/25 px-3 py-2 shadow-[2px_2px_0_rgba(13,122,100,0.14)]",
-                UPCOMING_TONES[index % UPCOMING_TONES.length],
-              )}
-            >
-              {item.when ? (
-                <p className="text-[clamp(0.8rem,1.5vh,1.05rem)] font-black tracking-[0.12em] text-[#0d5c4c] uppercase">
-                  {item.when}
+          {news.upcoming.map((item, index) => {
+            const when = formatUpcomingLabel(item);
+            return (
+              <li
+                key={item.id}
+                className={cn(
+                  "min-h-0 overflow-hidden rounded-lg border-2 border-[#0d7a64]/25 px-3 py-2 shadow-[2px_2px_0_rgba(13,122,100,0.14)]",
+                  UPCOMING_TONES[index % UPCOMING_TONES.length],
+                )}
+              >
+                {when ? (
+                  <p className="text-[clamp(0.8rem,1.5vh,1.05rem)] font-black tracking-[0.12em] text-[#0d5c4c] uppercase">
+                    {when}
+                  </p>
+                ) : null}
+                <p className={cn("leading-snug font-black break-words text-[#102a36]", textClass(size))}>
+                  <span className={lineClampFor(news.upcoming.length)}>{item.text}</span>
                 </p>
-              ) : null}
-              <p className={cn("leading-snug font-black break-words text-[#102a36]", textClass(size))}>
-                <span className={lineClampFor(news.upcoming.length)}>{item.text}</span>
-              </p>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       )}
     </Panel>
