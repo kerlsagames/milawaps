@@ -246,9 +246,6 @@ function GroupStage({
     gridClass += " grid-cols-3";
   }
 
-  // Same frame shape in a group so a square (Tom) doesn’t sit short next to tall portraits.
-  const frameAspect = allLandscape ? "4 / 3" : "3 / 4";
-
   return (
     <div className={gridClass}>
       {students.map((student, studentIndex) => {
@@ -267,17 +264,7 @@ function GroupStage({
             className="relative h-full min-h-0 w-full overflow-hidden"
           >
             <div className="absolute inset-0 flex items-center justify-center">
-              <div
-                className="flex max-h-full max-w-full flex-col overflow-hidden rounded-[16px] border-[3px] border-[#fff8df] bg-[#fff8df] p-1"
-                style={{
-                  aspectRatio: frameAspect,
-                  height: "100%",
-                  width: "auto",
-                  boxShadow: `0 4px 0 rgba(42,28,4,0.28), 0 0 0 3px ${unit.color}`,
-                }}
-              >
-                <GroupPhoto name={student.name} image={student.image} color={unit.color} framed />
-              </div>
+              <GroupPhoto name={student.name} image={student.image} color={unit.color} />
             </div>
           </motion.article>
         );
@@ -346,43 +333,21 @@ function GroupPhoto({
   name,
   image,
   color,
-  framed = false,
 }: {
   name: string;
   image: string;
   color: string;
-  /** When true, the parent already drew the border — just fill it. */
-  framed?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
 
   if (failed) {
     return (
       <div
-        className={
-          framed
-            ? "grid h-full w-full place-items-center px-4 py-6 text-center"
-            : "grid max-h-full max-w-full place-items-center rounded-[16px] border-[3px] border-[#fff8df] px-6 py-10 text-center"
-        }
-        style={
-          framed
-            ? { background: color }
-            : { background: color, boxShadow: `0 4px 0 rgba(42,28,4,0.28), 0 0 0 3px ${color}` }
-        }
+        className="grid max-h-full max-w-full place-items-center rounded-[16px] border-[3px] border-[#fff8df] px-6 py-10 text-center"
+        style={{ background: color, boxShadow: `0 4px 0 rgba(42,28,4,0.28), 0 0 0 3px ${color}` }}
       >
         <p className="font-display text-3xl leading-none text-[#2a1c04]">{name}</p>
       </div>
-    );
-  }
-
-  if (framed) {
-    return (
-      <img
-        src={image}
-        alt={name}
-        className="h-full w-full rounded-[12px] object-contain object-center"
-        onError={() => setFailed(true)}
-      />
     );
   }
 
