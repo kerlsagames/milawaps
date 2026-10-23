@@ -40,10 +40,14 @@ export function LeaderboardView({
     <div
       className={cn(
         "flex min-h-0 flex-col overflow-hidden",
-        compact ? "h-full gap-0.5 lg:gap-3" : "gap-2 lg:gap-3",
+        compact ? "h-full gap-0.5 lg:gap-2" : "gap-2 lg:gap-3",
       )}
     >
-      <VaultMeter vault={board.vault} onTeamwork={showScores ? () => onScore("teamwork") : undefined} />
+      <VaultMeter
+        vault={board.vault}
+        dense={showScores}
+        onTeamwork={showScores ? () => onScore("teamwork") : undefined}
+      />
       {error && (
         <p
           className="shrink-0 rounded-xl bg-[#c23b3b]/10 px-3 py-1 text-center text-xs font-semibold text-[#8d1f1f] lg:text-sm"
