@@ -1,7 +1,10 @@
 import * as XLSX from "xlsx";
 import { UNITS, kidName, type UnitId } from "@/lib/game";
-import type { HighlightEntry } from "@/lib/highlights";
-import { studentById, studentsForUnit } from "@/lib/students";
+import {
+  resolveHighlightStudent,
+  type HighlightEntry,
+} from "@/lib/highlights";
+import { studentsForUnit } from "@/lib/students";
 
 /**
  * Excel sheet / class labels — avoid "/" so Excel does not treat "2/3/4" as a date.
@@ -50,12 +53,12 @@ export function spotlightExportRows(entries: HighlightEntry[], now = Date.now())
   const sorted = [...entries].sort((left, right) => right.at - left.at);
   for (const entry of sorted) {
     for (const student of entry.students) {
-      const known = studentById(student.id);
+      const known = resolveHighlightStudent(student);
       if (!known) continue;
       rows.push([
         melbourneStamp(entry.at),
         kidName(entry.staffId),
-        known.name,
+        known.wholeClass ? "Whole class" : known.name,
         classLabel(known.unitId),
         entry.reason,
         melbourneStamp(entry.expiresAt),

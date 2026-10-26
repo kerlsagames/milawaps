@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { emptyScores } from "../lib/game";
-import { createHighlight } from "../lib/highlights";
+import { classHighlightId, createHighlight } from "../lib/highlights";
 import { applyAction } from "../lib/scoring";
 import { JIMMY_CRICKET_BOARD, parseCricketSnapshot, shareUrlForCode } from "../lib/cricket";
 import { feedEventStamp, melbourneYesterdayKey, todayFeed } from "../lib/today";
@@ -166,6 +166,21 @@ assert.equal(
   withHighlight.some((item) => item.kind === "tick"),
   false,
 );
+
+const classSpotlight = createHighlight(
+  [{ id: classHighlightId("f1"), unitId: "f1" }],
+  "Best lining up all term",
+  "jess",
+  spotlightAt + 60_000,
+  1,
+);
+const withClass = todayFeed({ ...emptyScores(1), highlights: [classSpotlight] }, now);
+assert.equal(withClass[0]?.kind, "highlight");
+assert.match(
+  withClass[0]?.text ?? "",
+  /Miss B · highlighted F\/1 whole class · Best lining up all term/,
+);
+assert.equal(withClass[0]?.points, 1);
 
 // A normal +2 with no highlight still shows as a tick.
 const surgeOnly = applyAction(emptyScores(1), "surge", "234", "ash", todayAt(90));

@@ -1,4 +1,4 @@
-import { isStaffId, isUnitId, type StaffId, type UnitId } from "@/lib/game";
+import { isStaffId, isUnitId, unitById, type StaffId, type UnitId } from "@/lib/game";
 import { studentById } from "@/lib/students";
 
 /** Spotlights leave the TV after this long. */
@@ -12,10 +12,67 @@ export const HIGHLIGHT_STUDENT_MAX = 3;
 /** Teacher-chosen score value for a highlight (0 = spotlight only). */
 export const HIGHLIGHT_POINT_MAX = 3;
 
+/** Synthetic student id for a whole-class spotlight (`class:f1`). */
+export const CLASS_HIGHLIGHT_PREFIX = "class:";
+
 export type HighlightStudent = {
   id: string;
   unitId: UnitId;
 };
+
+export function classHighlightId(unitId: UnitId): string {
+  return `${CLASS_HIGHLIGHT_PREFIX}${unitId}`;
+}
+
+export function isClassHighlightId(id: string): boolean {
+  return id.startsWith(CLASS_HIGHLIGHT_PREFIX);
+}
+
+export function unitIdFromClassHighlight(id: string): UnitId | null {
+  if (!isClassHighlightId(id)) return null;
+  const unitId = id.slice(CLASS_HIGHLIGHT_PREFIX.length);
+  return isUnitId(unitId) ? unitId : null;
+}
+
+export function classCheerImage(unitId: UnitId): string {
+  return `/classes/${unitId}-class-cheer.jpg`;
+}
+
+export function wholeClassLabel(unitId: UnitId): string {
+  return `${unitById(unitId).code} whole class`;
+}
+
+/** Resolve a highlight student — real kid or whole-class sentinel. */
+export function resolveHighlightStudent(
+  student: HighlightStudent,
+): { id: string; unitId: UnitId; name: string; image: string; wholeClass: boolean } | null {
+  const classUnit = unitIdFromClassHighlight(student.id);
+  if (classUnit) {
+    if (classUnit !== student.unitId) return null;
+    return {
+      id: student.id,
+      unitId: classUnit,
+      name: wholeClassLabel(classUnit),
+      image: classCheerImage(classUnit),
+      wholeClass: true,
+    };
+  }
+  const known = studentById(student.id);
+  if (!known || known.unitId !== student.unitId) return null;
+  return {
+    id: known.id,
+    unitId: known.unitId,
+    name: known.name,
+    image: known.image,
+    wholeClass: false,
+  };
+}
+
+function normalizeHighlightStudent(student: HighlightStudent): HighlightStudent | null {
+  const resolved = resolveHighlightStudent(student);
+  if (!resolved) return null;
+  return { id: resolved.id, unitId: resolved.unitId };
+}
 
 export type HighlightEntry = {
   id: string;
@@ -81,9 +138,8 @@ export function sanitizeHighlights(raw: unknown, now = Date.now()): HighlightEnt
       if (!student || typeof student !== "object") return [];
       const entry = student as Partial<HighlightStudent>;
       if (typeof entry.id !== "string" || !isUnitId(entry.unitId)) return [];
-      const known = studentById(entry.id);
-      if (!known || known.unitId !== entry.unitId) return [];
-      return [{ id: known.id, unitId: known.unitId }];
+      const known = normalizeHighlightStudent({ id: entry.id, unitId: entry.unitId });
+      return known ? [known] : [];
     });
     if (students.length === 0) continue;
     // Always 24h from creation — shortens older longer rows and drops over-long countdowns.
@@ -130,14 +186,25 @@ export function createHighlight(
   if (!clean) throw new Error("Write why they shone.");
   if (students.length === 0) throw new Error("Pick at least one student.");
   const unique = new Map<string, HighlightStudent>();
+  let wholeClass = false;
   for (const student of students) {
-    const known = studentById(student.id);
-    if (!known || known.unitId !== student.unitId) {
-      throw new Error("That student is not on the class list.");
+    const known = normalizeHighlightStudent(student);
+    if (!known) {
+      throw new Error(
+        isClassHighlightId(student.id)
+          ? "That class highlight is not valid."
+          : "That student is not on the class list.",
+      );
     }
-    unique.set(known.id, { id: known.id, unitId: known.unitId });
+    if (isClassHighlightId(known.id)) wholeClass = true;
+    unique.set(known.id, known);
   }
-  const picked = [...unique.values()].slice(0, HIGHLIGHT_STUDENT_MAX);
+  // Whole-class awards stand alone (cheer photo for one unit).
+  const values = [...unique.values()];
+  const picked = wholeClass
+    ? values.filter((student) => isClassHighlightId(student.id)).slice(0, 1)
+    : values.slice(0, HIGHLIGHT_STUDENT_MAX);
+  if (picked.length === 0) throw new Error("Pick at least one student.");
   const resolved =
     points === undefined
       ? Math.min(HIGHLIGHT_POINT_MAX, picked.length)

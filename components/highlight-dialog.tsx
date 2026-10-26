@@ -5,7 +5,10 @@ import { UNITS, type PublicBoard, type UnitId } from "@/lib/game";
 import {
   HIGHLIGHT_POINT_MAX,
   HIGHLIGHT_STUDENT_MAX,
+  classHighlightId,
+  isClassHighlightId,
   type HighlightStudent,
+  wholeClassLabel,
 } from "@/lib/highlights";
 import { studentById, studentsForUnit } from "@/lib/students";
 import { Button } from "@/components/ui/button";
@@ -40,11 +43,19 @@ export function HighlightDialog({
   const [message, setMessage] = useState("");
 
   const students = useMemo(() => (unitId ? studentsForUnit(unitId) : []), [unitId]);
+  const wholeClassPick = useMemo(
+    () => picked.find((item) => isClassHighlightId(item.id)) ?? null,
+    [picked],
+  );
   const pickedDetails = useMemo(
     () =>
-      picked
-        .map((item) => studentById(item.id))
-        .filter((student): student is NonNullable<typeof student> => Boolean(student)),
+      picked.flatMap((item) => {
+        if (isClassHighlightId(item.id)) {
+          return [{ id: item.id, unitId: item.unitId, name: wholeClassLabel(item.unitId) }];
+        }
+        const student = studentById(item.id);
+        return student ? [student] : [];
+      }),
     [picked],
   );
 
@@ -61,16 +72,22 @@ export function HighlightDialog({
     if (open) reset(initialUnitId);
   }, [open, initialUnitId]);
 
+  function pickWholeClass(target: UnitId) {
+    setPicked([{ id: classHighlightId(target), unitId: target }]);
+    setMessage("");
+  }
+
   function toggleStudent(student: { id: string; unitId: UnitId }) {
     setPicked((current) => {
-      const on = current.some((item) => item.id === student.id);
-      if (on) return current.filter((item) => item.id !== student.id);
-      if (current.length >= HIGHLIGHT_STUDENT_MAX) {
+      const withoutClass = current.filter((item) => !isClassHighlightId(item.id));
+      const on = withoutClass.some((item) => item.id === student.id);
+      if (on) return withoutClass.filter((item) => item.id !== student.id);
+      if (withoutClass.length >= HIGHLIGHT_STUDENT_MAX) {
         setMessage(`Pick up to ${HIGHLIGHT_STUDENT_MAX} students.`);
-        return current;
+        return withoutClass;
       }
       setMessage("");
-      return [...current, { id: student.id, unitId: student.unitId }];
+      return [...withoutClass, { id: student.id, unitId: student.unitId }];
     });
   }
 
@@ -118,9 +135,9 @@ export function HighlightDialog({
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">Student highlight</DialogTitle>
           <DialogDescription>
-            Pick up to {HIGHLIGHT_STUDENT_MAX} students across classes, choose 0 to +
-            {HIGHLIGHT_POINT_MAX} for their class(es), and write why. Picks stay when you switch
-            classes. The spotlight stays on the TV for 24 hours.
+            Pick up to {HIGHLIGHT_STUDENT_MAX} students across classes, award a whole class, choose 0
+            to +{HIGHLIGHT_POINT_MAX} for their class(es), and write why. The spotlight stays on the
+            TV for 24 hours.
           </DialogDescription>
         </DialogHeader>
 
@@ -129,6 +146,7 @@ export function HighlightDialog({
           <div className="grid grid-cols-3 gap-2">
             {UNITS.map((unit) => {
               const count = picked.filter((item) => item.unitId === unit.id).length;
+              const wholeOn = wholeClassPick?.unitId === unit.id;
               return (
                 <button
                   key={unit.id}
@@ -145,7 +163,7 @@ export function HighlightDialog({
                   {unit.code}
                   {count > 0 ? (
                     <span className="absolute -top-1.5 -right-1.5 grid size-5 place-items-center rounded-full bg-[#2a1c04] text-[10px] font-black text-[#ffe08a]">
-                      {count}
+                      {wholeOn ? "★" : count}
                     </span>
                   ) : null}
                 </button>
@@ -160,16 +178,23 @@ export function HighlightDialog({
             <div className="flex flex-wrap gap-1.5">
               {pickedDetails.map((student) => {
                 const unit = UNITS.find((item) => item.id === student.unitId);
+                const whole = isClassHighlightId(student.id);
                 return (
                   <button
                     key={student.id}
                     type="button"
-                    onClick={() => toggleStudent(student)}
+                    onClick={() =>
+                      whole
+                        ? setPicked((current) =>
+                            current.filter((item) => !isClassHighlightId(item.id)),
+                          )
+                        : toggleStudent(student)
+                    }
                     className="rounded-full border-2 border-[#2a1c04] bg-[#fff8df] px-2.5 py-1 text-xs font-extrabold text-[#2a1c04]"
                     title="Tap to remove"
                   >
                     {student.name}
-                    <span className="ml-1 opacity-60">{unit?.code}</span>
+                    {!whole ? <span className="ml-1 opacity-60">{unit?.code}</span> : null}
                     <span className="ml-1" aria-hidden="true">
                       ×
                     </span>
@@ -183,6 +208,24 @@ export function HighlightDialog({
         {unitId ? (
           <div className="grid gap-2">
             <p className="text-sm font-bold">Students</p>
+            <button
+              type="button"
+              aria-pressed={wholeClassPick?.unitId === unitId}
+              onClick={() => {
+                if (wholeClassPick?.unitId === unitId) {
+                  setPicked((current) => current.filter((item) => !isClassHighlightId(item.id)));
+                } else {
+                  pickWholeClass(unitId);
+                }
+              }}
+              className={
+                wholeClassPick?.unitId === unitId
+                  ? "h-12 rounded-xl bg-[#2a1c04] px-3 text-left text-sm font-extrabold text-[#ffe08a]"
+                  : "h-12 rounded-xl border-2 border-[#2a1c04] bg-[#fff8df] px-3 text-left text-sm font-extrabold text-[#2a1c04]"
+              }
+            >
+              Whole class — {UNITS.find((unit) => unit.id === unitId)?.code}
+            </button>
             {students.length === 0 ? (
               <p className="rounded-xl bg-[#fff8df] px-3 py-2 text-sm font-bold text-[#8a5a00]">
                 Photos for this class are not on the board yet.
@@ -190,7 +233,8 @@ export function HighlightDialog({
             ) : (
               <div className="grid max-h-56 grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3">
                 {students.map((student) => {
-                  const on = picked.some((item) => item.id === student.id);
+                  const on =
+                    !wholeClassPick && picked.some((item) => item.id === student.id);
                   return (
                     <button
                       key={student.id}
@@ -268,7 +312,7 @@ export function HighlightDialog({
           disabled={busy || picked.length === 0 || reason.trim().length === 0}
           onClick={() => void submit()}
         >
-          Put them on the spotlight
+          {wholeClassPick ? "Put the class on the spotlight" : "Put them on the spotlight"}
         </Button>
       </DialogContent>
     </Dialog>

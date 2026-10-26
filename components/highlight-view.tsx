@@ -4,8 +4,11 @@ import { useEffect, useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { kidName, unitById, type UnitId } from "@/lib/game";
-import { formatHighlightCountdown, type HighlightEntry } from "@/lib/highlights";
-import { studentById } from "@/lib/students";
+import {
+  formatHighlightCountdown,
+  resolveHighlightStudent,
+  type HighlightEntry,
+} from "@/lib/highlights";
 import { Button } from "@/components/ui/button";
 
 /** F/1 campus shots are landscape; other grades are portrait. */
@@ -38,16 +41,18 @@ export function HighlightView({
 }) {
   const [confirm, setConfirm] = useState(false);
   const students = entry.students
-    .map((item) => studentById(item.id))
+    .map((item) => resolveHighlightStudent(item))
     .filter((student): student is NonNullable<typeof student> => Boolean(student));
+  const wholeClass = students.length === 1 && students[0]?.wholeClass === true;
   const count = Math.max(1, students.length);
   const who = kidName(entry.staffId);
   const canCycle = total > 1 && Boolean(onPrev && onNext);
-  const solo = count === 1;
-  const pair = count === 2;
-  const trio = count === 3;
-  const quartet = count === 4;
-  const allLandscape = students.length > 0 && students.every((student) => isLandscape(student.unitId));
+  const solo = !wholeClass && count === 1;
+  const pair = !wholeClass && count === 2;
+  const trio = !wholeClass && count === 3;
+  const quartet = !wholeClass && count === 4;
+  const allLandscape =
+    !wholeClass && students.length > 0 && students.every((student) => isLandscape(student.unitId));
   const nameLine = nameList(students.map((student) => student.name));
 
   return (
@@ -91,7 +96,7 @@ export function HighlightView({
 
       <div
         className={
-          solo
+          wholeClass || solo
             ? "relative z-10 grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)] gap-3 overflow-hidden lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:items-stretch lg:gap-4"
             : pair || trio || quartet
               ? "relative z-10 grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)] gap-3 overflow-hidden lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)] lg:items-stretch lg:gap-4"
@@ -99,7 +104,9 @@ export function HighlightView({
         }
       >
         <div className="relative min-h-0 overflow-hidden">
-          {solo ? (
+          {wholeClass && students[0] ? (
+            <ClassStage student={students[0]} />
+          ) : solo ? (
             <SoloStage students={students} />
           ) : (
             <GroupStage
@@ -114,14 +121,16 @@ export function HighlightView({
 
         <div className="relative flex min-h-0 flex-col items-center justify-center overflow-y-auto rounded-[28px] border-4 border-[#2a1c04] bg-[#fff8df]/92 px-5 py-5 pb-12 text-center shadow-[0_10px_0_#6b5844] lg:px-7 lg:py-7 lg:pb-14">
           <p className="text-sm font-extrabold tracking-[0.28em] text-[#8a5a00] uppercase sm:text-base">
-            Student spotlight
+            {wholeClass ? "Class spotlight" : "Student spotlight"}
           </p>
           <h2 className="mt-2 font-display text-4xl leading-none text-[#2a1c04] sm:text-5xl lg:text-6xl">
             Highlighted!
           </h2>
           <p
             className={`mt-3 font-display leading-tight text-[#2a1c04] ${
-              solo ? "text-3xl sm:text-4xl lg:text-5xl" : "text-2xl sm:text-3xl lg:text-4xl"
+              wholeClass || solo
+                ? "text-3xl sm:text-4xl lg:text-5xl"
+                : "text-2xl sm:text-3xl lg:text-4xl"
             }`}
           >
             {nameLine}
@@ -184,10 +193,36 @@ export function HighlightView({
   );
 }
 
+type SpotlightStudent = NonNullable<ReturnType<typeof resolveHighlightStudent>>;
+
+function ClassStage({ student }: { student: SpotlightStudent }) {
+  const unit = unitById(student.unitId);
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden px-2 py-2 sm:px-3 sm:py-3">
+      <motion.article
+        initial={{ opacity: 0, scale: 0.94 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ type: "spring", stiffness: 120, damping: 16 }}
+        className="flex h-full max-h-full w-full max-w-full items-center justify-center"
+      >
+        <div
+          className="relative flex h-full max-h-full w-full max-w-full items-center justify-center overflow-hidden rounded-[22px] border-[4px] border-[#fff8df]"
+          style={{
+            boxShadow: `0 6px 0 rgba(42,28,4,0.28), 0 0 0 4px ${unit.color}`,
+            aspectRatio: "16 / 10",
+          }}
+        >
+          <StudentPhoto name={student.name} image={student.image} color={unit.color} solo />
+        </div>
+      </motion.article>
+    </div>
+  );
+}
+
 function SoloStage({
   students,
 }: {
-  students: NonNullable<ReturnType<typeof studentById>>[];
+  students: SpotlightStudent[];
 }) {
   const student = students[0];
   if (!student) return null;
@@ -221,7 +256,7 @@ function GroupStage({
   quartet,
   allLandscape,
 }: {
-  students: NonNullable<ReturnType<typeof studentById>>[];
+  students: SpotlightStudent[];
   pair: boolean;
   trio: boolean;
   quartet: boolean;

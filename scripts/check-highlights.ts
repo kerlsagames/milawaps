@@ -2,11 +2,16 @@ import assert from "node:assert/strict";
 import {
   createHighlight,
   activeHighlights,
+  classCheerImage,
+  classHighlightId,
   formatHighlightCountdown,
   highlightPointTotal,
   highlightSpotUnits,
+  isClassHighlightId,
   removeHighlightById,
+  resolveHighlightStudent,
   sanitizeHighlights,
+  wholeClassLabel,
   HIGHLIGHT_POINT_MAX,
   HIGHLIGHT_TTL_MS,
 } from "../lib/highlights";
@@ -190,6 +195,42 @@ const wrongClassDropped = sanitizeHighlights(
 assert.equal(wrongClassDropped.length, 1);
 assert.equal(wrongClassDropped[0]?.students.length, 1);
 assert.equal(wrongClassDropped[0]?.students[0]?.id, "234-tjmara");
+
+// Whole-class award uses cheer art and awards points to that unit only.
+const wholeClass = createHighlight(
+  [{ id: classHighlightId("56"), unitId: "56" }],
+  "Everyone helped tidy the courts",
+  "jess",
+  7_000,
+  2,
+);
+assert.equal(wholeClass.students.length, 1);
+assert.ok(isClassHighlightId(wholeClass.students[0]!.id));
+assert.equal(wholeClass.points, 2);
+assert.deepEqual(highlightSpotUnits(wholeClass.students, wholeClass.points), ["56", "56"]);
+const wholeResolved = resolveHighlightStudent(wholeClass.students[0]!);
+assert.equal(wholeResolved?.wholeClass, true);
+assert.equal(wholeResolved?.name, wholeClassLabel("56"));
+assert.equal(wholeResolved?.image, classCheerImage("56"));
+assert.equal(wholeResolved?.name, "5/6 whole class");
+
+// Mixing kids with whole-class collapses to the class award alone.
+const mixedWhole = createHighlight(
+  [
+    { id: "f1-will", unitId: "f1" },
+    { id: classHighlightId("f1"), unitId: "f1" },
+  ],
+  "Whole F/1 shone",
+  "ash",
+  7_100,
+  1,
+);
+assert.equal(mixedWhole.students.length, 1);
+assert.equal(mixedWhole.students[0]?.id, classHighlightId("f1"));
+
+const keptWhole = sanitizeHighlights([wholeClass], 7_000);
+assert.equal(keptWhole.length, 1);
+assert.equal(keptWhole[0]?.students[0]?.id, classHighlightId("56"));
 
 const second = createHighlight([{ id: "f1-will", unitId: "f1" }], "Led the line", "craig", 2_000);
 const endedAt = 1_500 - HIGHLIGHT_TTL_MS - 1;

@@ -10,9 +10,12 @@ import {
   type UnitId,
   clampScore,
 } from "@/lib/game";
-import { highlightPointTotal, type HighlightEntry } from "@/lib/highlights";
+import {
+  highlightPointTotal,
+  resolveHighlightStudent,
+  type HighlightEntry,
+} from "@/lib/highlights";
 import { milestonesBetween } from "@/lib/scoring";
-import { studentById } from "@/lib/students";
 import { melbourneDateKey } from "@/lib/ticker";
 
 export type TodayKind = "tick" | "strike" | "unlock" | "highlight";
@@ -52,7 +55,7 @@ function columnLine(entry: ScoreLogEntry): string | null {
 
 function nameList(entry: HighlightEntry): string {
   const names = entry.students
-    .map((student) => studentById(student.id)?.name)
+    .map((student) => resolveHighlightStudent(student)?.name)
     .filter((name): name is string => Boolean(name));
   if (names.length === 0) return "students";
   if (names.length === 1) return names[0]!;
