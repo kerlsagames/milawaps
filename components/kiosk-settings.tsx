@@ -24,7 +24,9 @@ import type { PublicBoard } from "@/lib/game";
 import {
   MAX_DWELL_SECONDS,
   MIN_DWELL_SECONDS,
+  DEFAULT_REVEAL_LEAD_MS,
   resetReveals,
+  revealsForSchoolSync,
   saveSiteDisplay,
   setAllViewDwells,
   setCricketPanelsLocal,
@@ -183,26 +185,40 @@ export function KioskSettings({
     return true;
   }
 
-  /** Desktop often keeps reveal times only in localStorage — copy them to every TV once. */
+  /** Desktop often keeps reveal times only in localStorage — copy missing ones to every TV. */
   async function syncLocalClocksToSchool() {
     if (syncedSchoolRef.current) return;
     const live = boardRef.current;
     const local = prefsRef.current;
     const schoolReveals = live?.reveals ?? null;
-    const schoolHasRevealAt = Boolean(
-      schoolReveals && REVEALS.some((reveal) => schoolReveals[reveal.id]?.at != null),
-    );
-    const localHasRevealAt = REVEALS.some((reveal) => local.reveals[reveal.id]?.at != null);
+    const merged = revealsForSchoolSync(local.reveals);
+    let filled = false;
+    for (const reveal of REVEALS) {
+      const localAt = local.reveals[reveal.id]?.at;
+      const schoolAt = schoolReveals?.[reveal.id]?.at;
+      if (localAt != null && schoolAt == null) {
+        merged[reveal.id] = {
+          ...merged[reveal.id],
+          at: localAt,
+        };
+        filled = true;
+      } else if (schoolReveals?.[reveal.id]) {
+        merged[reveal.id] = {
+          at: schoolReveals[reveal.id]!.at,
+          prize: schoolReveals[reveal.id]!.prize,
+          label: schoolReveals[reveal.id]!.label,
+          image: schoolReveals[reveal.id]!.image,
+        };
+      }
+    }
     const schoolFinish = live?.finishAt ?? null;
     const localFinish = local.finishAt;
 
     const patch: {
-      reveals?: import("@/lib/desk-prefs").RevealMap;
+      reveals?: ReturnType<typeof revealsForSchoolSync>;
       finishAt?: number | null;
     } = {};
-    if (localHasRevealAt && !schoolHasRevealAt) {
-      patch.reveals = { ...local.reveals };
-    }
+    if (filled) patch.reveals = merged;
     if (localFinish != null && schoolFinish == null) {
       patch.finishAt = localFinish;
     }
@@ -229,14 +245,19 @@ export function KioskSettings({
     const previous = prefs.shown[id];
     setScreenShown(id, next);
     setNote("");
-    // Turning a prize reveal on also ships local countdown times so laptop kiosk matches.
+    // Turning a prize reveal on also ships countdown times so laptop kiosk matches.
     const revealIds = new Set(REVEALS.map((reveal) => reveal.id));
     const patch: {
       shown: Partial<Record<FixedScreenId, boolean>>;
-      reveals?: import("@/lib/desk-prefs").RevealMap;
+      reveals?: ReturnType<typeof revealsForSchoolSync>;
     } = { shown: { [id]: next } };
     if (revealIds.has(id as (typeof REVEALS)[number]["id"])) {
-      patch.reveals = { ...prefs.reveals };
+      let reveals = prefs.reveals;
+      // A shown reveal with no time used to leave every other TV on “Coming soon”.
+      if (next && reveals[id as (typeof REVEALS)[number]["id"]]?.at == null) {
+        reveals = setRevealAt(id as (typeof REVEALS)[number]["id"], Date.now() + DEFAULT_REVEAL_LEAD_MS);
+      }
+      patch.reveals = revealsForSchoolSync(reveals);
     }
     const result = await saveSiteDisplay(patch, token);
     if (!result.ok) {
@@ -538,7 +559,10 @@ export function KioskSettings({
               schoolReveals={board?.reveals ?? null}
               onShown={(id, next) => void saveShown(id, next)}
               onSaveSchool={(reveals) => {
-                void patchDisplay({ reveals }, "Prize reveals saved for every TV.");
+                void patchDisplay(
+                  { reveals: revealsForSchoolSync(reveals) },
+                  "Prize reveals saved for every TV.",
+                );
               }}
               onPreview={(id) => {
                 setOpen(false);

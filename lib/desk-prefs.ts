@@ -395,6 +395,29 @@ export function setRevealAt(id: RevealId, at: number | null): RevealMap {
   return reveals;
 }
 
+/** Default countdown target when a prize is put on the TV with no time set yet. */
+export const DEFAULT_REVEAL_LEAD_MS = 14 * 24 * 60 * 60 * 1000;
+
+/**
+ * Slim reveal payload for school-wide saves — huge data-URL photos can exceed
+ * the display API body limit and silently leave every other TV on “Coming soon”.
+ */
+export function revealsForSchoolSync(reveals: RevealMap): SharedRevealMap {
+  const maxDataUrl = 400_000;
+  return Object.fromEntries(
+    REVEALS.map((reveal) => {
+      const row = reveals[reveal.id];
+      const image =
+        typeof row.image === "string" &&
+        row.image.startsWith("data:image/") &&
+        row.image.length > maxDataUrl
+          ? null
+          : row.image;
+      return [reveal.id, { at: row.at, prize: row.prize, label: row.label, image }];
+    }),
+  ) as SharedRevealMap;
+}
+
 export function resetReveals() {
   const reveals = defaultReveals();
   window.localStorage.setItem("ott-reveals", JSON.stringify(reveals));
