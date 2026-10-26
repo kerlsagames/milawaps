@@ -83,11 +83,14 @@ const PAGE_BUTTONS: {
 export function KioskSettings({
   onPreview,
   news,
+  board,
   onBoard,
   onChangeScores,
 }: {
   onPreview: (screen: ScreenId) => void;
   news?: DailyNews;
+  /** Live board — used to see whether prize reveal times are already school-wide. */
+  board?: PublicBoard | null;
   onBoard?: (board: PublicBoard) => void;
   /** Opens the teacher Change scores screen (feed remove + ±1 tallies). */
   onChangeScores?: () => void;
@@ -104,6 +107,11 @@ export function KioskSettings({
   const [note, setNote] = useState("");
   const [draftNews, setDraftNews] = useState<DailyNews>(news ?? emptyNews());
   const [draftCricket, setDraftCricket] = useState(prefs.cricketCode);
+  const syncedSchoolRef = useRef(false);
+  const boardRef = useRef(board);
+  boardRef.current = board;
+  const prefsRef = useRef(prefs);
+  prefsRef.current = prefs;
 
   useEffect(() => {
     if (!open) {
@@ -128,8 +136,10 @@ export function KioskSettings({
     void fetch("/api/admin", { headers: { Authorization: `Bearer ${token}` } })
       .then((response) => response.json())
       .then((body: { admin?: boolean }) => {
-        if (body.admin) setAdmin(true);
-        else {
+        if (body.admin) {
+          setAdmin(true);
+          void syncLocalClocksToSchool();
+        } else {
           window.sessionStorage.removeItem(ADMIN_KEY);
           setAdmin(false);
         }
@@ -158,7 +168,10 @@ export function KioskSettings({
     okNote: string,
   ) {
     const token = window.sessionStorage.getItem(ADMIN_KEY);
-    if (!token) return;
+    if (!token) {
+      setNote("Unlock Admin with the code, then save again so every TV gets it.");
+      return false;
+    }
     setNote("");
     const result = await saveSiteDisplay(patch, token);
     if (!result.ok) {
@@ -168,6 +181,41 @@ export function KioskSettings({
     onBoard?.(result.board);
     setNote(okNote);
     return true;
+  }
+
+  /** Desktop often keeps reveal times only in localStorage — copy them to every TV once. */
+  async function syncLocalClocksToSchool() {
+    if (syncedSchoolRef.current) return;
+    const live = boardRef.current;
+    const local = prefsRef.current;
+    const schoolReveals = live?.reveals ?? null;
+    const schoolHasRevealAt = Boolean(
+      schoolReveals && REVEALS.some((reveal) => schoolReveals[reveal.id]?.at != null),
+    );
+    const localHasRevealAt = REVEALS.some((reveal) => local.reveals[reveal.id]?.at != null);
+    const schoolFinish = live?.finishAt ?? null;
+    const localFinish = local.finishAt;
+
+    const patch: {
+      reveals?: import("@/lib/desk-prefs").RevealMap;
+      finishAt?: number | null;
+    } = {};
+    if (localHasRevealAt && !schoolHasRevealAt) {
+      patch.reveals = { ...local.reveals };
+    }
+    if (localFinish != null && schoolFinish == null) {
+      patch.finishAt = localFinish;
+    }
+    if (!patch.reveals && patch.finishAt === undefined) return;
+
+    syncedSchoolRef.current = true;
+    const ok = await patchDisplay(
+      patch,
+      patch.reveals
+        ? "Prize reveal times copied to every TV (including laptop kiosk)."
+        : "Finish countdown copied to every TV.",
+    );
+    if (!ok) syncedSchoolRef.current = false;
   }
 
   /** Flip the checkbox straight away, then save in the background. */
@@ -181,7 +229,16 @@ export function KioskSettings({
     const previous = prefs.shown[id];
     setScreenShown(id, next);
     setNote("");
-    const result = await saveSiteDisplay({ shown: { [id]: next } }, token);
+    // Turning a prize reveal on also ships local countdown times so laptop kiosk matches.
+    const revealIds = new Set(REVEALS.map((reveal) => reveal.id));
+    const patch: {
+      shown: Partial<Record<FixedScreenId, boolean>>;
+      reveals?: import("@/lib/desk-prefs").RevealMap;
+    } = { shown: { [id]: next } };
+    if (revealIds.has(id as (typeof REVEALS)[number]["id"])) {
+      patch.reveals = { ...prefs.reveals };
+    }
+    const result = await saveSiteDisplay(patch, token);
     if (!result.ok) {
       setScreenShown(id, previous);
       setNote(result.error);
@@ -247,6 +304,7 @@ export function KioskSettings({
       setAdmin(true);
       setAsking(false);
       setCode("");
+      void syncLocalClocksToSchool();
     } finally {
       setBusy(false);
     }
@@ -477,6 +535,7 @@ export function KioskSettings({
           {page === "reveals" && admin ? (
             <RevealsPanel
               prefs={prefs}
+              schoolReveals={board?.reveals ?? null}
               onShown={(id, next) => void saveShown(id, next)}
               onSaveSchool={(reveals) => {
                 void patchDisplay({ reveals }, "Prize reveals saved for every TV.");
@@ -1006,17 +1065,23 @@ function CricketPagePanel({
 
 function RevealsPanel({
   prefs,
+  schoolReveals,
   onShown,
   onSaveSchool,
   onPreview,
 }: {
   prefs: ReturnType<typeof useDeskPrefs>;
+  schoolReveals: PublicBoard["reveals"];
   onShown: (id: FixedScreenId, next: boolean) => void;
   /** Push a reveal map to every milawaps TV. */
   onSaveSchool: (reveals: import("@/lib/desk-prefs").RevealMap) => void;
   onPreview: (id: FixedScreenId) => void;
 }) {
   const textSaveTimer = useRef<number | null>(null);
+  const schoolHasRevealAt = Boolean(
+    schoolReveals && REVEALS.some((reveal) => schoolReveals[reveal.id]?.at != null),
+  );
+  const localHasRevealAt = REVEALS.some((reveal) => prefs.reveals[reveal.id]?.at != null);
 
   useEffect(() => {
     return () => {
@@ -1036,6 +1101,17 @@ function RevealsPanel({
         date, prize stops show a lock. On the day, the card flips. Saving here updates every TV —
         laptop kiosk included.
       </p>
+      {localHasRevealAt && !schoolHasRevealAt ? (
+        <p className="rounded-xl border border-[#c48a16]/40 bg-[#fff8df] px-3 py-2 text-sm font-bold text-[#8a5a00]">
+          These reveal times are only on this computer right now — the laptop will show “Coming
+          soon” until you save them for every TV.
+        </p>
+      ) : null}
+      {schoolHasRevealAt ? (
+        <p className="rounded-xl border border-[#0d7a64]/30 bg-[#e8fff8] px-3 py-2 text-sm font-bold text-[#0d7a64]">
+          Reveal countdown times are saved for every TV.
+        </p>
+      ) : null}
       <Button
         type="button"
         className="h-10 rounded-xl"

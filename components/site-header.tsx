@@ -44,6 +44,7 @@ export function SiteHeader({
   authed,
   dutyName,
   news,
+  board,
   onBoard,
   onLockClick,
   onChangeScores,
@@ -56,6 +57,7 @@ export function SiteHeader({
   authed: boolean;
   dutyName: string | null;
   news: DailyNews;
+  board?: PublicBoard | null;
   onBoard: (board: PublicBoard) => void;
   onLockClick: () => void;
   onChangeScores?: () => void;
@@ -108,6 +110,7 @@ export function SiteHeader({
         <KioskSettings
           onPreview={onView}
           news={news}
+          board={board}
           onBoard={onBoard}
           onChangeScores={onChangeScores}
         />

@@ -50,7 +50,7 @@ export function PrizesView({ board }: { board: PublicBoard }) {
 
       {/* Always keep the school finish clock on screen — paths shrink above it. */}
       <div className="flex shrink-0 justify-center pt-1 lg:pt-2">
-        <Countdown />
+        <Countdown finishAt={board.finishAt ?? prefs.finishAt} />
       </div>
     </div>
   );

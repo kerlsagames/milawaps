@@ -612,6 +612,7 @@ export function YardBoard() {
           authed={Boolean(token)}
           dutyName={dutyName}
           news={data?.news ?? emptyNews()}
+          board={data}
           onBoard={(board) => {
             void mutate(board, { revalidate: false });
           }}

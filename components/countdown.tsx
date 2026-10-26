@@ -4,8 +4,15 @@ import { useEffect, useState } from "react";
 import { useDeskPrefs } from "@/lib/desk-prefs";
 import { remainLabel, remainParts } from "@/lib/remain";
 
-export function Countdown() {
-  const { finishAt } = useDeskPrefs();
+export function Countdown({
+  finishAt: finishAtProp = null,
+}: {
+  /** School-wide finish time from the board — wins over local desk prefs when set. */
+  finishAt?: number | null;
+} = {}) {
+  const prefs = useDeskPrefs();
+  // Prefer an explicit board value; fall back to desk localStorage.
+  const finishAt = finishAtProp != null ? finishAtProp : prefs.finishAt;
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
