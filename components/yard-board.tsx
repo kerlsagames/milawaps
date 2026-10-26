@@ -890,10 +890,19 @@ export function YardBoard() {
                   {activeReveal && (
                     <RevealView
                       reveal={activeReveal}
-                      revealAt={prefs.reveals[activeReveal.id].at}
-                      prize={prefs.reveals[activeReveal.id].prize}
-                      image={prefs.reveals[activeReveal.id].image}
-                      label={prefs.reveals[activeReveal.id].label}
+                      // Prefer school-wide board reveals so laptop kiosk matches the desk that saved them.
+                      revealAt={
+                        data.reveals?.[activeReveal.id]?.at ?? prefs.reveals[activeReveal.id].at
+                      }
+                      prize={
+                        data.reveals?.[activeReveal.id]?.prize ?? prefs.reveals[activeReveal.id].prize
+                      }
+                      image={
+                        data.reveals?.[activeReveal.id]?.image ?? prefs.reveals[activeReveal.id].image
+                      }
+                      label={
+                        data.reveals?.[activeReveal.id]?.label ?? prefs.reveals[activeReveal.id].label
+                      }
                     />
                   )}
                 </DeskFit>

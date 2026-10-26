@@ -73,7 +73,11 @@ function defaultReveals(): RevealMap {
 }
 
 function readStoredImage(value: unknown): string | null {
-  return typeof value === "string" && value.startsWith("data:image/") ? value : null;
+  if (typeof value !== "string") return null;
+  if (value.startsWith("data:image/")) return value;
+  // Shared school reveals may keep the built-in /reveals/… path.
+  if (value.startsWith("/")) return value;
+  return null;
 }
 
 const serverPrefs: DeskPrefs = {

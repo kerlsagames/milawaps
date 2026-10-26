@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { LockKeyhole } from "lucide-react";
 import { remainLabel, remainParts } from "@/lib/remain";
 import type { RevealDef } from "@/lib/reveals";
+import { cn } from "@/lib/utils";
 
 export function RevealView({
   reveal,
@@ -43,15 +44,15 @@ export function RevealView({
   const spoken = label.trim() || reveal.title;
   const name = due ? spoken : reveal.mask;
 
-  // Same stack on desk + student screens: title → countdown → “to go until…”, then the card.
+  // Countdown stays pinned on short laptop kiosks; the mystery card shrinks under it.
   return (
-    <div className="flex h-full min-h-0 flex-col items-center justify-center gap-5 overflow-y-auto px-2 py-3 sm:gap-6">
+    <div className="flex h-full min-h-0 flex-col items-center gap-2 overflow-hidden px-2 py-2 sm:gap-3 sm:py-3">
       <div className="w-full max-w-4xl shrink-0 text-center">
         <p className="text-[11px] font-bold tracking-[0.22em] text-ink-gold uppercase">Prize reveal</p>
         {count ? (
           <>
             <div
-              className="mt-3 flex justify-center gap-3 sm:gap-6"
+              className="mt-2 flex justify-center gap-2 sm:mt-3 sm:gap-6"
               aria-label={`${remainLabel(count)} until ${name} is revealed`}
             >
               <RevealTick n={count.days} label={count.days === 1 ? "day" : "days"} />
@@ -59,28 +60,34 @@ export function RevealView({
               <RevealTick n={count.minutes} label={count.minutes === 1 ? "minute" : "minutes"} />
               <RevealTick n={count.seconds} label={count.seconds === 1 ? "second" : "seconds"} />
             </div>
-            <h2 className="mt-3 font-display text-3xl leading-tight sm:text-5xl">
+            <h2 className="mt-2 font-display text-[clamp(1.35rem,4.2vh,3rem)] leading-tight sm:mt-3 sm:text-5xl">
               to go until {name} is revealed
             </h2>
           </>
         ) : due ? (
           <>
             <p className="mt-2 text-[11px] font-bold tracking-[0.22em] text-ink-gold uppercase">It is time</p>
-            <h2 className="mt-2 font-display text-4xl leading-tight sm:text-6xl">{spoken}</h2>
+            <h2 className="mt-2 font-display text-[clamp(1.6rem,5vh,3.75rem)] leading-tight sm:text-6xl">
+              {spoken}
+            </h2>
             {flipped && line ? (
-              <p className="mx-auto mt-4 max-w-3xl text-2xl leading-snug font-extrabold sm:text-4xl">
+              <p className="mx-auto mt-2 max-w-3xl text-[clamp(1.1rem,3.2vh,2.25rem)] leading-snug font-extrabold sm:mt-4 sm:text-4xl">
                 {line}
               </p>
             ) : null}
           </>
         ) : (
           <>
-            <h2 className="mt-2 font-display text-4xl leading-tight sm:text-6xl">{name}</h2>
-            <p className="mt-3 text-xl font-extrabold text-muted-foreground">Coming soon</p>
+            <h2 className="mt-2 font-display text-[clamp(1.6rem,5vh,3.75rem)] leading-tight sm:text-6xl">
+              {name}
+            </h2>
+            <p className="mt-2 text-lg font-extrabold text-muted-foreground sm:mt-3 sm:text-xl">Coming soon</p>
           </>
         )}
       </div>
-      <FlipCard reveal={reveal} flipped={flipped} prize={line} image={image} spoken={spoken} />
+      <div className="flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden">
+        <FlipCard reveal={reveal} flipped={flipped} prize={line} image={image} spoken={spoken} />
+      </div>
     </div>
   );
 }
@@ -100,11 +107,14 @@ function FlipCard({
 }) {
   return (
     <div
-      className={reveal.wide ? "w-full max-w-[42rem] shrink-0" : "w-full max-w-[24rem] shrink-0 sm:max-w-[32rem]"}
+      className={cn(
+        "max-h-full max-w-full",
+        reveal.wide ? "aspect-[4/3] h-auto w-full max-w-[42rem]" : "aspect-[3/4] h-full w-auto max-w-[min(100%,32rem)]",
+      )}
       style={{ perspective: "1400px" }}
     >
       <div
-        className={reveal.wide ? "relative aspect-[4/3] w-full" : "relative aspect-[3/4] w-full"}
+        className="relative size-full"
         style={{
           transformStyle: "preserve-3d",
           transition: "transform 0.9s cubic-bezier(0.22, 1, 0.36, 1)",
@@ -191,8 +201,10 @@ function PrizeArt({ src, title, prize }: { src: string; title: string; prize: st
 function RevealTick({ n, label }: { n: number; label: string }) {
   return (
     <div className="text-center">
-      <p className="font-display text-5xl leading-none tabular-nums sm:text-7xl">{n}</p>
-      <p className="mt-1 text-[11px] font-extrabold tracking-[0.14em] text-muted-foreground uppercase sm:text-sm">
+      <p className="font-display text-[clamp(1.75rem,6vh,4.5rem)] leading-none tabular-nums sm:text-7xl">
+        {n}
+      </p>
+      <p className="mt-0.5 text-[10px] font-extrabold tracking-[0.14em] text-muted-foreground uppercase sm:mt-1 sm:text-sm">
         {label}
       </p>
     </div>

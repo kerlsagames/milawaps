@@ -1036,6 +1036,13 @@ function RevealsPanel({
         date, prize stops show a lock. On the day, the card flips. Saving here updates every TV —
         laptop kiosk included.
       </p>
+      <Button
+        type="button"
+        className="h-10 rounded-xl"
+        onClick={() => onSaveSchool({ ...prefs.reveals })}
+      >
+        Save all reveal times for every TV
+      </Button>
       {REVEALS.map((reveal) => {
         const saved = prefs.reveals[reveal.id];
         return (
