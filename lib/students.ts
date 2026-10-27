@@ -36,6 +36,7 @@ const YEAR_234: Student[] = [
   { id: "234-arthur", unitId: "234", name: "Arthur", image: "/students/234-arthur.jpg" },
   { id: "234-austin", unitId: "234", name: "Austin", image: "/students/234-austin.jpg" },
   { id: "234-bella", unitId: "234", name: "Bella", image: "/students/234-bella.jpg" },
+  { id: "234-gwen", unitId: "234", name: "Gwen", image: "/students/234-gwen.jpg" },
   { id: "234-hannah", unitId: "234", name: "Hannah", image: "/students/234-hannah.jpg" },
   { id: "234-harry", unitId: "234", name: "Harry", image: "/students/234-harry.jpg" },
   { id: "234-hugh", unitId: "234", name: "Hugh", image: "/students/234-hugh.jpg" },
