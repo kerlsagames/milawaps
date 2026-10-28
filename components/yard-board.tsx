@@ -747,6 +747,8 @@ export function YardBoard() {
                 (view === "board" ||
                   view === "today" ||
                   view === "edit" ||
+                  view === "prizes" ||
+                  view === "yard" ||
                   view === "cricket" ||
                   view === "cricket-teams" ||
                   view === "news" ||
@@ -779,7 +781,14 @@ export function YardBoard() {
               ) : view === "cricket" ? (
                 <CricketView code={cricketCode} fill panels={prefs.cricketPanels} />
               ) : view === "news" ? (
-                <NewsView news={data.news ?? emptyNews()} layout={prefs.newsLayout} />
+                // Laptop desk: nudge Daily News / Reminders slightly smaller so they keep shape.
+                kiosk ? (
+                  <NewsView news={data.news ?? emptyNews()} layout={prefs.newsLayout} />
+                ) : (
+                  <LaptopShrink>
+                    <NewsView news={data.news ?? emptyNews()} layout={prefs.newsLayout} />
+                  </LaptopShrink>
+                )
               ) : activeHighlight ? (
                 // Absolute fill — percentage height alone still let portraits grow past the TV.
                 <div className="absolute inset-0 min-h-0 overflow-hidden">
@@ -837,9 +846,15 @@ export function YardBoard() {
                   />
                 </div>
               ) : (
-                // TV kiosk scales to fit the screen; the teacher desk keeps natural layout
-                // so boards fill the space beside Latest Feed (no fixed stage / scale).
-                <DeskFit kiosk={kiosk}>
+                // TV kiosk scales to fit. Teacher homepage board stays natural beside Latest
+                // Feed; prize path / yard / reveals shrink a touch on laptop so they are not
+                // squashed under the desk chrome.
+                <DeskFit
+                  kiosk={kiosk}
+                  shrink={
+                    !kiosk && (view === "prizes" || view === "yard" || Boolean(activeReveal))
+                  }
+                >
                   {view === "board" ? (
                     <LeaderboardView
                       board={data}
@@ -1034,11 +1049,34 @@ async function celebrate(events: MilestoneEvent[]) {
   }
 }
 
-function DeskFit({ kiosk, children }: { kiosk: boolean; children: ReactNode }) {
-  if (!kiosk) {
-    return <div className="box-border h-full min-h-0 overflow-hidden p-2 lg:p-3">{children}</div>;
-  }
-  return <TvFit>{children}</TvFit>;
+function DeskFit({
+  kiosk,
+  shrink = false,
+  children,
+}: {
+  kiosk: boolean;
+  /** Laptop only: lay out a little larger, then scale down so proportions stay readable. */
+  shrink?: boolean;
+  children: ReactNode;
+}) {
+  if (kiosk) return <TvFit>{children}</TvFit>;
+  if (shrink) return <LaptopShrink>{children}</LaptopShrink>;
+  return <div className="box-border h-full min-h-0 overflow-hidden p-2 lg:p-3">{children}</div>;
+}
+
+/**
+ * Short laptop screens squash full-bleed pages under the site header. Give the
+ * page ~12% more layout room, then scale back so circles/type stay proportional.
+ * Phones keep a natural stacked layout (no scale).
+ */
+function LaptopShrink({ children }: { children: ReactNode }) {
+  return (
+    <div className="box-border h-full min-h-0 overflow-hidden p-1.5 sm:p-2 lg:p-2.5">
+      <div className="h-full w-full lg:h-[112.5%] lg:w-[112.5%] lg:origin-top-left lg:scale-[0.89]">
+        {children}
+      </div>
+    </div>
+  );
 }
 
 function TvFit({ children }: { children: ReactNode }) {

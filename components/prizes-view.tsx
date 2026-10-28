@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { LockKeyhole } from "lucide-react";
+import { LockKeyhole, Star } from "lucide-react";
 import { useDeskPrefs, type RevealMap } from "@/lib/desk-prefs";
 import {
   CLASS_MILESTONES,
@@ -16,6 +16,8 @@ import { prizeIsPublic, revealForPoints, type RevealDef } from "@/lib/reveals";
 
 const HIGHEST = CLASS_MILESTONES[CLASS_MILESTONES.length - 1]?.points ?? 80;
 const NODE = "var(--node)";
+/** One little square per point along the track (0 → finish). */
+const TRACK_POINTS = Array.from({ length: HIGHEST }, (_, index) => index + 1);
 
 function namedPrize(points: number, reveals: RevealMap, now: number) {
   const reveal = revealForPoints(points);
@@ -90,69 +92,118 @@ function ClassPath({
 
       <div className="relative min-w-0 flex-1 overflow-x-auto [--node:2.15rem] [--stop:2.4rem] lg:overflow-visible lg:[--node:clamp(3.4rem,10vh,6.25rem)] lg:[--stop:5rem]">
         <div className="relative min-w-[16.8rem] lg:min-w-0">
-        <div
-          className="absolute h-3 -translate-y-1/2 rounded-full bg-[#f3e2c0] lg:h-4"
-          style={{ top: `calc(${NODE} / 2)`, left: "calc(var(--stop) / 2)", right: "calc(var(--stop) / 2)" }}
-        />
-        <motion.div
-          className="absolute h-3 -translate-y-1/2 rounded-full lg:h-4"
-          style={{ top: `calc(${NODE} / 2)`, left: "calc(var(--stop) / 2)", background: unit.color }}
-          initial={false}
-          animate={{ width: `calc((100% - var(--stop)) * ${fraction})` }}
-          transition={{ type: "spring", stiffness: 90, damping: 18 }}
-        />
-        <span
-          className="absolute size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow lg:size-7 lg:border-4"
-          style={{
-            top: `calc(${NODE} / 2)`,
-            left: `calc(var(--stop) / 2 + (100% - var(--stop)) * ${fraction})`,
-            background: unit.color,
-          }}
-          aria-hidden="true"
-        />
-        <ol className="relative flex items-start justify-between">
-          <li className="flex w-[var(--stop)] flex-col items-center text-center">
-            <div
-              className="grid place-items-center rounded-full border-4 bg-[#fffdf8]"
-              style={{
-                width: NODE,
-                height: NODE,
-                borderColor: "rgba(42,34,24,0.12)",
-              }}
-            >
-              <span className="size-3 rounded-full" style={{ background: unit.deep }} />
-            </div>
-            <p className="mt-1 text-xs leading-none font-extrabold tabular-nums lg:mt-1.5 lg:text-sm">0</p>
-            <p className="hidden text-xs leading-tight font-bold text-muted-foreground lg:block lg:text-sm">Start</p>
-          </li>
-          {CLASS_MILESTONES.map((milestone) => {
-            const reveal = revealForPoints(milestone.points);
-            const saved = reveal ? reveals[reveal.id] : null;
-            const named = namedPrize(milestone.points, reveals, now);
-            return (
-              <Stop
-                key={milestone.points}
-                milestone={milestone}
-                score={score}
-                unit={unit}
-                named={named}
-                reveal={reveal}
-                title={
-                  named
-                    ? saved?.label?.trim() || milestone.short
-                    : reveal && !reveal.wide
-                      ? "Teacher takedown"
-                      : ""
-                }
-                art={named ? saved?.image || reveal?.image || "" : reveal && !reveal.wide ? reveal.face : ""}
-              />
-            );
-          })}
-        </ol>
+          {/* Empty track rail */}
+          <div
+            className="absolute h-3 -translate-y-1/2 rounded-full bg-[#f3e2c0] lg:h-4"
+            style={{
+              top: `calc(${NODE} / 2)`,
+              left: "calc(var(--stop) / 2)",
+              right: "calc(var(--stop) / 2)",
+            }}
+          />
+          {/* Soft fill under the squares so the marker still reads as progress */}
+          <motion.div
+            className="absolute h-3 -translate-y-1/2 rounded-full opacity-35 lg:h-4"
+            style={{ top: `calc(${NODE} / 2)`, left: "calc(var(--stop) / 2)", background: unit.color }}
+            initial={false}
+            animate={{ width: `calc((100% - var(--stop)) * ${fraction})` }}
+            transition={{ type: "spring", stiffness: 90, damping: 18 }}
+          />
+          {/* One square per point — so 19 does not look like 20 */}
+          <div
+            className="pointer-events-none absolute inset-x-0"
+            style={{ top: `calc(${NODE} / 2)` }}
+            aria-hidden="true"
+          >
+            {TRACK_POINTS.map((point) => {
+              const filled = score >= point;
+              const atStop = CLASS_MILESTONES.some((milestone) => milestone.points === point);
+              return (
+                <span
+                  key={point}
+                  className={
+                    atStop
+                      ? "absolute size-0"
+                      : "absolute size-[5px] -translate-x-1/2 -translate-y-1/2 rounded-[1.5px] border lg:size-2 lg:rounded-[2px]"
+                  }
+                  style={
+                    atStop
+                      ? { left: trackLeft(point) }
+                      : {
+                          left: trackLeft(point),
+                          background: filled ? unit.color : "#fffdf8",
+                          borderColor: filled ? unit.deep : "rgba(42,34,24,0.18)",
+                          boxShadow: filled ? `0 1px 0 ${unit.deep}55` : undefined,
+                        }
+                  }
+                />
+              );
+            })}
+          </div>
+          <span
+            className="absolute z-[1] size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow lg:size-7 lg:border-4"
+            style={{
+              top: `calc(${NODE} / 2)`,
+              left: `calc(var(--stop) / 2 + (100% - var(--stop)) * ${fraction})`,
+              background: unit.color,
+            }}
+            aria-hidden="true"
+          />
+          <ol className="relative flex items-start justify-between">
+            <li className="flex w-[var(--stop)] flex-col items-center text-center">
+              <div
+                className="grid place-items-center rounded-full border-4 bg-[#fffdf8]"
+                style={{
+                  width: NODE,
+                  height: NODE,
+                  borderColor: "rgba(42,34,24,0.12)",
+                }}
+              >
+                <span className="size-3 rounded-full" style={{ background: unit.deep }} />
+              </div>
+              <p className="mt-1 text-xs leading-none font-extrabold tabular-nums lg:mt-1.5 lg:text-sm">0</p>
+              <p className="hidden text-xs leading-tight font-bold text-muted-foreground lg:block lg:text-sm">
+                Start
+              </p>
+            </li>
+            {CLASS_MILESTONES.map((milestone) => {
+              const reveal = revealForPoints(milestone.points);
+              const saved = reveal ? reveals[reveal.id] : null;
+              const named = namedPrize(milestone.points, reveals, now);
+              return (
+                <Stop
+                  key={milestone.points}
+                  milestone={milestone}
+                  score={score}
+                  unit={unit}
+                  named={named}
+                  reveal={reveal}
+                  title={
+                    named
+                      ? saved?.label?.trim() || milestone.short
+                      : reveal && !reveal.wide
+                        ? "Teacher takedown"
+                        : ""
+                  }
+                  art={
+                    named
+                      ? saved?.image || reveal?.image || ""
+                      : reveal && !reveal.wide
+                        ? reveal.face
+                        : ""
+                  }
+                />
+              );
+            })}
+          </ol>
         </div>
       </div>
     </section>
   );
+}
+
+function trackLeft(point: number) {
+  return `calc(var(--stop) / 2 + (100% - var(--stop)) * ${point / HIGHEST})`;
 }
 
 function Stop({
@@ -174,7 +225,7 @@ function Stop({
 }) {
   const reached = score >= milestone.points;
   const next = nextClassMilestone(score);
-  const aiming = next?.points === milestone.points;
+  const aiming = !reached && next?.points === milestone.points;
   const takedownLocked = Boolean(reveal && !reveal.wide && !named);
   const showPicture = Boolean(art);
   // Mystery faces are square cutouts on charcoal — match that fill and fade
@@ -183,16 +234,41 @@ function Stop({
   const circleFill = !showPicture ? "#2a1c04" : takedownLocked ? "#5a524f" : "#efe6d6";
 
   return (
-    <li className="flex w-[var(--stop)] flex-col items-center text-center">
+    <li className="relative z-[1] flex w-[var(--stop)] flex-col items-center text-center">
+      {/* Achieved: star + glow sit behind the prize circle */}
+      {reached ? (
+        <>
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute top-0 left-1/2 -z-0 -translate-x-1/2 rounded-full"
+            style={{
+              width: `calc(${NODE} + 0.85rem)`,
+              height: `calc(${NODE} + 0.85rem)`,
+              background: `radial-gradient(circle, ${unit.color}aa 0%, ${unit.color}33 55%, transparent 72%)`,
+              boxShadow: `0 0 0 3px ${unit.color}, 0 0 16px ${unit.color}99`,
+            }}
+          />
+          <Star
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-1 left-1/2 z-[2] size-3.5 -translate-x-1/2 fill-current drop-shadow lg:-top-1.5 lg:size-5"
+            style={{ color: unit.color }}
+          />
+        </>
+      ) : null}
       <div
-        className="grid place-items-center overflow-hidden rounded-full border-4"
+        className="relative z-[1] grid place-items-center overflow-hidden rounded-full border-4"
         style={{
           width: NODE,
           height: NODE,
           background: circleFill,
           color: showPicture ? unit.ink : "#ffe08a",
-          borderColor: aiming ? unit.deep : reached && named ? unit.deep : "rgba(42,34,24,0.12)",
-          boxShadow: aiming ? `0 0 0 4px ${unit.color}` : undefined,
+          borderColor: reached
+            ? unit.deep
+            : aiming
+              ? `${unit.color}99`
+              : "rgba(42,34,24,0.12)",
+          // Aiming is a soft dashed feel via thin ring — not the big “won” glow.
+          boxShadow: aiming ? `0 0 0 2px ${unit.color}66` : undefined,
         }}
       >
         {showPicture ? (
@@ -217,15 +293,18 @@ function Stop({
           <LockKeyhole className="size-4 lg:size-9" />
         )}
       </div>
-      <p className="mt-1 text-xs leading-none font-extrabold tabular-nums lg:mt-1.5 lg:text-sm">{milestone.points}</p>
+      <p className="mt-1 text-xs leading-none font-extrabold tabular-nums lg:mt-1.5 lg:text-sm">
+        {milestone.points}
+      </p>
       <p
         className={
-          takedownLocked || named
-            ? "text-[10px] leading-tight font-bold text-muted-foreground lg:text-sm"
+          reached || takedownLocked || named
+            ? "text-[10px] leading-tight font-bold lg:text-sm"
             : "hidden text-xs leading-tight font-bold text-muted-foreground lg:block lg:text-sm"
         }
+        style={reached ? { color: unit.deep } : undefined}
       >
-        {title}
+        {reached && !title ? milestone.short : title}
       </p>
     </li>
   );
