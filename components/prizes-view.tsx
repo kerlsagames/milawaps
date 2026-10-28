@@ -19,7 +19,8 @@ const NODE = "var(--node)";
 
 function namedPrize(points: number, reveals: RevealMap, now: number) {
   const reveal = revealForPoints(points);
-  return prizeIsPublic(reveal ? reveals[reveal.id]?.at : null, now);
+  const saved = reveal ? reveals[reveal.id] : null;
+  return prizeIsPublic(saved?.at, now, saved?.unlocked === true);
 }
 
 export function PrizesView({ board }: { board: PublicBoard }) {

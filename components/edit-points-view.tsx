@@ -13,7 +13,7 @@ function prizeName(points: number, title: string, reveals: RevealMap, now: numbe
   const reveal = revealForPoints(points);
   if (!reveal) return title;
   const saved = reveals[reveal.id];
-  if (!prizeIsPublic(saved?.at, now)) {
+  if (!prizeIsPublic(saved?.at, now, saved?.unlocked === true)) {
     return reveal.wide ? "a secret prize" : "a teacher takedown";
   }
   return saved?.label?.trim() || title;

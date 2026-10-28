@@ -55,6 +55,7 @@ export type FixedScreenId =
   | ViewId
   | RevealId
   | "cricket"
+  | "cricket-teams"
   | "news"
   | "highlight"
   | "today"
@@ -66,6 +67,7 @@ export type ShownMap = Record<FixedScreenId, boolean>;
 export const SCREEN_IDS: FixedScreenId[] = [
   ...VIEWS.map((view) => view.id),
   ...REVEALS.map((reveal) => reveal.id),
+  "cricket-teams",
   "cricket",
   "news",
   "highlight",
@@ -81,6 +83,9 @@ export const DEFAULT_SHOWN: ShownMap = {
   "reveal-1": false,
   "reveal-laser": false,
   "reveal-2": false,
+  // Cricket 1 — who is on which team.
+  "cricket-teams": false,
+  // Cricket 2 — ladder, stats, draw, recent match.
   cricket: false,
   news: false,
   highlight: false,
@@ -98,12 +103,27 @@ export function revealForPoints(points: number): RevealDef | null {
   return REVEALS.find((reveal) => reveal.points === points) ?? null;
 }
 
-export function prizeIsPublic(at: number | null | undefined, now = Date.now()): boolean {
+/**
+ * Prize path stays open once revealed. `unlocked` sticks after the TV countdown
+ * page is turned off (or the reveal time is cleared), so the stop does not go
+ * back to a lock.
+ */
+export function prizeIsPublic(
+  at: number | null | undefined,
+  now = Date.now(),
+  unlocked = false,
+): boolean {
+  if (unlocked) return true;
   return typeof at === "number" && now >= at;
 }
 
-export function revealLabel(reveal: RevealDef, at: number | null | undefined, now = Date.now()) {
-  return prizeIsPublic(at, now) ? reveal.title : reveal.mask;
+export function revealLabel(
+  reveal: RevealDef,
+  at: number | null | undefined,
+  now = Date.now(),
+  unlocked = false,
+) {
+  return prizeIsPublic(at, now, unlocked) ? reveal.title : reveal.mask;
 }
 
 export function isFixedScreenId(id: string): id is FixedScreenId {

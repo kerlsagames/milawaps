@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import useSWR from "swr";
 import { AnimatePresence, motion } from "framer-motion";
+import { CricketTeamsView } from "@/components/cricket-teams-view";
 import { CricketView } from "@/components/cricket-view";
 import { EditPointsView } from "@/components/edit-points-view";
 import { HighlightView } from "@/components/highlight-view";
@@ -94,13 +95,14 @@ export function YardBoard() {
   const [reasonPrompt, setReasonPrompt] = useState<{ id: string; line: string } | null>(null);
 
   const displaySyncKey = data?.displayUpdatedAt
-    ? `${data.displayUpdatedAt}:${data.cricketCode}:${JSON.stringify(data.shown)}:${data.newsLayout}:${JSON.stringify(data.cricketPanels)}:${data.finishAt ?? ""}:${JSON.stringify(data.dwells)}:${JSON.stringify(data.reveals)}`
+    ? `${data.displayUpdatedAt}:${data.cricketCode}:${JSON.stringify(data.shown)}:${data.newsLayout}:${JSON.stringify(data.cricketPanels)}:${JSON.stringify(data.cricketRosters)}:${data.finishAt ?? ""}:${JSON.stringify(data.dwells)}:${JSON.stringify(data.reveals)}`
     : "";
   useEffect(() => {
     if (!data?.displayUpdatedAt) return;
     hydrateDisplay(data.shown, data.cricketCode, {
       newsLayout: data.newsLayout,
       cricketPanels: data.cricketPanels,
+      cricketRosters: data.cricketRosters,
       finishAt: data.finishAt,
       dwells: data.dwells,
       reveals: data.reveals,
@@ -114,6 +116,7 @@ export function YardBoard() {
 
   useEffect(() => {
     if (view === "cricket" && (!cricketCode || !shown.cricket)) setView("board");
+    if (view === "cricket-teams" && (!cricketCode || !shown["cricket-teams"])) setView("board");
     if (view === "news" && !shown.news && !deskBrowse) setView("board");
     if (view === "highlight" && !shown.highlight && !deskBrowse) setView("board");
     if (view === "edit" && !deskTeacher) setView("board");
@@ -124,6 +127,7 @@ export function YardBoard() {
     view,
     cricketCode,
     shown.cricket,
+    shown["cricket-teams"],
     shown.news,
     shown.highlight,
     liveHighlights,
@@ -600,11 +604,15 @@ export function YardBoard() {
               short: "Stars",
               open: deskBrowse || shown.highlight,
             },
+            ...(cricketCode && shown["cricket-teams"]
+              ? [{ id: "cricket-teams" as const, label: "Cricket 1", short: "Teams" }]
+              : []),
             ...(cricketCode && shown.cricket
-              ? [{ id: "cricket" as const, label: "Cricket", short: "Cricket" }]
+              ? [{ id: "cricket" as const, label: "Cricket 2", short: "Ladder" }]
               : []),
             ...REVEALS.filter((item) => shown[item.id] || view === item.id).map((item) => {
-              const label = revealLabel(item, prefs.reveals[item.id]?.at);
+              const saved = prefs.reveals[item.id];
+              const label = revealLabel(item, saved?.at, now || undefined, saved?.unlocked === true);
               return { id: item.id as ScreenId, label, short: label };
             }),
           ]}
@@ -667,7 +675,8 @@ export function YardBoard() {
           const unit = toast.unitId ? unitById(toast.unitId) : null;
           const tone = unit?.color ?? "#e2a01a";
           const reveal = revealForPoints(toast.points);
-          const named = prizeIsPublic(reveal ? prefs.reveals[reveal.id]?.at : null);
+          const saved = reveal ? prefs.reveals[reveal.id] : null;
+          const named = prizeIsPublic(saved?.at, now || undefined, saved?.unlocked === true);
           return (
             <div
               key={toast.id}
@@ -697,6 +706,7 @@ export function YardBoard() {
             view === "today" ||
             view === "edit" ||
             view === "cricket" ||
+            view === "cricket-teams" ||
             view === "news" ||
             Boolean(activeHighlightId)) &&
             "max-w-none",
@@ -738,6 +748,7 @@ export function YardBoard() {
                   view === "today" ||
                   view === "edit" ||
                   view === "cricket" ||
+                  view === "cricket-teams" ||
                   view === "news" ||
                   Boolean(activeHighlightId) ||
                   Boolean(activeReveal)) &&
@@ -758,6 +769,12 @@ export function YardBoard() {
                   error={deskError}
                   onAdjust={adjustPoints}
                   onRemoveFeedItem={removeFeedItem}
+                />
+              ) : view === "cricket-teams" ? (
+                <CricketTeamsView
+                  code={cricketCode}
+                  rosters={data.cricketRosters ?? prefs.cricketRosters}
+                  fill
                 />
               ) : view === "cricket" ? (
                 <CricketView code={cricketCode} fill panels={prefs.cricketPanels} />

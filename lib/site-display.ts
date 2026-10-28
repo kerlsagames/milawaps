@@ -13,6 +13,8 @@ export type SharedRevealPrefs = {
   prize: string;
   label: string;
   image: string | null;
+  /** Once true, the prize path stop stays open even if the TV reveal page is hidden. */
+  unlocked: boolean;
 };
 
 export type SharedRevealMap = Record<RevealId, SharedRevealPrefs>;
@@ -23,7 +25,7 @@ function defaultSharedReveals(): SharedRevealMap {
   return Object.fromEntries(
     REVEALS.map((reveal) => [
       reveal.id,
-      { at: null, prize: reveal.prize, label: reveal.title, image: null },
+      { at: null, prize: reveal.prize, label: reveal.title, image: null, unlocked: false },
     ]),
   ) as SharedRevealMap;
 }
@@ -50,6 +52,7 @@ export function sanitizeSharedReveals(raw: unknown): SharedRevealMap | null {
       prize?: unknown;
       label?: unknown;
       image?: unknown;
+      unlocked?: unknown;
     };
     const at =
       typeof record.at === "number" && Number.isFinite(record.at) && record.at > 0
@@ -60,11 +63,14 @@ export function sanitizeSharedReveals(raw: unknown): SharedRevealMap | null {
       typeof record.label === "string" && record.label.trim()
         ? record.label.trim().slice(0, 40)
         : reveal.title;
+    const unlocked =
+      record.unlocked === true || (typeof at === "number" && at <= Date.now());
     reveals[reveal.id] = {
       at,
       prize,
       label,
       image: sanitizeRevealImage(record.image),
+      unlocked,
     };
   }
   return sawAny ? reveals : null;
@@ -84,6 +90,7 @@ export const DEFAULT_DWELLS: DwellMap = {
   "reveal-1": 12,
   "reveal-laser": 12,
   "reveal-2": 12,
+  "cricket-teams": 18,
   cricket: 16,
   news: 18,
   highlight: 16,
@@ -150,6 +157,28 @@ export const DEFAULT_CRICKET_PANELS: CricketPanels = {
   draw: true,
 };
 
+/** Cricket 1 — player names under each team (keyed by team name). */
+export type CricketRosters = Record<string, string[]>;
+
+export function sanitizeCricketRosters(raw: unknown): CricketRosters {
+  if (!raw || typeof raw !== "object") return {};
+  const out: CricketRosters = {};
+  for (const [name, players] of Object.entries(raw as Record<string, unknown>)) {
+    const team = name.replace(/\s+/g, " ").trim().slice(0, 40);
+    if (!team) continue;
+    if (!Array.isArray(players)) continue;
+    const list = players
+      .flatMap((player) => {
+        if (typeof player !== "string") return [];
+        const value = player.replace(/\s+/g, " ").trim().slice(0, 40);
+        return value ? [value] : [];
+      })
+      .slice(0, 24);
+    out[team] = list;
+  }
+  return out;
+}
+
 export type SiteDisplay = {
   shown: ShownMap;
   cricketCode: string;
@@ -157,6 +186,8 @@ export type SiteDisplay = {
   updatedAt: number;
   newsLayout: NewsLayoutId;
   cricketPanels: CricketPanels;
+  /** Cricket 1 team lists — who is on which team. */
+  cricketRosters: CricketRosters;
   /** Shared prize-path finish countdown (ms since epoch), or null if unset. */
   finishAt: number | null;
   /**
@@ -178,6 +209,7 @@ export function emptySiteDisplay(): SiteDisplay {
     updatedAt: 0,
     newsLayout: "split",
     cricketPanels: { ...DEFAULT_CRICKET_PANELS },
+    cricketRosters: {},
     finishAt: null,
     dwells: null,
     reveals: null,
@@ -217,6 +249,7 @@ export function sanitizeSiteDisplay(raw: unknown): SiteDisplay {
     updatedAt?: unknown;
     newsLayout?: unknown;
     cricketPanels?: unknown;
+    cricketRosters?: unknown;
     finishAt?: unknown;
     dwells?: unknown;
     reveals?: unknown;
@@ -230,7 +263,10 @@ export function sanitizeSiteDisplay(raw: unknown): SiteDisplay {
   }
   const cricketCode =
     typeof record.cricketCode === "string" ? record.cricketCode.trim().slice(0, 300) : "";
-  if (!cricketCode) shown.cricket = false;
+  if (!cricketCode) {
+    shown.cricket = false;
+    shown["cricket-teams"] = false;
+  }
   const updatedAt =
     typeof record.updatedAt === "number" && Number.isFinite(record.updatedAt) && record.updatedAt > 0
       ? Math.floor(record.updatedAt)
@@ -246,6 +282,7 @@ export function sanitizeSiteDisplay(raw: unknown): SiteDisplay {
     updatedAt,
     newsLayout: sanitizeNewsLayout(record.newsLayout),
     cricketPanels: sanitizeCricketPanels(record.cricketPanels),
+    cricketRosters: sanitizeCricketRosters(record.cricketRosters),
     finishAt: sanitizeFinishAt(record.finishAt),
     dwells,
     reveals,
@@ -260,6 +297,7 @@ export function siteDisplayFromInput(raw: unknown, current: SiteDisplay): SiteDi
     cricketCode?: unknown;
     newsLayout?: unknown;
     cricketPanels?: unknown;
+    cricketRosters?: unknown;
     finishAt?: unknown;
     dwells?: unknown;
     reveals?: unknown;
@@ -268,6 +306,7 @@ export function siteDisplayFromInput(raw: unknown, current: SiteDisplay): SiteDi
   let cricketCode = current.cricketCode;
   let newsLayout = current.newsLayout;
   let cricketPanels = { ...current.cricketPanels };
+  let cricketRosters = { ...current.cricketRosters };
   let finishAt = current.finishAt;
   let dwells = current.dwells;
   let reveals = current.reveals;
@@ -287,6 +326,10 @@ export function siteDisplayFromInput(raw: unknown, current: SiteDisplay): SiteDi
   if (record.cricketPanels !== undefined) {
     cricketPanels = sanitizeCricketPanels({ ...cricketPanels, ...(record.cricketPanels as object) });
   }
+  if (record.cricketRosters !== undefined && record.cricketRosters !== null) {
+    // Full replace so deleted teams disappear from Cricket 1.
+    cricketRosters = sanitizeCricketRosters(record.cricketRosters);
+  }
   if ("finishAt" in record) {
     finishAt = sanitizeFinishAt(record.finishAt);
   }
@@ -298,22 +341,32 @@ export function siteDisplayFromInput(raw: unknown, current: SiteDisplay): SiteDi
     reveals = sanitizeSharedReveals({ ...base, ...(record.reveals as object) });
   }
 
-  const cricketPatched =
-    record.shown &&
-    typeof record.shown === "object" &&
-    typeof (record.shown as { cricket?: unknown }).cricket === "boolean";
+  const shownPatch =
+    record.shown && typeof record.shown === "object"
+      ? (record.shown as { cricket?: unknown; "cricket-teams"?: unknown })
+      : null;
+  const cricketPatched = typeof shownPatch?.cricket === "boolean";
+  const cricketTeamsPatched = typeof shownPatch?.["cricket-teams"] === "boolean";
 
-  // A new code turns cricket on unless the patch also sets cricket explicitly.
+  // A new code turns Cricket 2 on unless the patch also sets cricket explicitly.
   if (cricketCode && !current.cricketCode && !cricketPatched) {
     nextShown.cricket = true;
   }
-  if (!cricketCode) nextShown.cricket = false;
+  if (!cricketCode) {
+    nextShown.cricket = false;
+    nextShown["cricket-teams"] = false;
+  }
+  // Don't force Cricket 1 on for a new code — teachers opt in when rosters are ready.
+  if (cricketTeamsPatched && !cricketCode) {
+    nextShown["cricket-teams"] = false;
+  }
 
   return sanitizeSiteDisplay({
     shown: nextShown,
     cricketCode,
     newsLayout,
     cricketPanels,
+    cricketRosters,
     finishAt,
     dwells,
     reveals,

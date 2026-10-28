@@ -30,12 +30,14 @@ import {
   saveSiteDisplay,
   setAllViewDwells,
   setCricketPanelsLocal,
+  setCricketRostersLocal,
   setFinishAt,
   setNewsLayoutLocal,
   setRevealAt,
   setRevealImage,
   setRevealLabel,
   setRevealPrize,
+  setRevealUnlocked,
   setScreenShown,
   setTimerStyle,
   setViewDwell,
@@ -45,11 +47,13 @@ import { highlightsWorkbookBytes } from "@/lib/highlight-spreadsheet";
 import type { HighlightEntry } from "@/lib/highlights";
 import { emptyNews, type DailyNews } from "@/lib/news";
 import { compressPrizeImage } from "@/lib/prize-image";
-import { REVEALS, type FixedScreenId, type ScreenId } from "@/lib/reveals";
+import { prizeIsPublic, REVEALS, type FixedScreenId, type ScreenId } from "@/lib/reveals";
 import {
   NEWS_LAYOUTS,
   dwellsForEveryScreen,
+  sanitizeCricketRosters,
   type CricketPanels,
+  type CricketRosters,
   type NewsLayoutId,
 } from "@/lib/site-display";
 import { cn } from "@/lib/utils";
@@ -78,7 +82,7 @@ const PAGE_BUTTONS: {
   { id: "yard", label: "Yard & Rules", blurb: "Yard duty rules", icon: Map, tone: "#2ec9a0" },
   { id: "news", label: "Daily News", blurb: "Layout, copy, photo", icon: Newspaper, tone: "#1f6f8b" },
   { id: "highlight", label: "Highlights", blurb: "Student star pages", icon: Sparkles, tone: "#7b4bff" },
-  { id: "cricket", label: "Cricket", blurb: "Code, show, panels", icon: Volleyball, tone: "#0d7a64" },
+  { id: "cricket", label: "Cricket", blurb: "Teams + ladder pages", icon: Volleyball, tone: "#0d7a64" },
   { id: "reveals", label: "Prize reveals", blurb: "Times, names, pictures", icon: Gift, tone: "#c48a16" },
 ];
 
@@ -163,6 +167,7 @@ export function KioskSettings({
       cricketCode?: string;
       newsLayout?: NewsLayoutId;
       cricketPanels?: Partial<CricketPanels>;
+      cricketRosters?: CricketRosters;
       finishAt?: number | null;
       dwells?: Partial<Record<FixedScreenId, number>>;
       reveals?: import("@/lib/desk-prefs").RevealMap;
@@ -208,6 +213,7 @@ export function KioskSettings({
           prize: schoolReveals[reveal.id]!.prize,
           label: schoolReveals[reveal.id]!.label,
           image: schoolReveals[reveal.id]!.image,
+          unlocked: schoolReveals[reveal.id]!.unlocked === true,
         };
       }
     }
@@ -238,7 +244,7 @@ export function KioskSettings({
   async function saveShown(id: FixedScreenId, next: boolean) {
     const token = window.sessionStorage.getItem(ADMIN_KEY);
     if (!token) return;
-    if (id === "cricket" && next && !prefs.cricketCode.trim()) {
+    if ((id === "cricket" || id === "cricket-teams") && next && !prefs.cricketCode.trim()) {
       setNote("Paste a cricket code first, then turn Cricket on.");
       return;
     }
@@ -252,10 +258,18 @@ export function KioskSettings({
       reveals?: ReturnType<typeof revealsForSchoolSync>;
     } = { shown: { [id]: next } };
     if (revealIds.has(id as (typeof REVEALS)[number]["id"])) {
+      const revealId = id as (typeof REVEALS)[number]["id"];
       let reveals = prefs.reveals;
       // A shown reveal with no time used to leave every other TV on “Coming soon”.
-      if (next && reveals[id as (typeof REVEALS)[number]["id"]]?.at == null) {
-        reveals = setRevealAt(id as (typeof REVEALS)[number]["id"], Date.now() + DEFAULT_REVEAL_LEAD_MS);
+      if (next && reveals[revealId]?.at == null) {
+        reveals = setRevealAt(revealId, Date.now() + DEFAULT_REVEAL_LEAD_MS);
+      }
+      // Taking a revealed prize off the TV keeps the path stop open (not locked again).
+      if (!next) {
+        const row = reveals[revealId];
+        if (prizeIsPublic(row?.at, Date.now(), row?.unlocked === true)) {
+          reveals = setRevealUnlocked(revealId, true);
+        }
       }
       patch.reveals = revealsForSchoolSync(reveals);
     }
@@ -525,11 +539,15 @@ export function KioskSettings({
           {page === "cricket" ? (
             <CricketPagePanel
               admin={admin}
-              shown={prefs.shown.cricket}
-              seconds={prefs.dwells.cricket}
+              shownTeams={prefs.shown["cricket-teams"]}
+              shownLadder={prefs.shown.cricket}
+              secondsTeams={prefs.dwells["cricket-teams"]}
+              secondsLadder={prefs.dwells.cricket}
               draftCode={admin ? draftCricket : prefs.cricketCode}
               panels={prefs.cricketPanels}
-              onShown={(next) => void saveShown("cricket", next)}
+              rosters={prefs.cricketRosters}
+              onShownTeams={(next) => void saveShown("cricket-teams", next)}
+              onShownLadder={(next) => void saveShown("cricket", next)}
               onDraftCode={setDraftCricket}
               onSaveCode={() => {
                 if (!admin) return;
@@ -546,7 +564,21 @@ export function KioskSettings({
                   if (ok === false) setCricketPanelsLocal(previous);
                 });
               }}
-              onPreview={() => {
+              onRosters={(next) => {
+                const previous = prefs.cricketRosters;
+                setCricketRostersLocal(next);
+                void patchDisplay(
+                  { cricketRosters: next },
+                  "Cricket teams saved for everyone.",
+                ).then((ok) => {
+                  if (ok === false) setCricketRostersLocal(previous);
+                });
+              }}
+              onPreviewTeams={() => {
+                setOpen(false);
+                onPreview("cricket-teams");
+              }}
+              onPreviewLadder={() => {
                 setOpen(false);
                 onPreview("cricket");
               }}
@@ -992,46 +1024,91 @@ function NewsPagePanel({
 
 function CricketPagePanel({
   admin,
-  shown,
-  seconds,
+  shownTeams,
+  shownLadder,
+  secondsTeams,
+  secondsLadder,
   draftCode,
   panels,
-  onShown,
+  rosters,
+  onShownTeams,
+  onShownLadder,
   onDraftCode,
   onSaveCode,
   onPanel,
-  onPreview,
+  onRosters,
+  onPreviewTeams,
+  onPreviewLadder,
 }: {
   admin: boolean;
-  shown: boolean;
-  seconds: number;
+  shownTeams: boolean;
+  shownLadder: boolean;
+  secondsTeams: number;
+  secondsLadder: number;
   draftCode: string;
   panels: CricketPanels;
-  onShown: (next: boolean) => void;
+  rosters: CricketRosters;
+  onShownTeams: (next: boolean) => void;
+  onShownLadder: (next: boolean) => void;
   onDraftCode: (value: string) => void;
   onSaveCode: () => void;
   onPanel: (key: keyof CricketPanels, value: boolean) => void;
-  onPreview: () => void;
+  onRosters: (next: CricketRosters) => void;
+  onPreviewTeams: () => void;
+  onPreviewLadder: () => void;
 }) {
+  const [rosterDraft, setRosterDraft] = useState(() => rosterTextFromMap(rosters));
+  const saveTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    setRosterDraft(rosterTextFromMap(rosters));
+  }, [rosters]);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    };
+  }, []);
+
+  function saveRostersSoon(text: string) {
+    setRosterDraft(text);
+    if (!admin) return;
+    if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    saveTimer.current = window.setTimeout(() => {
+      onRosters(rosterMapFromText(text));
+    }, 700);
+  }
+
   return (
     <div className="grid gap-3">
+      <p className="text-xs font-semibold text-muted-foreground">
+        Cricket 1 shows who is on each team. Cricket 2 shows the ladder, stats, draw, and recent
+        match.
+      </p>
       {admin ? (
-        <ShowToggle
-          label="Show Cricket on every TV"
-          checked={shown}
-          onChange={onShown}
-          hint={!draftCode.trim() ? "Paste a Jimmy cricket code below before turning this on." : undefined}
-        />
+        <>
+          <ShowToggle
+            label="Show Cricket 1 (teams) on every TV"
+            checked={shownTeams}
+            onChange={onShownTeams}
+            hint={!draftCode.trim() ? "Paste a Jimmy cricket code below before turning this on." : undefined}
+          />
+          <DwellSlider id="cricket-teams" label="Cricket 1" seconds={secondsTeams} />
+          <ShowToggle
+            label="Show Cricket 2 (ladder) on every TV"
+            checked={shownLadder}
+            onChange={onShownLadder}
+            hint={!draftCode.trim() ? "Paste a Jimmy cricket code below before turning this on." : undefined}
+          />
+          <DwellSlider id="cricket" label="Cricket 2" seconds={secondsLadder} />
+        </>
       ) : (
         <p className="text-xs font-semibold text-muted-foreground">
           {draftCode
-            ? shown
-              ? "Cricket is on for the whole school."
-              : "Cricket code is saved, but the page is hidden until an admin turns it on."
+            ? `Cricket 1 ${shownTeams ? "on" : "off"} · Cricket 2 ${shownLadder ? "on" : "off"}.`
             : "Ask an admin to paste the Jimmy cricket code."}
         </p>
       )}
-      <DwellSlider id="cricket" label="Cricket" seconds={seconds} />
       <label className="grid gap-1.5">
         <span className="text-sm font-bold">Cricket code</span>
         <input
@@ -1052,8 +1129,26 @@ function CricketPagePanel({
         />
       </label>
       {admin ? (
+        <label className="grid gap-1.5 rounded-2xl border border-[#0d7a64]/25 bg-[#eefaf6] p-3">
+          <span className="text-sm font-bold">Cricket 1 team lists</span>
+          <p className="text-xs font-semibold text-muted-foreground">
+            One team per block. First line is the team name, then one player per line. Blank line
+            between teams.
+          </p>
+          <textarea
+            value={rosterDraft}
+            aria-label="Cricket team lists"
+            rows={10}
+            onChange={(event) => saveRostersSoon(event.target.value)}
+            onBlur={() => onRosters(rosterMapFromText(rosterDraft))}
+            placeholder={"F/1\nAlex\nSam\n\n2/3/4\nJordan\nRiley"}
+            className="min-h-40 rounded-xl border border-input bg-white px-3 py-2 text-sm font-semibold"
+          />
+        </label>
+      ) : null}
+      {admin ? (
         <div className="grid gap-2 rounded-2xl border border-[#0d7a64]/25 bg-[#eefaf6] p-3">
-          <p className="text-sm font-bold">What to show</p>
+          <p className="text-sm font-bold">Cricket 2 panels</p>
           {(
             [
               ["lastNext", "Last game + next game"],
@@ -1074,17 +1169,52 @@ function CricketPagePanel({
           ))}
         </div>
       ) : null}
-      <Button
-        type="button"
-        variant="outline"
-        className="h-10 rounded-xl"
-        disabled={!draftCode.trim()}
-        onClick={onPreview}
-      >
-        Preview Cricket
-      </Button>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-10 rounded-xl"
+          disabled={!draftCode.trim()}
+          onClick={onPreviewTeams}
+        >
+          Preview Cricket 1
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-10 rounded-xl"
+          disabled={!draftCode.trim()}
+          onClick={onPreviewLadder}
+        >
+          Preview Cricket 2
+        </Button>
+      </div>
     </div>
   );
+}
+
+function rosterTextFromMap(rosters: CricketRosters) {
+  return Object.entries(rosters)
+    .map(([team, players]) => [team, ...players].join("\n"))
+    .join("\n\n");
+}
+
+function rosterMapFromText(text: string): CricketRosters {
+  const blocks = text
+    .split(/\n\s*\n/)
+    .map((block) => block.trim())
+    .filter(Boolean);
+  const raw: Record<string, string[]> = {};
+  for (const block of blocks) {
+    const lines = block
+      .split("\n")
+      .map((line) => line.replace(/\s+/g, " ").trim())
+      .filter(Boolean);
+    const team = lines[0];
+    if (!team) continue;
+    raw[team] = lines.slice(1);
+  }
+  return sanitizeCricketRosters(raw);
 }
 
 function RevealsPanel({
@@ -1122,8 +1252,9 @@ function RevealsPanel({
     <section className="grid gap-3">
       <p className="text-xs font-semibold text-muted-foreground">
         Change what a prize says, and upload a picture if ice cream becomes movie day. Before the
-        date, prize stops show a lock. On the day, the card flips. Saving here updates every TV —
-        laptop kiosk included.
+        date, prize stops show a lock. On the day, the card flips — and stays open on the prize path
+        even after you turn the TV reveal page off. Saving here updates every TV — laptop kiosk
+        included.
       </p>
       {localHasRevealAt && !schoolHasRevealAt ? (
         <p className="rounded-xl border border-[#c48a16]/40 bg-[#fff8df] px-3 py-2 text-sm font-bold text-[#8a5a00]">
@@ -1152,6 +1283,11 @@ function RevealsPanel({
               checked={prefs.shown[reveal.id]}
               onChange={(next) => onShown(reveal.id, next)}
             />
+            {saved.unlocked || prizeIsPublic(saved.at) ? (
+              <p className="text-xs font-bold text-[#0d7a64]">
+                Prize path stop stays open{prefs.shown[reveal.id] ? "" : " after this TV page is off"}.
+              </p>
+            ) : null}
             <DwellSlider id={reveal.id} label={reveal.title} seconds={prefs.dwells[reveal.id]} />
             <MomentFields
               at={saved.at}

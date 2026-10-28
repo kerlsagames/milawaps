@@ -93,7 +93,7 @@ export function CricketView({
       <header className="flex shrink-0 items-end justify-between gap-2">
         <div className="min-w-0">
           <p className="text-[10px] font-bold tracking-[0.2em] text-ink-gold uppercase">
-            School cricket
+            Cricket 2 · Ladder & games
           </p>
           <h2 className="truncate font-display text-[clamp(1.6rem,3.8vh,3.25rem)] leading-none">
             {data.title}

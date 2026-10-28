@@ -47,9 +47,10 @@ export function BlockMatrix({
         const filled = index < earned;
         const milestone = trophies.get(square);
         const reveal = milestone ? revealForPoints(milestone.points) : null;
-        const named = Boolean(reveal && prizeIsPublic(reveals[reveal.id]?.at, now));
+        const saved = reveal ? reveals[reveal.id] : null;
+        const named = Boolean(reveal && prizeIsPublic(saved?.at, now, saved?.unlocked === true));
         const caption =
-          reveal && named ? reveals[reveal.id]?.label?.trim() || milestone?.title || "Prize" : "Prize";
+          reveal && named ? saved?.label?.trim() || milestone?.title || "Prize" : "Prize";
         const won = Boolean(milestone && score >= milestone.points);
         return (
           <span

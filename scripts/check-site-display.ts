@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { DEFAULT_SHOWN } from "../lib/reveals";
+import { DEFAULT_SHOWN, prizeIsPublic } from "../lib/reveals";
 import {
   dwellsForEveryScreen,
   emptySiteDisplay,
@@ -14,8 +14,10 @@ assert.equal(empty.updatedAt, 0);
 assert.equal(empty.shown.board, true);
 assert.equal(empty.shown.news, false);
 assert.equal(empty.shown.cricket, false);
+assert.equal(empty.shown["cricket-teams"], false);
 assert.equal(empty.newsLayout, "split");
 assert.equal(empty.cricketPanels.ladder, true);
+assert.deepEqual(empty.cricketRosters, {});
 assert.equal(empty.finishAt, null);
 assert.equal(empty.dwells, null);
 assert.equal(empty.reveals, null);
@@ -23,17 +25,31 @@ assert.equal(empty.reveals, null);
 const withCode = siteDisplayFromInput({ cricketCode: "BQWA8Z" }, empty);
 assert.equal(withCode.cricketCode, "BQWA8Z");
 assert.equal(withCode.shown.cricket, true);
+assert.equal(withCode.shown["cricket-teams"], false);
 assert.ok(withCode.updatedAt > 0);
 
-const hideNews = siteDisplayFromInput({ shown: { news: true, highlight: true } }, withCode);
+const withTeams = siteDisplayFromInput(
+  {
+    shown: { "cricket-teams": true },
+    cricketRosters: { "F/1": ["Alex", "Sam"], "5/6": ["Poppy"] },
+  },
+  withCode,
+);
+assert.equal(withTeams.shown["cricket-teams"], true);
+assert.deepEqual(withTeams.cricketRosters["F/1"], ["Alex", "Sam"]);
+assert.deepEqual(withTeams.cricketRosters["5/6"], ["Poppy"]);
+
+const hideNews = siteDisplayFromInput({ shown: { news: true, highlight: true } }, withTeams);
 assert.equal(hideNews.shown.news, true);
 assert.equal(hideNews.shown.highlight, true);
 assert.equal(hideNews.shown.cricket, true);
+assert.equal(hideNews.shown["cricket-teams"], true);
 assert.equal(hideNews.cricketCode, "BQWA8Z");
 
 const cleared = siteDisplayFromInput({ cricketCode: "" }, hideNews);
 assert.equal(cleared.cricketCode, "");
 assert.equal(cleared.shown.cricket, false);
+assert.equal(cleared.shown["cricket-teams"], false);
 assert.equal(cleared.shown.news, true);
 
 const sanitized = sanitizeSiteDisplay({
@@ -101,7 +117,28 @@ const withReveals = siteDisplayFromInput(
 );
 assert.equal(withReveals.reveals?.["reveal-1"]?.at, revealAt);
 assert.equal(withReveals.reveals?.["reveal-1"]?.prize, "Movie afternoon");
+assert.equal(withReveals.reveals?.["reveal-1"]?.unlocked, false);
 assert.equal(withReveals.reveals?.["reveal-game"]?.at, null);
 assert.ok(withReveals.reveals?.["reveal-laser"]?.prize);
+
+const pastAt = Date.now() - 60_000;
+const unlockedReveal = siteDisplayFromInput(
+  {
+    reveals: {
+      "reveal-laser": {
+        at: pastAt,
+        prize: "Laser tag",
+        label: "Laser",
+        image: null,
+        unlocked: true,
+      },
+    },
+  },
+  withReveals,
+);
+assert.equal(unlockedReveal.reveals?.["reveal-laser"]?.unlocked, true);
+assert.equal(prizeIsPublic(null, Date.now(), true), true);
+assert.equal(prizeIsPublic(pastAt, Date.now(), false), true);
+assert.equal(prizeIsPublic(null, Date.now(), false), false);
 
 console.log("site display checks passed");

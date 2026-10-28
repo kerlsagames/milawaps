@@ -17,8 +17,10 @@ import {
   MAX_DWELL_SECONDS,
   clampDwell,
   dwellsForEveryScreen,
+  sanitizeCricketRosters,
   sanitizeDwells,
   type CricketPanels,
+  type CricketRosters,
   type DwellMap,
   type NewsLayoutId,
   type SharedRevealMap,
@@ -44,6 +46,8 @@ export type RevealPrefs = {
   prize: string;
   label: string;
   image: string | null;
+  /** Sticky open on the prize path after the countdown reveal. */
+  unlocked: boolean;
 };
 
 export type RevealMap = Record<RevealId, RevealPrefs>;
@@ -61,13 +65,20 @@ export type DeskPrefs = {
   cricketCode: string;
   newsLayout: NewsLayoutId;
   cricketPanels: CricketPanels;
+  cricketRosters: CricketRosters;
 };
 
 function defaultReveals(): RevealMap {
   return Object.fromEntries(
     REVEALS.map((reveal) => [
       reveal.id,
-      { at: null, prize: reveal.prize, label: revealDefaultLabel(reveal), image: null },
+      {
+        at: null,
+        prize: reveal.prize,
+        label: revealDefaultLabel(reveal),
+        image: null,
+        unlocked: false,
+      },
     ]),
   ) as RevealMap;
 }
@@ -91,6 +102,7 @@ const serverPrefs: DeskPrefs = {
   cricketCode: "",
   newsLayout: "split",
   cricketPanels: { ...DEFAULT_CRICKET_PANELS },
+  cricketRosters: {},
 };
 
 let current: DeskPrefs = serverPrefs;
@@ -146,19 +158,23 @@ function readShown(): ShownMap {
 }
 
 function readReveals(): RevealMap {
-  let stored: Record<string, { at?: unknown; prize?: unknown; label?: unknown; image?: unknown }> = {};
+  let stored: Record<
+    string,
+    { at?: unknown; prize?: unknown; label?: unknown; image?: unknown; unlocked?: unknown }
+  > = {};
   try {
     const raw = window.localStorage.getItem("ott-reveals");
     if (raw) {
       stored = JSON.parse(raw) as Record<
         string,
-        { at?: unknown; prize?: unknown; label?: unknown; image?: unknown }
+        { at?: unknown; prize?: unknown; label?: unknown; image?: unknown; unlocked?: unknown }
       >;
     }
   } catch {
     stored = {};
   }
   const reveals = defaultReveals();
+  const now = Date.now();
   for (const reveal of REVEALS) {
     const saved = stored[reveal.id];
     const at = typeof saved?.at === "number" && Number.isFinite(saved.at) && saved.at > 0 ? saved.at : null;
@@ -167,9 +183,26 @@ function readReveals(): RevealMap {
       typeof saved?.label === "string" && saved.label.trim()
         ? saved.label.trim().slice(0, 40)
         : revealDefaultLabel(reveal);
-    reveals[reveal.id] = { at, prize, label, image: readStoredImage(saved?.image) };
+    const unlocked = saved?.unlocked === true || (typeof at === "number" && at <= now);
+    reveals[reveal.id] = {
+      at,
+      prize,
+      label,
+      image: readStoredImage(saved?.image),
+      unlocked,
+    };
   }
   return reveals;
+}
+
+function readCricketRosters(): CricketRosters {
+  try {
+    const raw = window.localStorage.getItem("ott-cricket-rosters");
+    if (!raw) return {};
+    return sanitizeCricketRosters(JSON.parse(raw) as unknown);
+  } catch {
+    return {};
+  }
 }
 
 function readCricket(): string {
@@ -210,7 +243,10 @@ function readCricketPanels(): CricketPanels {
 function readPrefs(): DeskPrefs {
   const cricketCode = readCricket();
   const shown = readShown();
-  if (!cricketCode) shown.cricket = false;
+  if (!cricketCode) {
+    shown.cricket = false;
+    shown["cricket-teams"] = false;
+  }
   return {
     kiosk: window.localStorage.getItem("ott-kiosk") === "1",
     token: readToken(),
@@ -222,6 +258,7 @@ function readPrefs(): DeskPrefs {
     cricketCode,
     newsLayout: readNewsLayout(),
     cricketPanels: readCricketPanels(),
+    cricketRosters: readCricketRosters(),
   };
 }
 
@@ -296,6 +333,12 @@ export function setCricketPanelsLocal(panels: CricketPanels) {
   publish({ ...readPrefs(), cricketPanels: panels });
 }
 
+export function setCricketRostersLocal(rosters: CricketRosters) {
+  const next = sanitizeCricketRosters(rosters);
+  window.localStorage.setItem("ott-cricket-rosters", JSON.stringify(next));
+  publish({ ...readPrefs(), cricketRosters: next });
+}
+
 /** Apply shared TV display settings from the server board (every visitor). */
 export function hydrateDisplay(
   shown: ShownMap,
@@ -303,6 +346,7 @@ export function hydrateDisplay(
   extras?: {
     newsLayout?: NewsLayoutId;
     cricketPanels?: CricketPanels;
+    cricketRosters?: CricketRosters;
     finishAt?: number | null;
     dwells?: DwellMap | null;
     reveals?: SharedRevealMap | null;
@@ -317,6 +361,9 @@ export function hydrateDisplay(
   }
   if (extras?.cricketPanels) {
     window.localStorage.setItem("ott-cricket-panels", JSON.stringify(extras.cricketPanels));
+  }
+  if (extras?.cricketRosters) {
+    window.localStorage.setItem("ott-cricket-rosters", JSON.stringify(extras.cricketRosters));
   }
   if (extras && "finishAt" in extras) {
     if (extras.finishAt == null || !Number.isFinite(extras.finishAt)) {
@@ -337,6 +384,7 @@ export function hydrateDisplay(
     cricketCode: code,
     newsLayout: extras?.newsLayout ?? readNewsLayout(),
     cricketPanels: extras?.cricketPanels ?? readCricketPanels(),
+    cricketRosters: extras?.cricketRosters ?? readCricketRosters(),
     finishAt: extras && "finishAt" in extras ? (extras.finishAt ?? null) : readFinish(),
     dwells: extras?.dwells ?? readDwells(),
     reveals: extras?.reveals ?? readReveals(),
@@ -350,6 +398,7 @@ export async function saveSiteDisplay(
     cricketCode?: string;
     newsLayout?: NewsLayoutId;
     cricketPanels?: Partial<CricketPanels>;
+    cricketRosters?: CricketRosters;
     finishAt?: number | null;
     dwells?: Partial<DwellMap>;
     reveals?: SharedRevealMap;
@@ -374,6 +423,7 @@ export async function saveSiteDisplay(
     hydrateDisplay(body.shown, body.cricketCode, {
       newsLayout: body.newsLayout,
       cricketPanels: body.cricketPanels,
+      cricketRosters: body.cricketRosters,
       finishAt: body.finishAt,
       dwells: body.dwells,
       reveals: body.reveals,
@@ -386,10 +436,23 @@ export async function saveSiteDisplay(
 
 export function setRevealAt(id: RevealId, at: number | null): RevealMap {
   const reveals = readReveals();
+  const nextAt = at != null && Number.isFinite(at) ? at : null;
+  const wasUnlocked = reveals[id].unlocked;
+  const unlocked = wasUnlocked || (typeof nextAt === "number" && nextAt <= Date.now());
   reveals[id] = {
     ...reveals[id],
-    at: at != null && Number.isFinite(at) ? at : null,
+    at: nextAt,
+    unlocked,
   };
+  window.localStorage.setItem("ott-reveals", JSON.stringify(reveals));
+  publish({ ...readPrefs(), reveals });
+  return reveals;
+}
+
+/** Keep a prize-path stop open after the TV reveal page is turned off. */
+export function setRevealUnlocked(id: RevealId, unlocked: boolean): RevealMap {
+  const reveals = readReveals();
+  reveals[id] = { ...reveals[id], unlocked };
   window.localStorage.setItem("ott-reveals", JSON.stringify(reveals));
   publish({ ...readPrefs(), reveals });
   return reveals;
@@ -413,7 +476,16 @@ export function revealsForSchoolSync(reveals: RevealMap): SharedRevealMap {
         row.image.length > maxDataUrl
           ? null
           : row.image;
-      return [reveal.id, { at: row.at, prize: row.prize, label: row.label, image }];
+      return [
+        reveal.id,
+        {
+          at: row.at,
+          prize: row.prize,
+          label: row.label,
+          image,
+          unlocked: row.unlocked === true,
+        },
+      ];
     }),
   ) as SharedRevealMap;
 }
@@ -462,6 +534,7 @@ export function setCricketCode(code: string) {
   if (cricketCode) window.localStorage.setItem("ott-cricket-code", cricketCode);
   else window.localStorage.removeItem("ott-cricket-code");
   const shown = { ...readShown(), cricket: cricketCode.length > 0 };
+  if (!cricketCode) shown["cricket-teams"] = false;
   window.localStorage.setItem("ott-kiosk-shown", JSON.stringify(shown));
   publish({ ...readPrefs(), cricketCode, shown });
 }
