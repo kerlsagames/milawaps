@@ -6,7 +6,6 @@ import { useDeskPrefs, type RevealMap } from "@/lib/desk-prefs";
 import {
   CLASS_MILESTONES,
   UNITS,
-  nextClassMilestone,
   type Milestone,
   type PublicBoard,
   type UnitTheme,
@@ -70,11 +69,12 @@ function ClassPath({
   reveals: RevealMap;
   now: number;
 }) {
-  const fraction = pathFraction(score);
+  // Marker sits on the last earned point, not under the next prize circle.
+  const markerFraction = score <= 0 ? 0 : Math.min(score, HIGHEST) / HIGHEST;
 
   return (
     <section
-      className="flex min-h-0 flex-1 items-center gap-1.5 rounded-2xl border-4 bg-card px-1.5 py-2 lg:gap-3 lg:rounded-[28px] lg:px-3 lg:py-3"
+      className="flex min-h-0 flex-1 items-center gap-1.5 rounded-2xl border-4 bg-card px-1.5 pt-4 pb-2 lg:gap-3 lg:rounded-[28px] lg:px-3 lg:pt-5 lg:pb-3"
       style={{ borderColor: unit.color }}
     >
       <div
@@ -101,15 +101,15 @@ function ClassPath({
               right: "calc(var(--stop) / 2)",
             }}
           />
-          {/* Soft fill under the squares so the marker still reads as progress */}
+          {/* Soft fill only under filled squares — stops short of the next prize circle */}
           <motion.div
-            className="absolute h-3 -translate-y-1/2 rounded-full opacity-35 lg:h-4"
+            className="absolute h-3 -translate-y-1/2 rounded-full opacity-30 lg:h-4"
             style={{ top: `calc(${NODE} / 2)`, left: "calc(var(--stop) / 2)", background: unit.color }}
             initial={false}
-            animate={{ width: `calc((100% - var(--stop)) * ${fraction})` }}
+            animate={{ width: `calc((100% - var(--stop)) * ${markerFraction})` }}
             transition={{ type: "spring", stiffness: 90, damping: 18 }}
           />
-          {/* One square per point — so 19 does not look like 20 */}
+          {/* One square per point — empty squares after the score make “not yet” obvious */}
           <div
             className="pointer-events-none absolute inset-x-0"
             style={{ top: `calc(${NODE} / 2)` }}
@@ -124,7 +124,7 @@ function ClassPath({
                   className={
                     atStop
                       ? "absolute size-0"
-                      : "absolute size-[5px] -translate-x-1/2 -translate-y-1/2 rounded-[1.5px] border lg:size-2 lg:rounded-[2px]"
+                      : "absolute size-[5px] -translate-x-1/2 -translate-y-1/2 rounded-[1.5px] border lg:size-2.5 lg:rounded-[2px]"
                   }
                   style={
                     atStop
@@ -132,7 +132,8 @@ function ClassPath({
                       : {
                           left: trackLeft(point),
                           background: filled ? unit.color : "#fffdf8",
-                          borderColor: filled ? unit.deep : "rgba(42,34,24,0.18)",
+                          borderColor: filled ? unit.deep : "rgba(42,34,24,0.22)",
+                          opacity: filled ? 1 : 0.85,
                           boxShadow: filled ? `0 1px 0 ${unit.deep}55` : undefined,
                         }
                   }
@@ -140,15 +141,17 @@ function ClassPath({
               );
             })}
           </div>
-          <span
-            className="absolute z-[1] size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow lg:size-7 lg:border-4"
-            style={{
-              top: `calc(${NODE} / 2)`,
-              left: `calc(var(--stop) / 2 + (100% - var(--stop)) * ${fraction})`,
-              background: unit.color,
-            }}
-            aria-hidden="true"
-          />
+          {score > 0 ? (
+            <span
+              className="absolute z-[1] size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow lg:size-5 lg:border-[3px]"
+              style={{
+                top: `calc(${NODE} / 2)`,
+                left: trackLeft(Math.min(score, HIGHEST)),
+                background: unit.color,
+              }}
+              aria-hidden="true"
+            />
+          ) : null}
           <ol className="relative flex items-start justify-between">
             <li className="flex w-[var(--stop)] flex-col items-center text-center">
               <div
@@ -170,6 +173,23 @@ function ClassPath({
               const reveal = revealForPoints(milestone.points);
               const saved = reveal ? reveals[reveal.id] : null;
               const named = namedPrize(milestone.points, reveals, now);
+              const reached = score >= milestone.points;
+              // Only show the prize picture/name once this class has actually hit the stop.
+              // (School-wide “named” alone was making 19 look like they already won.)
+              const title = reached
+                ? named
+                  ? saved?.label?.trim() || milestone.short
+                  : milestone.short
+                : reveal && !reveal.wide && !named
+                  ? "Teacher takedown"
+                  : "";
+              const art = reached
+                ? named
+                  ? saved?.image || reveal?.image || ""
+                  : ""
+                : reveal && !reveal.wide && !named
+                  ? reveal.face
+                  : "";
               return (
                 <Stop
                   key={milestone.points}
@@ -178,20 +198,8 @@ function ClassPath({
                   unit={unit}
                   named={named}
                   reveal={reveal}
-                  title={
-                    named
-                      ? saved?.label?.trim() || milestone.short
-                      : reveal && !reveal.wide
-                        ? "Teacher takedown"
-                        : ""
-                  }
-                  art={
-                    named
-                      ? saved?.image || reveal?.image || ""
-                      : reveal && !reveal.wide
-                        ? reveal.face
-                        : ""
-                  }
+                  title={title}
+                  art={art}
                 />
               );
             })}
@@ -224,9 +232,7 @@ function Stop({
   art: string;
 }) {
   const reached = score >= milestone.points;
-  const next = nextClassMilestone(score);
-  const aiming = !reached && next?.points === milestone.points;
-  const takedownLocked = Boolean(reveal && !reveal.wide && !named);
+  const takedownLocked = Boolean(reveal && !reveal.wide && !named && !reached);
   const showPicture = Boolean(art);
   // Mystery faces are square cutouts on charcoal — match that fill and fade
   // the square edges so they blend into the circle instead of reading as a stamp.
@@ -235,25 +241,12 @@ function Stop({
 
   return (
     <li className="relative z-[1] flex w-[var(--stop)] flex-col items-center text-center">
-      {/* Achieved: star + glow sit behind the prize circle */}
       {reached ? (
-        <>
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute top-0 left-1/2 -z-0 -translate-x-1/2 rounded-full"
-            style={{
-              width: `calc(${NODE} + 0.85rem)`,
-              height: `calc(${NODE} + 0.85rem)`,
-              background: `radial-gradient(circle, ${unit.color}aa 0%, ${unit.color}33 55%, transparent 72%)`,
-              boxShadow: `0 0 0 3px ${unit.color}, 0 0 16px ${unit.color}99`,
-            }}
-          />
-          <Star
-            aria-hidden="true"
-            className="pointer-events-none absolute -top-1 left-1/2 z-[2] size-3.5 -translate-x-1/2 fill-current drop-shadow lg:-top-1.5 lg:size-5"
-            style={{ color: unit.color }}
-          />
-        </>
+        <Star
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-2 left-1/2 z-[2] size-6 -translate-x-1/2 fill-current drop-shadow-[0_2px_0_rgba(42,28,4,0.25)] lg:-top-3 lg:size-9"
+          style={{ color: unit.color }}
+        />
       ) : null}
       <div
         className="relative z-[1] grid place-items-center overflow-hidden rounded-full border-4"
@@ -262,13 +255,7 @@ function Stop({
           height: NODE,
           background: circleFill,
           color: showPicture ? unit.ink : "#ffe08a",
-          borderColor: reached
-            ? unit.deep
-            : aiming
-              ? `${unit.color}99`
-              : "rgba(42,34,24,0.12)",
-          // Aiming is a soft dashed feel via thin ring — not the big “won” glow.
-          boxShadow: aiming ? `0 0 0 2px ${unit.color}66` : undefined,
+          borderColor: reached ? unit.deep : "rgba(42,34,24,0.12)",
         }}
       >
         {showPicture ? (
@@ -298,29 +285,14 @@ function Stop({
       </p>
       <p
         className={
-          reached || takedownLocked || named
+          title
             ? "text-[10px] leading-tight font-bold lg:text-sm"
             : "hidden text-xs leading-tight font-bold text-muted-foreground lg:block lg:text-sm"
         }
         style={reached ? { color: unit.deep } : undefined}
       >
-        {reached && !title ? milestone.short : title}
+        {title}
       </p>
     </li>
   );
-}
-
-function pathFraction(score: number) {
-  const points = [0, ...CLASS_MILESTONES.map((milestone) => milestone.points)];
-  if (score <= 0) return 0;
-  if (score >= HIGHEST) return 1;
-  for (let index = 0; index < points.length - 1; index += 1) {
-    const start = points[index];
-    const end = points[index + 1];
-    if (score <= end) {
-      const local = (score - start) / (end - start);
-      return (index + local) / (points.length - 1);
-    }
-  }
-  return 1;
 }
