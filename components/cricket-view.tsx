@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import {
   cricketMatchTitle,
+  filterCricketLeaders,
   fixtureIsFinished,
   formatLadderPercentage,
   type CricketFixture,
@@ -10,7 +12,13 @@ import {
   type CricketLeaders,
   type CricketSnapshot,
 } from "@/lib/cricket";
-import { DEFAULT_CRICKET_PANELS, type CricketPanels } from "@/lib/site-display";
+import {
+  cricketStatsScopeLabel,
+  DEFAULT_CRICKET_PANELS,
+  type CricketPanels,
+  type CricketStatsScope,
+} from "@/lib/site-display";
+import { STUDENTS } from "@/lib/students";
 import { cn } from "@/lib/utils";
 
 function fixtureMeta(when: string, ground: string) {
@@ -31,16 +39,23 @@ const LEADER_BOXES: { key: keyof CricketLeaders; title: string; tone: string }[]
   { key: "wickets", title: "Most wickets", tone: "#ff7a59" },
   { key: "catches", title: "Most catches", tone: "#5ec8ff" },
   { key: "highest", title: "Highest score", tone: "#e2a01a" },
+  { key: "runOuts", title: "Most run outs", tone: "#c48a16" },
 ];
+
+const ROTATE_SCOPES = ["all", "56", "234", "f1"] as const;
 
 export function CricketView({
   code,
   fill = false,
   panels = DEFAULT_CRICKET_PANELS,
+  statsScope = "all",
+  statsRotateSec = 10,
 }: {
   code: string;
   fill?: boolean;
   panels?: CricketPanels;
+  statsScope?: CricketStatsScope;
+  statsRotateSec?: number;
 }) {
   const show = { ...DEFAULT_CRICKET_PANELS, ...panels };
   const { data, error, isLoading } = useSWR<CricketSnapshot>(
@@ -48,6 +63,22 @@ export function CricketView({
     fetcher,
     { refreshInterval: 30_000 },
   );
+  const [rotateIndex, setRotateIndex] = useState(0);
+
+  useEffect(() => {
+    if (statsScope !== "rotate") return;
+    const ms = Math.max(5, statsRotateSec) * 1000;
+    const timer = window.setInterval(() => {
+      setRotateIndex((index) => (index + 1) % ROTATE_SCOPES.length);
+    }, ms);
+    return () => window.clearInterval(timer);
+  }, [statsScope, statsRotateSec]);
+
+  const activeScope = statsScope === "rotate" ? ROTATE_SCOPES[rotateIndex]! : statsScope;
+  const leaders = useMemo(() => {
+    if (!data) return null;
+    return filterCricketLeaders(data.leaders, activeScope, STUDENTS);
+  }, [data, activeScope]);
 
   if (!code) {
     return (
@@ -69,7 +100,7 @@ export function CricketView({
     );
   }
 
-  if (error || !data) {
+  if (error || !data || !leaders) {
     return (
       <section className="rounded-[28px] border border-[#c23b3b]/30 bg-card px-6 py-10 text-center">
         <h2 className="font-display text-4xl">Cricket</h2>
@@ -88,8 +119,10 @@ export function CricketView({
   });
   const upcoming = data.draw
     .filter((game, index) => index > lastFinishedIndex && !fixtureIsFinished(game.result))
-    .slice(0, 2);
+    .slice(0, 3);
   const showBottom = show.ladder || show.draw;
+  const showTopStrip = show.lastNext || show.leaders;
+  const scopeLabel = cricketStatsScopeLabel(activeScope);
 
   return (
     <div
@@ -102,6 +135,7 @@ export function CricketView({
         <div className="min-w-0">
           <p className="text-[10px] font-bold tracking-[0.2em] text-ink-gold uppercase">
             Cricket 2 · Ladder & games
+            {show.leaders ? ` · Stats ${scopeLabel}` : ""}
           </p>
           <h2 className="truncate font-display text-[clamp(1.6rem,3.8vh,3.25rem)] leading-none">
             {data.title}
@@ -109,33 +143,30 @@ export function CricketView({
         </div>
         {data.preview ? (
           <p className="shrink-0 text-xs font-extrabold text-[#8a5a00]">Sample page</p>
+        ) : statsScope === "rotate" ? (
+          <p className="shrink-0 text-xs font-extrabold text-[#8a5a00]">
+            Rotating · {scopeLabel}
+          </p>
         ) : null}
       </header>
 
-      {show.lastNext ? (
-        <div className="grid shrink-0 gap-1.5 sm:grid-cols-2">
-          <GameCard
-            eyebrow="Last game"
-            tone="#0d7a64"
-            game={data.lastGame}
-            empty="No finished game yet."
-            resultFirst
-          />
-          <GameCard
-            eyebrow="Next game"
-            tone="#5146b8"
-            game={data.nextGame}
-            empty="No game coming up."
-            resultFirst={false}
-          />
-        </div>
-      ) : null}
-
-      {show.leaders ? (
-        <div className="grid min-h-0 shrink-0 grid-cols-2 gap-1.5 xl:grid-cols-4">
-          {LEADER_BOXES.map(({ key, title, tone }) => (
-            <LeaderCard key={key} title={title} tone={tone} rows={data.leaders[key]} />
-          ))}
+      {showTopStrip ? (
+        <div className="grid min-h-0 shrink-0 grid-cols-2 gap-1.5 sm:grid-cols-3 xl:grid-cols-6">
+          {show.lastNext ? (
+            <GameCard
+              eyebrow="Last game"
+              tone="#0d7a64"
+              game={data.lastGame}
+              empty="No finished game yet."
+              resultFirst
+              compact
+            />
+          ) : null}
+          {show.leaders
+            ? LEADER_BOXES.map(({ key, title, tone }) => (
+                <LeaderCard key={key} title={title} tone={tone} rows={leaders[key]} compact />
+              ))
+            : null}
         </div>
       ) : null}
 
@@ -217,9 +248,13 @@ export function CricketView({
                   {upcoming.map((game, index) => (
                     <li
                       key={`${game.home}-${game.away}-${index}`}
-                      className="rounded-xl bg-[#f6f3ff] px-3 py-2"
+                      className={cn(
+                        "rounded-xl px-3 py-2",
+                        index === 0 ? "bg-[#efe9ff] ring-2 ring-[#5146b8]/35" : "bg-[#f6f3ff]",
+                      )}
                     >
                       <p className="text-[clamp(0.65rem,1.2vh,0.8rem)] font-extrabold tracking-wide text-[#5146b8] uppercase">
+                        {index === 0 ? "Next · " : ""}
                         {fixtureMeta(game.when, game.ground)}
                       </p>
                       <p className="font-display text-[clamp(1.05rem,2.5vh,1.85rem)] leading-tight">
@@ -227,6 +262,10 @@ export function CricketView({
                       </p>
                       {game.result ? (
                         <p className="mt-0.5 text-[clamp(0.8rem,1.6vh,1.1rem)] font-bold">{game.result}</p>
+                      ) : index === 0 ? (
+                        <p className="mt-0.5 text-[clamp(0.8rem,1.6vh,1.1rem)] font-extrabold text-[#5146b8]">
+                          Still to play
+                        </p>
                       ) : null}
                     </li>
                   ))}
@@ -246,49 +285,54 @@ function GameCard({
   game,
   empty,
   resultFirst,
+  compact = false,
 }: {
   eyebrow: string;
   tone: string;
   game: CricketFixture | null;
   empty: string;
   resultFirst: boolean;
+  compact?: boolean;
 }) {
   return (
     <section
-      className="overflow-hidden rounded-[20px] border-4 bg-card px-2.5 py-2 shadow-[0_5px_0_rgba(42,28,4,0.1)]"
+      className={cn(
+        "overflow-hidden rounded-[18px] border-4 bg-card shadow-[0_5px_0_rgba(42,28,4,0.1)]",
+        compact ? "px-2 py-1.5" : "px-2.5 py-2",
+      )}
       style={{ borderColor: tone }}
     >
       <p
-        className="text-[clamp(0.65rem,1.2vh,0.8rem)] font-extrabold tracking-[0.16em] uppercase"
+        className="text-[clamp(0.55rem,1vh,0.75rem)] font-extrabold tracking-[0.14em] uppercase"
         style={{ color: tone }}
       >
         {eyebrow}
       </p>
       {!game ? (
-        <p className="mt-0.5 text-[clamp(0.9rem,1.8vh,1.25rem)] font-bold text-muted-foreground">
+        <p className="mt-0.5 text-[clamp(0.8rem,1.6vh,1.1rem)] font-bold text-muted-foreground">
           {empty}
         </p>
       ) : (
         <>
-          <p className="mt-0.5 truncate text-[clamp(0.7rem,1.3vh,0.95rem)] font-extrabold text-muted-foreground">
+          <p className="mt-0.5 truncate text-[clamp(0.6rem,1.1vh,0.85rem)] font-extrabold text-muted-foreground">
             {fixtureMeta(game.when, game.ground)}
           </p>
-          <p className="font-display text-[clamp(1.1rem,2.6vh,2rem)] leading-none">
+          <p className="font-display text-[clamp(0.95rem,2.1vh,1.55rem)] leading-none">
             {cricketMatchTitle(game)}
           </p>
           {game.result ? (
             <p
-              className={`mt-0.5 text-[clamp(0.95rem,2vh,1.35rem)] font-extrabold ${resultFirst ? "" : "text-[#5146b8]"}`}
+              className={`mt-0.5 text-[clamp(0.85rem,1.8vh,1.2rem)] font-extrabold ${resultFirst ? "" : "text-[#5146b8]"}`}
               style={resultFirst ? { color: tone } : undefined}
             >
               {game.result}
             </p>
           ) : resultFirst ? (
-            <p className="mt-0.5 text-[clamp(0.95rem,2vh,1.35rem)] font-extrabold text-muted-foreground">
+            <p className="mt-0.5 text-[clamp(0.85rem,1.8vh,1.2rem)] font-extrabold text-muted-foreground">
               Result not on the board yet
             </p>
           ) : (
-            <p className="mt-0.5 text-[clamp(0.85rem,1.7vh,1.2rem)] font-extrabold text-[#5146b8]">
+            <p className="mt-0.5 text-[clamp(0.8rem,1.6vh,1.1rem)] font-extrabold text-[#5146b8]">
               Still to play
             </p>
           )}
@@ -302,20 +346,26 @@ function LeaderCard({
   title,
   tone,
   rows,
+  compact = false,
 }: {
   title: string;
   tone: string;
   rows: CricketLeader[];
+  compact?: boolean;
 }) {
-  // Always paint five slots so the board is ready for full top-5 lists.
-  const slots = Array.from({ length: 5 }, (_, index) => rows[index] ?? null);
+  // Compact top strip keeps three slots; full cards keep five.
+  const slotCount = compact ? 3 : 5;
+  const slots = Array.from({ length: slotCount }, (_, index) => rows[index] ?? null);
   return (
     <section
-      className="min-h-0 overflow-hidden rounded-[18px] border-4 bg-card px-2 py-1.5"
+      className={cn(
+        "min-h-0 overflow-hidden rounded-[18px] border-4 bg-card",
+        compact ? "px-1.5 py-1" : "px-2 py-1.5",
+      )}
       style={{ borderColor: tone }}
     >
       <p
-        className="text-[clamp(0.6rem,1.1vh,0.75rem)] font-extrabold tracking-[0.14em] uppercase"
+        className="text-[clamp(0.5rem,0.95vh,0.7rem)] font-extrabold tracking-[0.12em] uppercase"
         style={{ color: tone }}
       >
         {title}
@@ -328,14 +378,24 @@ function LeaderCard({
           >
             <span
               className={cn(
-                "min-w-0 truncate font-display text-[clamp(0.85rem,1.9vh,1.35rem)] leading-none",
+                "min-w-0 truncate font-display leading-none",
+                compact
+                  ? "text-[clamp(0.75rem,1.6vh,1.15rem)]"
+                  : "text-[clamp(0.85rem,1.9vh,1.35rem)]",
                 !row && "text-muted-foreground/50",
               )}
             >
               <span className="mr-1 text-[0.7em] text-muted-foreground tabular-nums">{index + 1}.</span>
               {row?.name ?? "—"}
             </span>
-            <span className="shrink-0 font-display text-[clamp(0.9rem,2vh,1.45rem)] tabular-nums">
+            <span
+              className={cn(
+                "shrink-0 font-display tabular-nums",
+                compact
+                  ? "text-[clamp(0.8rem,1.7vh,1.2rem)]"
+                  : "text-[clamp(0.9rem,2vh,1.45rem)]",
+              )}
+            >
               {row?.value ?? ""}
             </span>
           </li>

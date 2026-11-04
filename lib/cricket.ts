@@ -25,6 +25,7 @@ export type CricketLeaders = {
   wickets: CricketLeader[];
   catches: CricketLeader[];
   highest: CricketLeader[];
+  runOuts: CricketLeader[];
 };
 export type CricketTeam = { name: string; players: string[] };
 
@@ -90,6 +91,11 @@ export const PREVIEW_CRICKET: CricketSnapshot = {
       { name: "Isla", value: "27" },
       { name: "Hugh", value: "22" },
       { name: "Harry", value: "18" },
+    ],
+    runOuts: [
+      { name: "Scout", value: "2" },
+      { name: "Riley", value: "1" },
+      { name: "Max", value: "1" },
     ],
   },
   teams: [
@@ -157,7 +163,7 @@ function leadersFromStatValue(value: string): CricketLeader[] {
 }
 
 function emptyLeaders(): CricketLeaders {
-  return { runs: [], wickets: [], catches: [], highest: [] };
+  return { runs: [], wickets: [], catches: [], highest: [], runOuts: [] };
 }
 
 function leadersFromStats(stats: CricketStat[]): CricketLeaders {
@@ -169,6 +175,7 @@ function leadersFromStats(stats: CricketStat[]): CricketLeaders {
     if (label.includes("most runs") || label === "runs") leaders.runs = row;
     else if (label.includes("most wicket") || label === "wickets") leaders.wickets = row;
     else if (label.includes("most catch") || label === "catches") leaders.catches = row;
+    else if (label.includes("run out") || label.includes("runout")) leaders.runOuts = row;
     else if (label.includes("highest") || label.includes("top score")) leaders.highest = row;
   }
   return leaders;
@@ -182,10 +189,46 @@ function mergeLeaders(fromApi: CricketLeaders, fromStats: CricketLeaders): Crick
   const runs = preferLonger(fromApi.runs, fromStats.runs);
   const wickets = preferLonger(fromApi.wickets, fromStats.wickets);
   const catches = preferLonger(fromApi.catches, fromStats.catches);
+  const runOuts = preferLonger(fromApi.runOuts, fromStats.runOuts);
   let highest = preferLonger(fromApi.highest, fromStats.highest);
   // Jimmy often only publishes “Most runs” — reuse that list for highest score when empty.
   if (highest.length === 0 && runs.length > 0) highest = runs;
-  return { runs, wickets, catches, highest };
+  return { runs, wickets, catches, highest, runOuts };
+}
+
+/** Match a cricket leader name to a school year level via the student roll. */
+export function cricketLeaderUnitId(
+  name: string,
+  roll: { name: string; unitId: "f1" | "234" | "56" }[],
+): "f1" | "234" | "56" | null {
+  const needle = name.replace(/\s+/g, " ").trim().toLowerCase();
+  if (!needle) return null;
+  const exact = roll.find((student) => student.name.replace(/\s+/g, " ").trim().toLowerCase() === needle);
+  if (exact) return exact.unitId;
+  const first = needle.split(" ")[0]!;
+  const partial = roll.filter((student) => {
+    const studentName = student.name.replace(/\s+/g, " ").trim().toLowerCase();
+    return studentName === first || studentName.startsWith(`${first} `);
+  });
+  if (partial.length === 1) return partial[0]!.unitId;
+  return null;
+}
+
+export function filterCricketLeaders(
+  leaders: CricketLeaders,
+  scope: "all" | "f1" | "234" | "56",
+  roll: { name: string; unitId: "f1" | "234" | "56" }[],
+): CricketLeaders {
+  if (scope === "all") return leaders;
+  const keep = (rows: CricketLeader[]) =>
+    rows.filter((row) => cricketLeaderUnitId(row.name, roll) === scope);
+  return {
+    runs: keep(leaders.runs),
+    wickets: keep(leaders.wickets),
+    catches: keep(leaders.catches),
+    highest: keep(leaders.highest),
+    runOuts: keep(leaders.runOuts),
+  };
 }
 
 export function ladderPercentage(row: Pick<CricketRow, "played" | "won" | "runsFor" | "runsAgainst">) {
@@ -358,6 +401,7 @@ export function parseCricketSnapshot(raw: unknown, preview = false): CricketSnap
     wickets: parseLeadersList(leadersRaw?.wickets ?? leadersRaw?.mostWickets),
     catches: parseLeadersList(leadersRaw?.catches ?? leadersRaw?.mostCatches),
     highest: parseLeadersList(leadersRaw?.highest ?? leadersRaw?.highestScore),
+    runOuts: parseLeadersList(leadersRaw?.runOuts ?? leadersRaw?.mostRunOuts),
   };
   const leaders = mergeLeaders(fromApi, leadersFromStats(stats));
   const { lastGame, nextGame } = pickLastAndNext(draw);

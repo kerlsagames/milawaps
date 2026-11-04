@@ -31,6 +31,8 @@ import {
   setAllViewDwells,
   setCricketPanelsLocal,
   setCricketRostersLocal,
+  setCricketStatsRotateSecLocal,
+  setCricketStatsScopeLocal,
   setCricketTeamsModeLocal,
   setFinishAt,
   setNewsLayoutLocal,
@@ -50,11 +52,15 @@ import { emptyNews, type DailyNews } from "@/lib/news";
 import { compressPrizeImage } from "@/lib/prize-image";
 import { prizeIsPublic, REVEALS, type FixedScreenId, type ScreenId } from "@/lib/reveals";
 import {
+  CRICKET_STATS_ROTATE_MAX,
+  CRICKET_STATS_ROTATE_MIN,
   NEWS_LAYOUTS,
+  cricketStatsScopeLabel,
   dwellsForEveryScreen,
   sanitizeCricketRosters,
   type CricketPanels,
   type CricketRosters,
+  type CricketStatsScope,
   type CricketTeamsMode,
   type NewsLayoutId,
 } from "@/lib/site-display";
@@ -171,6 +177,8 @@ export function KioskSettings({
       cricketPanels?: Partial<CricketPanels>;
       cricketRosters?: CricketRosters;
       cricketTeamsMode?: CricketTeamsMode;
+      cricketStatsScope?: CricketStatsScope;
+      cricketStatsRotateSec?: number;
       finishAt?: number | null;
       dwells?: Partial<Record<FixedScreenId, number>>;
       reveals?: import("@/lib/desk-prefs").RevealMap;
@@ -550,6 +558,8 @@ export function KioskSettings({
               panels={prefs.cricketPanels}
               rosters={prefs.cricketRosters}
               teamsMode={prefs.cricketTeamsMode}
+              statsScope={prefs.cricketStatsScope}
+              statsRotateSec={prefs.cricketStatsRotateSec}
               onShownTeams={(next) => void saveShown("cricket-teams", next)}
               onShownLadder={(next) => void saveShown("cricket", next)}
               onDraftCode={setDraftCricket}
@@ -588,6 +598,27 @@ export function KioskSettings({
                     : "Cricket 1 shows all teams on every TV.",
                 ).then((ok) => {
                   if (ok === false) setCricketTeamsModeLocal(previous);
+                });
+              }}
+              onStatsScope={(scope) => {
+                const previous = prefs.cricketStatsScope;
+                setCricketStatsScopeLocal(scope);
+                const note =
+                  scope === "rotate"
+                    ? "Cricket 2 stats will rotate year levels on every TV."
+                    : `Cricket 2 stats show ${cricketStatsScopeLabel(scope)} on every TV.`;
+                void patchDisplay({ cricketStatsScope: scope }, note).then((ok) => {
+                  if (ok === false) setCricketStatsScopeLocal(previous);
+                });
+              }}
+              onStatsRotateSec={(seconds) => {
+                const previous = prefs.cricketStatsRotateSec;
+                setCricketStatsRotateSecLocal(seconds);
+                void patchDisplay(
+                  { cricketStatsRotateSec: seconds },
+                  `Cricket 2 stats rotate every ${seconds}s on every TV.`,
+                ).then((ok) => {
+                  if (ok === false) setCricketStatsRotateSecLocal(previous);
                 });
               }}
               onPreviewTeams={() => {
@@ -1048,6 +1079,8 @@ function CricketPagePanel({
   panels,
   rosters,
   teamsMode,
+  statsScope,
+  statsRotateSec,
   onShownTeams,
   onShownLadder,
   onDraftCode,
@@ -1055,6 +1088,8 @@ function CricketPagePanel({
   onPanel,
   onRosters,
   onTeamsMode,
+  onStatsScope,
+  onStatsRotateSec,
   onPreviewTeams,
   onPreviewLadder,
 }: {
@@ -1067,6 +1102,8 @@ function CricketPagePanel({
   panels: CricketPanels;
   rosters: CricketRosters;
   teamsMode: CricketTeamsMode;
+  statsScope: CricketStatsScope;
+  statsRotateSec: number;
   onShownTeams: (next: boolean) => void;
   onShownLadder: (next: boolean) => void;
   onDraftCode: (value: string) => void;
@@ -1074,6 +1111,8 @@ function CricketPagePanel({
   onPanel: (key: keyof CricketPanels, value: boolean) => void;
   onRosters: (next: CricketRosters) => void;
   onTeamsMode: (mode: CricketTeamsMode) => void;
+  onStatsScope: (scope: CricketStatsScope) => void;
+  onStatsRotateSec: (seconds: number) => void;
   onPreviewTeams: () => void;
   onPreviewLadder: () => void;
 }) {
@@ -1103,7 +1142,7 @@ function CricketPagePanel({
     <div className="grid gap-3">
       <p className="text-xs font-semibold text-muted-foreground">
         Cricket 1 is either all team lists, or next-game mode (big matchup + both sides). Cricket 2
-        shows the ladder, stats, draw, and recent match.
+        puts last game and leader stats across the top, with next games in Coming up.
       </p>
       {admin ? (
         <>
@@ -1152,7 +1191,7 @@ function CricketPagePanel({
       ) : (
         <p className="text-xs font-semibold text-muted-foreground">
           {draftCode
-            ? `Cricket 1 ${shownTeams ? "on" : "off"} (${teamsMode === "next" ? "next game" : "all teams"}) · Cricket 2 ${shownLadder ? "on" : "off"}.`
+            ? `Cricket 1 ${shownTeams ? "on" : "off"} (${teamsMode === "next" ? "next game" : "all teams"}) · Cricket 2 ${shownLadder ? "on" : "off"} (stats ${statsScope === "rotate" ? `rotate ${statsRotateSec}s` : cricketStatsScopeLabel(statsScope)}).`
             : "Ask an admin to paste the Jimmy cricket code."}
         </p>
       )}
@@ -1198,10 +1237,10 @@ function CricketPagePanel({
           <p className="text-sm font-bold">Cricket 2 panels</p>
           {(
             [
-              ["lastNext", "Last game + next game"],
-              ["leaders", "Leader boxes"],
+              ["lastNext", "Last game (top row)"],
+              ["leaders", "Leader stats (top row)"],
               ["ladder", "Ladder"],
-              ["draw", "Coming up draw"],
+              ["draw", "Coming up (includes next game)"],
             ] as const
           ).map(([key, label]) => (
             <label key={key} className="flex items-center gap-2 text-sm font-bold">
@@ -1214,6 +1253,51 @@ function CricketPagePanel({
               {label}
             </label>
           ))}
+        </div>
+      ) : null}
+      {admin ? (
+        <div className="grid gap-2 rounded-2xl border border-[#0d7a64]/25 bg-[#eefaf6] p-3">
+          <p className="text-sm font-bold">Cricket 2 stats for</p>
+          {(
+            [
+              ["all", "All students"],
+              ["56", "5/6"],
+              ["234", "2/3/4"],
+              ["f1", "F/1"],
+              ["rotate", "Rotate through year levels"],
+            ] as const
+          ).map(([value, label]) => (
+            <label key={value} className="flex items-center gap-2 text-sm font-bold">
+              <input
+                type="radio"
+                name="cricket-stats-scope"
+                checked={statsScope === value}
+                onChange={() => onStatsScope(value)}
+                className="size-5 accent-[#0d7a64]"
+              />
+              {label}
+            </label>
+          ))}
+          {statsScope === "rotate" ? (
+            <label className="grid gap-1 pt-1">
+              <span className="text-sm font-bold">
+                Rotate every {statsRotateSec}s ({CRICKET_STATS_ROTATE_MIN}–{CRICKET_STATS_ROTATE_MAX})
+              </span>
+              <input
+                type="range"
+                min={CRICKET_STATS_ROTATE_MIN}
+                max={CRICKET_STATS_ROTATE_MAX}
+                step={1}
+                value={statsRotateSec}
+                onChange={(event) => onStatsRotateSec(Number(event.target.value))}
+                className="w-full accent-[#0d7a64]"
+              />
+            </label>
+          ) : null}
+          <p className="text-xs font-semibold text-muted-foreground">
+            Filters most runs / wickets / catches / highest / run outs by the student roll. Jimmy
+            only sends a short list for now — empty slots stay blank until more names arrive.
+          </p>
         </div>
       ) : null}
       <div className="grid gap-2 sm:grid-cols-2">

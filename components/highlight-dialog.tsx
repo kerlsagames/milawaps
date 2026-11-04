@@ -131,13 +131,12 @@ export function HighlightDialog({
         onOpenChange(next);
       }}
     >
-      <DialogContent className="max-h-[88dvh] overflow-y-auto sm:!max-w-xl">
+      <DialogContent className="max-h-[min(92dvh,44rem)] overflow-y-auto top-[4dvh] translate-y-0 sm:!max-w-xl sm:top-[50%] sm:translate-y-[-50%]">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">Student highlight</DialogTitle>
           <DialogDescription>
-            Pick up to {HIGHLIGHT_STUDENT_MAX} students across classes, award a whole class, choose 0
-            to +{HIGHLIGHT_POINT_MAX} for their class(es), and write why. The spotlight stays on the
-            TV for 24 hours.
+            Pick a class, choose 0 to +{HIGHLIGHT_POINT_MAX} points, then tap students (or whole
+            class) and write why. Up to {HIGHLIGHT_STUDENT_MAX} students. Spotlight lasts 24 hours.
           </DialogDescription>
         </DialogHeader>
 
@@ -170,6 +169,39 @@ export function HighlightDialog({
               );
             })}
           </div>
+        </div>
+
+        {/* Points sit above the student list so phones see 0/+1/+2/+3 without scrolling past the roster. */}
+        <div className="grid gap-2 rounded-2xl border-2 border-[#2a1c04]/15 bg-[#fff8df] p-3">
+          <p className="text-sm font-bold">Points for their class</p>
+          <div className="grid grid-cols-4 gap-2" role="group" aria-label="Highlight points">
+            {POINT_CHOICES.map((value) => {
+              const label = value === 0 ? "0" : `+${value}`;
+              const on = points === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setPoints(value)}
+                  className={
+                    on
+                      ? "h-12 rounded-xl bg-[#2a1c04] text-lg font-black text-[#ffe08a]"
+                      : "h-12 rounded-xl border-2 border-[#2a1c04] bg-white text-lg font-black text-[#2a1c04]"
+                  }
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs font-semibold text-[#8a5a00]">
+            {points === 0
+              ? "Spotlight only — no class ticks."
+              : points === 1
+                ? "One +1 tick shared across the selected class(es)."
+                : `${points} ticks shared across the selected class(es).`}
+          </p>
         </div>
 
         {pickedDetails.length > 0 ? (
@@ -231,7 +263,7 @@ export function HighlightDialog({
                 Photos for this class are not on the board yet.
               </p>
             ) : (
-              <div className="grid max-h-56 grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3">
+              <div className="grid max-h-40 grid-cols-2 gap-2 overflow-y-auto sm:max-h-56 sm:grid-cols-3">
                 {students.map((student) => {
                   const on =
                     !wholeClassPick && picked.some((item) => item.id === student.id);
@@ -256,43 +288,11 @@ export function HighlightDialog({
           </div>
         ) : null}
 
-        <div className="grid gap-2">
-          <p className="text-sm font-bold">Points for their class</p>
-          <div className="grid grid-cols-4 gap-2" role="group" aria-label="Highlight points">
-            {POINT_CHOICES.map((value) => {
-              const label = value === 0 ? "0" : `+${value}`;
-              const on = points === value;
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => setPoints(value)}
-                  className={
-                    on
-                      ? "h-12 rounded-xl bg-[#2a1c04] text-lg font-black text-[#ffe08a]"
-                      : "h-12 rounded-xl border-2 border-[#2a1c04] bg-white text-lg font-black text-[#2a1c04]"
-                  }
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-          <p className="text-xs font-semibold text-[#8a5a00]">
-            {points === 0
-              ? "Spotlight only — no class ticks."
-              : points === 1
-                ? "One +1 tick shared across the selected class(es)."
-                : `${points} ticks shared across the selected class(es).`}
-          </p>
-        </div>
-
         <label className="grid gap-1">
           <span className="text-sm font-bold">Reason</span>
           <textarea
             value={reason}
-            rows={3}
+            rows={2}
             aria-label="Highlight reason"
             placeholder="Helped pack the sports shed without being asked"
             onChange={(event) => setReason(event.target.value.slice(0, 140))}

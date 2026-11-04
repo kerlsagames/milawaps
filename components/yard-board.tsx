@@ -78,6 +78,12 @@ export function YardBoard() {
   const cricketRosters = data?.displayUpdatedAt
     ? (data.cricketRosters ?? prefs.cricketRosters)
     : prefs.cricketRosters;
+  const cricketStatsScope = data?.displayUpdatedAt
+    ? (data.cricketStatsScope ?? prefs.cricketStatsScope)
+    : prefs.cricketStatsScope;
+  const cricketStatsRotateSec = data?.displayUpdatedAt
+    ? (data.cricketStatsRotateSec ?? prefs.cricketStatsRotateSec)
+    : prefs.cricketStatsRotateSec;
   const dwellsRef = useRef(dwells);
   dwellsRef.current = dwells;
   const liveHighlights = useMemo(
@@ -101,7 +107,7 @@ export function YardBoard() {
   const [reasonPrompt, setReasonPrompt] = useState<{ id: string; line: string } | null>(null);
 
   const displaySyncKey = data?.displayUpdatedAt
-    ? `${data.displayUpdatedAt}:${data.cricketCode}:${JSON.stringify(data.shown)}:${data.newsLayout}:${JSON.stringify(data.cricketPanels)}:${JSON.stringify(data.cricketRosters)}:${data.cricketTeamsMode}:${data.finishAt ?? ""}:${JSON.stringify(data.dwells)}:${JSON.stringify(data.reveals)}`
+    ? `${data.displayUpdatedAt}:${data.cricketCode}:${JSON.stringify(data.shown)}:${data.newsLayout}:${JSON.stringify(data.cricketPanels)}:${JSON.stringify(data.cricketRosters)}:${data.cricketTeamsMode}:${data.cricketStatsScope}:${data.cricketStatsRotateSec}:${data.finishAt ?? ""}:${JSON.stringify(data.dwells)}:${JSON.stringify(data.reveals)}`
     : "";
   useEffect(() => {
     if (!data?.displayUpdatedAt) return;
@@ -110,6 +116,8 @@ export function YardBoard() {
       cricketPanels: data.cricketPanels,
       cricketRosters: data.cricketRosters,
       cricketTeamsMode: data.cricketTeamsMode,
+      cricketStatsScope: data.cricketStatsScope,
+      cricketStatsRotateSec: data.cricketStatsRotateSec,
       finishAt: data.finishAt,
       dwells: data.dwells,
       reveals: data.reveals,
@@ -787,7 +795,13 @@ export function YardBoard() {
                   fill
                 />
               ) : view === "cricket" ? (
-                <CricketView code={cricketCode} fill panels={prefs.cricketPanels} />
+                <CricketView
+                  code={cricketCode}
+                  fill
+                  panels={prefs.cricketPanels}
+                  statsScope={cricketStatsScope}
+                  statsRotateSec={cricketStatsRotateSec}
+                />
               ) : view === "news" ? (
                 // Laptop desk: nudge Daily News / Reminders slightly smaller so they keep shape.
                 kiosk ? (

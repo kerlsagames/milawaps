@@ -4,6 +4,7 @@ import { classHighlightId, createHighlight } from "../lib/highlights";
 import { applyAction } from "../lib/scoring";
 import {
   JIMMY_CRICKET_BOARD,
+  filterCricketLeaders,
   formatLadderPercentage,
   parseCricketSnapshot,
   pickLastAndNext,
@@ -152,6 +153,22 @@ assert.equal(milawaLike?.ladder[1]?.percentage, 44.9);
 const picked = pickLastAndNext(milawaLike!.draw);
 assert.equal(picked.lastGame?.home, "Renegades");
 assert.equal(picked.nextGame?.home, "Scorchers");
+
+const scoped = filterCricketLeaders(
+  milawaLike!.leaders,
+  "56",
+  [
+    { name: "Van", unitId: "56" },
+    { name: "Charlie", unitId: "56" },
+    { name: "Zach", unitId: "56" },
+  ],
+);
+assert.equal(scoped.runs.length, 3);
+assert.equal(scoped.runs[0]?.name, "Van");
+assert.equal(
+  filterCricketLeaders(milawaLike!.leaders, "f1", [{ name: "Van", unitId: "56" }]).runs.length,
+  0,
+);
 
 const now = Date.parse("2026-10-19T12:00:00+11:00");
 const todayAt = (minute: number) => Date.parse("2026-10-19T08:00:00+11:00") + minute * 60_000;
