@@ -137,7 +137,7 @@ export function CricketView({
             Cricket 2 · Ladder & games
             {show.leaders ? ` · Stats ${scopeLabel}` : ""}
           </p>
-          <h2 className="truncate font-display text-[clamp(1.6rem,3.8vh,3.25rem)] leading-none">
+          <h2 className="truncate font-display text-[clamp(1.45rem,3.2vh,2.75rem)] leading-none">
             {data.title}
           </h2>
         </div>
@@ -151,7 +151,7 @@ export function CricketView({
       </header>
 
       {showTopStrip ? (
-        <div className="grid min-h-0 shrink-0 grid-cols-2 gap-1.5 sm:grid-cols-3 xl:grid-cols-6">
+        <div className="grid min-h-0 flex-[1.55] grid-cols-2 gap-1.5 overflow-hidden sm:grid-cols-3 xl:grid-cols-6">
           {show.lastNext ? (
             <GameCard
               eyebrow="Last game"
@@ -160,6 +160,7 @@ export function CricketView({
               empty="No finished game yet."
               resultFirst
               compact
+              ladder={data.ladder}
             />
           ) : null}
           {show.leaders
@@ -173,7 +174,7 @@ export function CricketView({
       {showBottom ? (
         <div
           className={cn(
-            "grid min-h-0 flex-1 gap-1.5 overflow-hidden",
+            "grid min-h-0 flex-[0.7] gap-1.5 overflow-hidden",
             show.ladder && show.draw && "lg:grid-cols-[1.2fr_0.8fr]",
           )}
         >
@@ -286,6 +287,7 @@ function GameCard({
   empty,
   resultFirst,
   compact = false,
+  ladder = [],
 }: {
   eyebrow: string;
   tone: string;
@@ -293,11 +295,26 @@ function GameCard({
   empty: string;
   resultFirst: boolean;
   compact?: boolean;
+  ladder?: CricketSnapshot["ladder"];
 }) {
+  const homeRow = game ? ladder.find((row) => row.team.toLowerCase() === game.home.toLowerCase()) : null;
+  const awayRow = game ? ladder.find((row) => row.team.toLowerCase() === game.away.toLowerCase()) : null;
+  const scoreLine =
+    game && (game.homeScore != null || game.awayScore != null)
+      ? `${game.homeScore ?? "—"} – ${game.awayScore ?? "—"}`
+      : null;
+  const rfRaLine =
+    !scoreLine &&
+    homeRow &&
+    awayRow &&
+    (homeRow.runsFor > 0 || homeRow.runsAgainst > 0 || awayRow.runsFor > 0 || awayRow.runsAgainst > 0)
+      ? `${game!.home} ${homeRow.runsFor} · ${game!.away} ${awayRow.runsFor}`
+      : null;
+
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-[18px] border-4 bg-card shadow-[0_5px_0_rgba(42,28,4,0.1)]",
+        "flex min-h-0 flex-col overflow-hidden rounded-[18px] border-4 bg-card shadow-[0_5px_0_rgba(42,28,4,0.1)]",
         compact ? "px-2 py-1.5" : "px-2.5 py-2",
       )}
       style={{ borderColor: tone }}
@@ -320,6 +337,16 @@ function GameCard({
           <p className="font-display text-[clamp(0.95rem,2.1vh,1.55rem)] leading-none">
             {cricketMatchTitle(game)}
           </p>
+          {scoreLine ? (
+            <p className="mt-0.5 font-display text-[clamp(1rem,2.2vh,1.65rem)] tabular-nums" style={{ color: tone }}>
+              {scoreLine}
+            </p>
+          ) : null}
+          {rfRaLine ? (
+            <p className="mt-0.5 text-[clamp(0.7rem,1.3vh,0.95rem)] font-extrabold text-muted-foreground">
+              RF {rfRaLine}
+            </p>
+          ) : null}
           {game.result ? (
             <p
               className={`mt-0.5 text-[clamp(0.85rem,1.8vh,1.2rem)] font-extrabold ${resultFirst ? "" : "text-[#5146b8]"}`}
@@ -353,34 +380,34 @@ function LeaderCard({
   rows: CricketLeader[];
   compact?: boolean;
 }) {
-  // Compact top strip keeps three slots; full cards keep five.
-  const slotCount = compact ? 3 : 5;
+  // Top strip keeps eight slots so the board is ready for a full leaderboard.
+  const slotCount = 8;
   const slots = Array.from({ length: slotCount }, (_, index) => rows[index] ?? null);
   return (
     <section
       className={cn(
-        "min-h-0 overflow-hidden rounded-[18px] border-4 bg-card",
+        "flex min-h-0 flex-col overflow-hidden rounded-[18px] border-4 bg-card",
         compact ? "px-1.5 py-1" : "px-2 py-1.5",
       )}
       style={{ borderColor: tone }}
     >
       <p
-        className="text-[clamp(0.5rem,0.95vh,0.7rem)] font-extrabold tracking-[0.12em] uppercase"
+        className="shrink-0 text-[clamp(0.5rem,0.95vh,0.7rem)] font-extrabold tracking-[0.12em] uppercase"
         style={{ color: tone }}
       >
         {title}
       </p>
-      <ol className="mt-0.5 flex flex-col">
+      <ol className="mt-0.5 flex min-h-0 flex-1 flex-col justify-evenly">
         {slots.map((row, index) => (
           <li
             key={`${title}-${index}`}
-            className="flex items-baseline justify-between gap-1 border-b border-black/5 py-0.5 last:border-b-0"
+            className="flex items-baseline justify-between gap-1 border-b border-black/5 py-0 last:border-b-0"
           >
             <span
               className={cn(
                 "min-w-0 truncate font-display leading-none",
                 compact
-                  ? "text-[clamp(0.75rem,1.6vh,1.15rem)]"
+                  ? "text-[clamp(0.7rem,1.45vh,1.05rem)]"
                   : "text-[clamp(0.85rem,1.9vh,1.35rem)]",
                 !row && "text-muted-foreground/50",
               )}
@@ -392,7 +419,7 @@ function LeaderCard({
               className={cn(
                 "shrink-0 font-display tabular-nums",
                 compact
-                  ? "text-[clamp(0.8rem,1.7vh,1.2rem)]"
+                  ? "text-[clamp(0.75rem,1.55vh,1.1rem)]"
                   : "text-[clamp(0.9rem,2vh,1.45rem)]",
               )}
             >

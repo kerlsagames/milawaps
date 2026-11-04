@@ -144,11 +144,34 @@ assert.equal(milawaLike?.leaders.runs[1]?.name, "Charlie");
 assert.equal(milawaLike?.leaders.highest[0]?.name, "Van");
 assert.equal(milawaLike?.leaders.wickets[0]?.name, "Zach");
 assert.equal(milawaLike?.teams[0]?.players[0], "Zach");
-assert.equal(milawaLike?.ladder[0]?.percentage, 100);
-assert.equal(formatLadderPercentage(milawaLike?.ladder[0]?.percentage ?? null), "100");
+assert.equal(milawaLike?.ladder[0]?.percentage, null);
+assert.equal(formatLadderPercentage(milawaLike?.ladder[0]?.percentage ?? null), "—");
 assert.equal(milawaLike?.ladder[1]?.runsFor, 40);
 assert.equal(milawaLike?.ladder[1]?.runsAgainst, 49);
-assert.equal(milawaLike?.ladder[1]?.percentage, 44.9);
+assert.equal(milawaLike?.ladder[1]?.percentage, 81.6);
+
+const scored = parseCricketSnapshot({
+  title: "With scores",
+  ladder: [
+    { team: "Renegades", played: 1, won: 1, lost: 0, points: 2 },
+    { team: "Strikers", played: 1, won: 0, lost: 1, points: 0 },
+  ],
+  draw: [
+    {
+      when: "Wed",
+      home: "Renegades",
+      away: "Strikers",
+      ground: "Recess",
+      result: "Renegades 85 def Strikers 76",
+    },
+  ],
+});
+assert.equal(scored?.ladder[0]?.runsFor, 85);
+assert.equal(scored?.ladder[0]?.runsAgainst, 76);
+assert.equal(scored?.ladder[0]?.percentage, 111.8);
+assert.equal(scored?.ladder[1]?.runsFor, 76);
+assert.equal(scored?.ladder[1]?.runsAgainst, 85);
+assert.equal(scored?.ladder[1]?.percentage, 89.4);
 
 const picked = pickLastAndNext(milawaLike!.draw);
 assert.equal(picked.lastGame?.home, "Renegades");

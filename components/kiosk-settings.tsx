@@ -1699,46 +1699,52 @@ function NewsEditor({
           className="h-10 rounded-xl border border-input bg-white px-3 text-sm font-bold"
         />
       </label>
-      <div className="flex items-center gap-3">
-        <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-input bg-white">
-          {news.picture ? (
-            <img src={news.picture} alt="" className="size-full object-cover" />
-          ) : (
-            <span className="px-1 text-center text-[10px] font-bold text-muted-foreground">No pic</span>
-          )}
-        </div>
-        <div className="grid gap-1">
-          <label className="inline-flex h-9 cursor-pointer items-center rounded-xl border border-input bg-white px-3 text-sm font-bold">
-            <input
-              type="file"
-              accept="image/*"
-              className="sr-only"
-              aria-label="News picture"
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                event.target.value = "";
-                if (!file) return;
-                void compressPrizeImage(file)
-                  .then((data) => {
-                    onChange({ ...news, picture: data });
-                    setError(null);
-                  })
-                  .catch((reason: unknown) => {
-                    setError(reason instanceof Error ? reason.message : "Could not read that picture.");
-                  });
-              }}
-            />
-            {news.picture ? "Change picture" : "Upload picture"}
-          </label>
-          {news.picture ? (
-            <button
-              type="button"
-              className="text-left text-xs font-bold text-muted-foreground underline"
-              onClick={() => onChange({ ...news, picture: null })}
-            >
-              Clear picture
-            </button>
-          ) : null}
+      <div className="grid gap-1.5">
+        <p className="text-xs font-semibold text-muted-foreground">
+          Leave the picture empty and the TV rotates the school gallery (class cheers + yard) through
+          the day. Upload here only when you want one fixed photo.
+        </p>
+        <div className="flex items-center gap-3">
+          <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-input bg-white">
+            {news.picture ? (
+              <img src={news.picture} alt="" className="size-full object-cover" />
+            ) : (
+              <span className="px-1 text-center text-[10px] font-bold text-muted-foreground">Auto</span>
+            )}
+          </div>
+          <div className="grid gap-1">
+            <label className="inline-flex h-9 cursor-pointer items-center rounded-xl border border-input bg-white px-3 text-sm font-bold">
+              <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                aria-label="News picture"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  event.target.value = "";
+                  if (!file) return;
+                  void compressPrizeImage(file)
+                    .then((data) => {
+                      onChange({ ...news, picture: data });
+                      setError(null);
+                    })
+                    .catch((reason: unknown) => {
+                      setError(reason instanceof Error ? reason.message : "Could not read that picture.");
+                    });
+                }}
+              />
+              {news.picture ? "Change picture" : "Upload fixed picture"}
+            </label>
+            {news.picture ? (
+              <button
+                type="button"
+                className="text-left text-xs font-bold text-muted-foreground underline"
+                onClick={() => onChange({ ...news, picture: null })}
+              >
+                Use auto gallery
+              </button>
+            ) : null}
+          </div>
         </div>
       </div>
       <LineList
