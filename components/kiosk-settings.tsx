@@ -1741,7 +1741,7 @@ function NewsEditor({
       </label>
       <div className="grid gap-1.5">
         <p className="text-xs font-semibold text-muted-foreground">
-          Leave the picture empty and the TV rotates real campus photos from the school gallery
+          Leave the picture empty and the TV rotates photos from the school Photos Drive folder
           through the day. Upload here only when you want one fixed photo.
         </p>
         <div className="flex items-center gap-3">
