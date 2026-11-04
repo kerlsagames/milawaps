@@ -11,6 +11,19 @@ export const HIGHLIGHT_LIMIT = 12;
 export const HIGHLIGHT_STUDENT_MAX = 3;
 /** Teacher-chosen score value for a highlight (0 = spotlight only). */
 export const HIGHLIGHT_POINT_MAX = 3;
+/** Milawa Primary School values — pick one when saving a highlight. */
+export const HIGHLIGHT_VALUES = ["Engage", "Respect", "Create", "Connect"] as const;
+export type HighlightValue = (typeof HIGHLIGHT_VALUES)[number];
+
+export function isHighlightValue(value: unknown): value is HighlightValue {
+  return typeof value === "string" && (HIGHLIGHT_VALUES as readonly string[]).includes(value);
+}
+
+/** Build the spotlight reason from a school value plus optional detail. */
+export function highlightReasonFromValue(value: HighlightValue, detail = "") {
+  const note = detail.replace(/\s+/g, " ").trim().slice(0, 120);
+  return note ? `${value} · ${note}` : value;
+}
 
 /** Synthetic student id for a whole-class spotlight (`class:f1`). */
 export const CLASS_HIGHLIGHT_PREFIX = "class:";

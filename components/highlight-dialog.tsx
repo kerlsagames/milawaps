@@ -3,11 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { UNITS, type PublicBoard, type UnitId } from "@/lib/game";
 import {
-  HIGHLIGHT_POINT_MAX,
   HIGHLIGHT_STUDENT_MAX,
+  HIGHLIGHT_VALUES,
   classHighlightId,
+  highlightReasonFromValue,
   isClassHighlightId,
   type HighlightStudent,
+  type HighlightValue,
   wholeClassLabel,
 } from "@/lib/highlights";
 import { studentById, studentsForUnit } from "@/lib/students";
@@ -21,6 +23,13 @@ import {
 } from "@/components/ui/dialog";
 
 const POINT_CHOICES = [0, 1, 2, 3] as const;
+
+const VALUE_TONES: Record<HighlightValue, { bg: string; ink: string; border: string }> = {
+  Engage: { bg: "#2ec9a0", ink: "#08352b", border: "#0d7a64" },
+  Respect: { bg: "#5ec8ff", ink: "#0a3a55", border: "#1f6f8b" },
+  Create: { bg: "#ffe08a", ink: "#5a3208", border: "#c48a16" },
+  Connect: { bg: "#ff9ec8", ink: "#5a1030", border: "#c23b6b" },
+};
 
 export function HighlightDialog({
   open,
@@ -38,7 +47,8 @@ export function HighlightDialog({
   const [unitId, setUnitId] = useState<UnitId | null>(null);
   const [picked, setPicked] = useState<HighlightStudent[]>([]);
   const [points, setPoints] = useState(1);
-  const [reason, setReason] = useState("");
+  const [value, setValue] = useState<HighlightValue | null>(null);
+  const [detail, setDetail] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -63,7 +73,8 @@ export function HighlightDialog({
     setUnitId(nextUnit);
     setPicked([]);
     setPoints(1);
-    setReason("");
+    setValue(null);
+    setDetail("");
     setMessage("");
     setBusy(false);
   }
@@ -92,7 +103,7 @@ export function HighlightDialog({
   }
 
   async function submit() {
-    if (picked.length === 0 || reason.trim().length === 0) return;
+    if (picked.length === 0 || !value) return;
     setBusy(true);
     setMessage("");
     try {
@@ -103,7 +114,7 @@ export function HighlightDialog({
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          reason,
+          reason: highlightReasonFromValue(value, detail),
           students: picked,
           points,
         }),
@@ -137,30 +148,53 @@ export function HighlightDialog({
         <DialogHeader className="shrink-0 gap-0 pr-8">
           <DialogTitle className="font-display text-xl sm:text-2xl">Student highlight</DialogTitle>
           <DialogDescription className="sr-only">
-            Choose points, a class, students, and a reason.
+            Choose a school value, points, a class, students, and an optional note.
           </DialogDescription>
         </DialogHeader>
 
-        {/* Fixed top: points first so 0/+1/+2/+3 never sit under the roster on phone. */}
+        {/* Fixed top: school values + points always visible on phone. */}
         <div className="grid shrink-0 gap-2">
-          <div
-            className="grid grid-cols-4 gap-1.5"
-            role="group"
-            aria-label="Highlight points"
-          >
-            {POINT_CHOICES.map((value) => {
-              const label = value === 0 ? "0" : `+${value}`;
-              const on = points === value;
+          <div className="grid grid-cols-2 gap-1.5" role="group" aria-label="School value">
+            {HIGHLIGHT_VALUES.map((item) => {
+              const on = value === item;
+              const tone = VALUE_TONES[item];
               return (
                 <button
-                  key={value}
+                  key={item}
                   type="button"
                   aria-pressed={on}
-                  onClick={() => setPoints(value)}
+                  onClick={() => setValue(item)}
+                  className="h-12 rounded-xl text-sm font-black tracking-wide uppercase"
+                  style={
+                    on
+                      ? { background: tone.bg, color: tone.ink, border: `3px solid ${tone.border}` }
+                      : {
+                          background: "#fff",
+                          color: "#2a1c04",
+                          border: `2px solid ${tone.border}`,
+                        }
+                  }
+                >
+                  {item}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="grid grid-cols-4 gap-1.5" role="group" aria-label="Highlight points">
+            {POINT_CHOICES.map((choice) => {
+              const label = choice === 0 ? "0" : `+${choice}`;
+              const on = points === choice;
+              return (
+                <button
+                  key={choice}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setPoints(choice)}
                   className={
                     on
-                      ? "h-12 rounded-xl bg-[#2a1c04] text-lg font-black text-[#ffe08a]"
-                      : "h-12 rounded-xl border-2 border-[#2a1c04] bg-[#fff8df] text-lg font-black text-[#2a1c04]"
+                      ? "h-11 rounded-xl bg-[#2a1c04] text-lg font-black text-[#ffe08a]"
+                      : "h-11 rounded-xl border-2 border-[#2a1c04] bg-[#fff8df] text-lg font-black text-[#2a1c04]"
                   }
                 >
                   {label}
@@ -286,16 +320,16 @@ export function HighlightDialog({
           )}
         </div>
 
-        {/* Fixed bottom: reason + submit. */}
+        {/* Fixed bottom: optional note + submit. */}
         <div className="grid shrink-0 gap-2 border-t border-black/10 pt-2">
           <label className="grid gap-1">
-            <span className="text-sm font-bold">Reason</span>
+            <span className="text-sm font-bold">Note (optional)</span>
             <textarea
-              value={reason}
+              value={detail}
               rows={2}
-              aria-label="Highlight reason"
+              aria-label="Optional highlight note"
               placeholder="Helped pack the sports shed without being asked"
-              onChange={(event) => setReason(event.target.value.slice(0, 140))}
+              onChange={(event) => setDetail(event.target.value.slice(0, 120))}
               className="rounded-xl border border-input bg-transparent px-3 py-2 text-sm font-bold"
             />
           </label>
@@ -309,7 +343,7 @@ export function HighlightDialog({
           <Button
             type="button"
             className="h-11 rounded-xl"
-            disabled={busy || picked.length === 0 || reason.trim().length === 0}
+            disabled={busy || picked.length === 0 || !value}
             onClick={() => void submit()}
           >
             {wholeClassPick ? "Put the class on the spotlight" : "Put them on the spotlight"}

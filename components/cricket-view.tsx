@@ -61,7 +61,7 @@ export function CricketView({
   const { data, error, isLoading } = useSWR<CricketSnapshot>(
     code ? `/api/cricket?code=${encodeURIComponent(code)}` : null,
     fetcher,
-    { refreshInterval: 30_000 },
+    { refreshInterval: 15_000, revalidateOnFocus: true },
   );
   const [rotateIndex, setRotateIndex] = useState(0);
 
@@ -117,9 +117,14 @@ export function CricketView({
   data.draw.forEach((game, index) => {
     if (fixtureIsFinished(game.result)) lastFinishedIndex = index;
   });
-  const upcoming = data.draw
-    .filter((game, index) => index > lastFinishedIndex && !fixtureIsFinished(game.result))
-    .slice(0, 3);
+  const afterLast = data.draw.filter(
+    (game, index) => index > lastFinishedIndex && !fixtureIsFinished(game.result),
+  );
+  const upcomingClean = afterLast.filter((game) => {
+    const result = game.result.replace(/\s+/g, " ").trim().toLowerCase();
+    return result !== "under way" && result !== "underway";
+  });
+  const upcoming = (upcomingClean.length > 0 ? upcomingClean : afterLast).slice(0, 3);
   const showBottom = show.ladder || show.draw;
   const showTopStrip = show.lastNext || show.leaders;
   const scopeLabel = cricketStatsScopeLabel(activeScope);
@@ -151,7 +156,7 @@ export function CricketView({
       </header>
 
       {showTopStrip ? (
-        <div className="grid max-h-[min(38vh,22rem)] min-h-0 shrink-0 grid-cols-2 items-stretch gap-1 overflow-hidden sm:grid-cols-3 xl:grid-cols-6">
+        <div className="grid min-h-0 flex-[1.15] grid-cols-2 items-stretch gap-1 overflow-hidden sm:grid-cols-3 xl:grid-cols-6">
           {show.lastNext ? (
             <GameCard
               eyebrow="Last game"
@@ -174,21 +179,21 @@ export function CricketView({
       {showBottom ? (
         <div
           className={cn(
-            "grid min-h-0 flex-1 gap-1.5 overflow-hidden",
+            "grid min-h-0 flex-[0.9] gap-1.5 overflow-hidden",
             show.ladder && show.draw && "lg:grid-cols-[1.2fr_0.8fr]",
           )}
         >
           {show.ladder ? (
-            <section className="flex min-h-0 flex-col overflow-hidden rounded-[22px] border-4 border-[#2ec9a0] bg-card p-2.5">
-              <h3 className="shrink-0 font-display text-[clamp(1.25rem,2.8vh,2.25rem)] leading-none">
+            <section className="flex min-h-0 flex-col overflow-hidden rounded-[22px] border-4 border-[#2ec9a0] bg-card p-2">
+              <h3 className="shrink-0 font-display text-[clamp(1.1rem,2.4vh,1.85rem)] leading-none">
                 Ladder
               </h3>
               {data.ladder.length === 0 ? (
                 <p className="mt-2 text-sm font-bold text-muted-foreground">No ladder yet.</p>
               ) : (
-                <table className="mt-1 w-full min-h-0 flex-1 text-left">
+                <table className="mt-0.5 w-full min-h-0 flex-1 text-left">
                   <thead>
-                    <tr className="text-[clamp(0.6rem,1.1vh,0.75rem)] font-extrabold tracking-wide text-muted-foreground uppercase">
+                    <tr className="text-[clamp(0.55rem,1vh,0.7rem)] font-extrabold tracking-wide text-muted-foreground uppercase">
                       <th className="py-0.5 pr-1">#</th>
                       <th className="py-0.5">Team</th>
                       <th className="py-0.5 text-right">P</th>
@@ -203,31 +208,31 @@ export function CricketView({
                   <tbody>
                     {data.ladder.map((row, index) => (
                       <tr key={`${row.team}-${index}`} className="border-t border-black/10">
-                        <td className="py-1 pr-1 font-display text-[clamp(1rem,2.4vh,1.85rem)] tabular-nums">
+                        <td className="py-0.5 pr-1 font-display text-[clamp(0.9rem,2.1vh,1.55rem)] tabular-nums">
                           {index + 1}
                         </td>
-                        <td className="py-1 font-display text-[clamp(1rem,2.5vh,2.1rem)] leading-tight">
+                        <td className="py-0.5 font-display text-[clamp(0.9rem,2.2vh,1.7rem)] leading-tight">
                           {row.team}
                         </td>
-                        <td className="py-1 text-right text-[clamp(0.85rem,2vh,1.45rem)] font-extrabold tabular-nums">
+                        <td className="py-0.5 text-right text-[clamp(0.75rem,1.7vh,1.2rem)] font-extrabold tabular-nums">
                           {row.played}
                         </td>
-                        <td className="py-1 text-right text-[clamp(0.85rem,2vh,1.45rem)] font-extrabold tabular-nums">
+                        <td className="py-0.5 text-right text-[clamp(0.75rem,1.7vh,1.2rem)] font-extrabold tabular-nums">
                           {row.won}
                         </td>
-                        <td className="py-1 text-right text-[clamp(0.85rem,2vh,1.45rem)] font-extrabold tabular-nums">
+                        <td className="py-0.5 text-right text-[clamp(0.75rem,1.7vh,1.2rem)] font-extrabold tabular-nums">
                           {row.lost}
                         </td>
-                        <td className="py-1 text-right text-[clamp(0.85rem,2vh,1.45rem)] font-extrabold tabular-nums">
+                        <td className="py-0.5 text-right text-[clamp(0.75rem,1.7vh,1.2rem)] font-extrabold tabular-nums">
                           {row.runsFor > 0 || row.runsAgainst > 0 ? row.runsFor : "—"}
                         </td>
-                        <td className="py-1 text-right text-[clamp(0.85rem,2vh,1.45rem)] font-extrabold tabular-nums">
+                        <td className="py-0.5 text-right text-[clamp(0.75rem,1.7vh,1.2rem)] font-extrabold tabular-nums">
                           {row.runsFor > 0 || row.runsAgainst > 0 ? row.runsAgainst : "—"}
                         </td>
-                        <td className="py-1 text-right text-[clamp(0.85rem,2vh,1.45rem)] font-extrabold tabular-nums">
+                        <td className="py-0.5 text-right text-[clamp(0.75rem,1.7vh,1.2rem)] font-extrabold tabular-nums">
                           {formatLadderPercentage(row.percentage)}
                         </td>
-                        <td className="py-1 text-right font-display text-[clamp(1.15rem,2.8vh,2.25rem)] tabular-nums">
+                        <td className="py-0.5 text-right font-display text-[clamp(1rem,2.4vh,1.85rem)] tabular-nums">
                           {row.points}
                         </td>
                       </tr>
@@ -238,33 +243,33 @@ export function CricketView({
             </section>
           ) : null}
           {show.draw ? (
-            <section className="flex min-h-0 flex-col overflow-hidden rounded-[22px] border-4 border-[#8b7cf7] bg-card p-2.5">
-              <h3 className="shrink-0 font-display text-[clamp(1.25rem,2.8vh,2.25rem)] leading-none">
+            <section className="flex min-h-0 flex-col overflow-hidden rounded-[22px] border-4 border-[#8b7cf7] bg-card p-2">
+              <h3 className="shrink-0 font-display text-[clamp(1.1rem,2.4vh,1.85rem)] leading-none">
                 Coming up
               </h3>
               {upcoming.length === 0 ? (
                 <p className="mt-2 text-sm font-bold text-muted-foreground">No games left on the draw.</p>
               ) : (
-                <ul className="mt-1 flex min-h-0 flex-1 flex-col justify-evenly gap-1.5 overflow-hidden">
+                <ul className="mt-1 flex min-h-0 flex-1 flex-col justify-start gap-1 overflow-hidden">
                   {upcoming.map((game, index) => (
                     <li
                       key={`${game.home}-${game.away}-${index}`}
                       className={cn(
-                        "rounded-xl px-3 py-2",
+                        "rounded-xl px-2.5 py-1.5",
                         index === 0 ? "bg-[#efe9ff] ring-2 ring-[#5146b8]/35" : "bg-[#f6f3ff]",
                       )}
                     >
-                      <p className="text-[clamp(0.65rem,1.2vh,0.8rem)] font-extrabold tracking-wide text-[#5146b8] uppercase">
+                      <p className="text-[clamp(0.6rem,1.1vh,0.75rem)] font-extrabold tracking-wide text-[#5146b8] uppercase">
                         {index === 0 ? "Next · " : ""}
                         {fixtureMeta(game.when, game.ground)}
                       </p>
-                      <p className="font-display text-[clamp(1.05rem,2.5vh,1.85rem)] leading-tight">
+                      <p className="font-display text-[clamp(0.95rem,2.2vh,1.55rem)] leading-tight">
                         {cricketMatchTitle(game)}
                       </p>
                       {game.result ? (
-                        <p className="mt-0.5 text-[clamp(0.8rem,1.6vh,1.1rem)] font-bold">{game.result}</p>
+                        <p className="mt-0.5 text-[clamp(0.7rem,1.4vh,0.95rem)] font-bold">{game.result}</p>
                       ) : index === 0 ? (
-                        <p className="mt-0.5 text-[clamp(0.8rem,1.6vh,1.1rem)] font-extrabold text-[#5146b8]">
+                        <p className="mt-0.5 text-[clamp(0.7rem,1.4vh,0.95rem)] font-extrabold text-[#5146b8]">
                           Still to play
                         </p>
                       ) : null}

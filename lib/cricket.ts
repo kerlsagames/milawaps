@@ -133,10 +133,12 @@ function count(value: unknown) {
   return Math.max(0, Math.min(999, Math.round(number)));
 }
 
+const LEADER_LIST_LIMIT = 6;
+
 function parseLeadersList(raw: unknown): CricketLeader[] {
   if (typeof raw === "string") return leadersFromStatValue(raw);
   if (!Array.isArray(raw)) return [];
-  return raw.slice(0, 5).flatMap((item) => {
+  return raw.slice(0, LEADER_LIST_LIMIT).flatMap((item) => {
     if (typeof item === "string") return leadersFromStatValue(item);
     if (!item || typeof item !== "object") return [];
     const row = item as Record<string, unknown>;
@@ -154,7 +156,7 @@ function leadersFromStatValue(value: string): CricketLeader[] {
   if (!cleaned) return [];
   const chunks = cleaned.split(/\s*,\s*|\s*;\s*|\s*\|\s*/).filter(Boolean);
   const rows: CricketLeader[] = [];
-  for (const chunk of chunks.slice(0, 5)) {
+  for (const chunk of chunks.slice(0, LEADER_LIST_LIMIT)) {
     const match = chunk.trim().match(/^(.+?)\s+(\d[\d]*)$/);
     if (match) {
       rows.push({ name: match[1]!.trim().slice(0, 40), value: match[2]! });
@@ -345,6 +347,31 @@ function fixtureFinished(result: string) {
   return fixtureIsFinished(result);
 }
 
+function fixtureLooksLive(result: string) {
+  const value = result.replace(/\s+/g, " ").trim().toLowerCase();
+  return value === "under way" || value === "underway";
+}
+
+function pickNextCandidate(
+  draw: CricketFixture[],
+  fromIndex: number,
+  preferFresh: boolean,
+): CricketFixture | null {
+  // After a finished result, prefer a blank upcoming fixture over a stuck "Under way"
+  // so a manually chosen next game on Jimmy wins over an abandoned early start.
+  let liveFallback: CricketFixture | null = null;
+  for (let index = Math.max(0, fromIndex); index < draw.length; index += 1) {
+    const game = draw[index]!;
+    if (fixtureFinished(game.result)) continue;
+    if (preferFresh && fixtureLooksLive(game.result)) {
+      liveFallback ??= game;
+      continue;
+    }
+    return game;
+  }
+  return liveFallback;
+}
+
 export function pickLastAndNext(draw: CricketFixture[]): {
   lastGame: CricketFixture | null;
   nextGame: CricketFixture | null;
@@ -360,20 +387,11 @@ export function pickLastAndNext(draw: CricketFixture[]): {
 
   // First unfinished fixture AFTER the last finished game. Starting after the last
   // result skips a stuck early "Under way" that would otherwise hide both last + next.
-  let nextGame: CricketFixture | null = null;
-  for (let index = lastFinishedIndex + 1; index < draw.length; index += 1) {
-    const game = draw[index]!;
-    if (fixtureFinished(game.result)) continue;
-    nextGame = game;
-    break;
-  }
+  const preferFresh = lastFinishedIndex >= 0;
+  let nextGame = pickNextCandidate(draw, lastFinishedIndex + 1, preferFresh);
 
   if (!nextGame) {
-    for (const game of draw) {
-      if (fixtureFinished(game.result)) continue;
-      nextGame = game;
-      break;
-    }
+    nextGame = pickNextCandidate(draw, 0, false);
   }
 
   return { lastGame, nextGame };

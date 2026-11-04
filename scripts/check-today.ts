@@ -177,6 +177,34 @@ const picked = pickLastAndNext(milawaLike!.draw);
 assert.equal(picked.lastGame?.home, "Renegades");
 assert.equal(picked.nextGame?.home, "Scorchers");
 
+// Manually chosen next (Stars vs Hurricanes) wins over a stuck early Under way.
+const starsNext = pickLastAndNext([
+  {
+    when: "Mon, 2 Nov · Lunch",
+    home: "Stars",
+    away: "Renegades",
+    ground: "Lunch",
+    result: "Under way",
+  },
+  {
+    when: "Wed, 4 Nov · Recess",
+    home: "Renegades",
+    away: "Strikers",
+    ground: "Recess",
+    result: "Renegades won by 9 runs",
+  },
+  {
+    when: "Wed, 4 Nov · Lunch",
+    home: "Stars",
+    away: "Hurricanes",
+    ground: "Lunch",
+    result: "",
+  },
+]);
+assert.equal(starsNext.lastGame?.home, "Renegades");
+assert.equal(starsNext.nextGame?.home, "Stars");
+assert.equal(starsNext.nextGame?.away, "Hurricanes");
+
 const scoped = filterCricketLeaders(
   milawaLike!.leaders,
   "56",

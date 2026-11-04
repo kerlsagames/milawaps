@@ -6,15 +6,27 @@ import {
   classHighlightId,
   formatHighlightCountdown,
   highlightPointTotal,
+  highlightReasonFromValue,
   highlightSpotUnits,
   isClassHighlightId,
-  removeHighlightById,
+  isHighlightValue,
   resolveHighlightStudent,
+  removeHighlightById,
   sanitizeHighlights,
   wholeClassLabel,
   HIGHLIGHT_POINT_MAX,
   HIGHLIGHT_TTL_MS,
+  HIGHLIGHT_VALUES,
 } from "../lib/highlights";
+
+assert.deepEqual([...HIGHLIGHT_VALUES], ["Engage", "Respect", "Create", "Connect"]);
+assert.equal(isHighlightValue("Engage"), true);
+assert.equal(isHighlightValue("Kindness"), false);
+assert.equal(highlightReasonFromValue("Respect"), "Respect");
+assert.equal(
+  highlightReasonFromValue("Connect", "looked after a buddy"),
+  "Connect · looked after a buddy",
+);
 import {
   buildHighlightWorkbook,
   classLabel,

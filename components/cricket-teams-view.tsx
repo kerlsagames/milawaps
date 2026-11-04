@@ -69,7 +69,7 @@ export function CricketTeamsView({
   const { data, error, isLoading } = useSWR<CricketSnapshot>(
     code ? `/api/cricket?code=${encodeURIComponent(code)}` : null,
     fetcher,
-    { refreshInterval: 30_000 },
+    { refreshInterval: 15_000, revalidateOnFocus: true },
   );
 
   const boardTeams = data?.teams ?? [];
