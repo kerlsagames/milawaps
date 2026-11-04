@@ -157,7 +157,7 @@ export function CricketView({
       </header>
 
       {showTopStrip ? (
-        <div className="grid min-h-0 shrink-0 grid-cols-2 gap-1.5 sm:grid-cols-3 xl:grid-cols-6 [grid-auto-rows:minmax(7.5rem,1fr)] xl:[grid-auto-rows:minmax(9.5rem,11.5rem)]">
+        <div className="grid min-h-0 flex-1 grid-cols-2 gap-1.5 overflow-hidden sm:grid-cols-3 xl:grid-cols-6">
           {show.lastNext ? (
             <GameCard
               eyebrow="Last game"
@@ -180,19 +180,19 @@ export function CricketView({
       {showBottom ? (
         <div
           className={cn(
-            "grid min-h-0 flex-1 gap-2 overflow-hidden",
+            "grid shrink-0 gap-2 overflow-hidden",
             show.ladder && show.draw && "lg:grid-cols-[1.35fr_0.85fr]",
           )}
         >
           {show.ladder ? (
-            <section className="flex min-h-0 flex-col overflow-hidden rounded-[22px] border-4 border-[#2ec9a0] bg-card p-2.5">
+            <section className="flex flex-col overflow-hidden rounded-[22px] border-4 border-[#2ec9a0] bg-card p-2.5">
               <h3 className="shrink-0 font-display text-[clamp(1.25rem,2.7vh,2.1rem)] leading-none">
                 Ladder
               </h3>
               {data.ladder.length === 0 ? (
                 <p className="mt-2 text-sm font-bold text-muted-foreground">No ladder yet.</p>
               ) : (
-                <div className="mt-1 flex min-h-0 flex-1 flex-col overflow-hidden">
+                <div className="mt-1 flex flex-col overflow-hidden">
                   <div className="grid shrink-0 grid-cols-[2rem_minmax(0,1.6fr)_repeat(3,2.2rem)_repeat(2,2.8rem)_3rem_3rem] gap-x-1 text-[clamp(0.7rem,1.3vh,0.88rem)] font-extrabold tracking-wide text-muted-foreground uppercase">
                     <span className="py-1">#</span>
                     <span className="py-1">Team</span>
@@ -204,11 +204,11 @@ export function CricketView({
                     <span className="py-1 text-right">%</span>
                     <span className="py-1 text-right">Pts</span>
                   </div>
-                  <ul className="flex min-h-0 flex-1 flex-col justify-start overflow-hidden pb-1">
+                  <ul className="flex flex-col overflow-hidden pb-0.5">
                     {data.ladder.map((row, index) => (
                       <li
                         key={`${row.team}-${index}`}
-                        className="grid shrink-0 grid-cols-[2rem_minmax(0,1.6fr)_repeat(3,2.2rem)_repeat(2,2.8rem)_3rem_3rem] items-center gap-x-1 border-t border-black/10 py-[clamp(0.35rem,1.1vh,0.7rem)]"
+                        className="grid shrink-0 grid-cols-[2rem_minmax(0,1.6fr)_repeat(3,2.2rem)_repeat(2,2.8rem)_3rem_3rem] items-center gap-x-1 border-t border-black/10 py-[clamp(0.4rem,1.15vh,0.75rem)]"
                       >
                         <span className="font-display text-[clamp(1.05rem,2.3vh,1.65rem)] tabular-nums leading-none">
                           {index + 1}
@@ -245,14 +245,14 @@ export function CricketView({
             </section>
           ) : null}
           {show.draw ? (
-            <section className="flex min-h-0 flex-col overflow-hidden rounded-[22px] border-4 border-[#8b7cf7] bg-card p-2.5">
+            <section className="flex flex-col overflow-hidden rounded-[22px] border-4 border-[#8b7cf7] bg-card p-2.5">
               <h3 className="shrink-0 font-display text-[clamp(1.25rem,2.7vh,2.1rem)] leading-none">
                 Coming up
               </h3>
               {upcoming.length === 0 ? (
                 <p className="mt-2 text-sm font-bold text-muted-foreground">No games left on the draw.</p>
               ) : (
-                <ul className="mt-1.5 flex min-h-0 flex-1 flex-col justify-start gap-2.5 overflow-hidden">
+                <ul className="mt-1.5 flex flex-col gap-2.5 overflow-hidden">
                   {upcoming.map((game, index) => (
                     <li
                       key={`${game.home}-${game.away}-${index}`}
