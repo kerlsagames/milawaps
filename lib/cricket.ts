@@ -18,6 +18,9 @@ export type CricketFixture = {
   away: string;
   ground: string;
   result: string;
+  /** Live / exported innings totals when Jimmy includes them. */
+  homeScore?: number;
+  awayScore?: number;
 };
 export type CricketLeader = { name: string; value: string };
 export type CricketLeaders = {
@@ -25,6 +28,7 @@ export type CricketLeaders = {
   wickets: CricketLeader[];
   catches: CricketLeader[];
   highest: CricketLeader[];
+  runOuts: CricketLeader[];
 };
 export type CricketTeam = { name: string; players: string[] };
 
@@ -54,9 +58,9 @@ export const PREVIEW_CRICKET: CricketSnapshot = {
     { label: "On top", value: "5/6 · 4 pts" },
   ],
   ladder: [
-    { team: "5/6", played: 2, won: 2, lost: 0, points: 4, runsFor: 96, runsAgainst: 70, percentage: 57.8 },
-    { team: "2/3/4", played: 2, won: 1, lost: 1, points: 2, runsFor: 80, runsAgainst: 82, percentage: 49.4 },
-    { team: "F/1", played: 2, won: 0, lost: 2, points: 0, runsFor: 64, runsAgainst: 88, percentage: 42.1 },
+    { team: "5/6", played: 2, won: 2, lost: 0, points: 4, runsFor: 96, runsAgainst: 70, percentage: 137.1 },
+    { team: "2/3/4", played: 2, won: 1, lost: 1, points: 2, runsFor: 80, runsAgainst: 82, percentage: 97.6 },
+    { team: "F/1", played: 2, won: 0, lost: 2, points: 0, runsFor: 64, runsAgainst: 88, percentage: 72.7 },
   ],
   draw: [
     { when: "Fri 9:00", home: "F/1", away: "2/3/4", ground: "Oval", result: "2/3/4 won by 12 runs" },
@@ -90,6 +94,11 @@ export const PREVIEW_CRICKET: CricketSnapshot = {
       { name: "Isla", value: "27" },
       { name: "Hugh", value: "22" },
       { name: "Harry", value: "18" },
+    ],
+    runOuts: [
+      { name: "Scout", value: "2" },
+      { name: "Riley", value: "1" },
+      { name: "Max", value: "1" },
     ],
   },
   teams: [
@@ -157,7 +166,7 @@ function leadersFromStatValue(value: string): CricketLeader[] {
 }
 
 function emptyLeaders(): CricketLeaders {
-  return { runs: [], wickets: [], catches: [], highest: [] };
+  return { runs: [], wickets: [], catches: [], highest: [], runOuts: [] };
 }
 
 function leadersFromStats(stats: CricketStat[]): CricketLeaders {
@@ -169,6 +178,7 @@ function leadersFromStats(stats: CricketStat[]): CricketLeaders {
     if (label.includes("most runs") || label === "runs") leaders.runs = row;
     else if (label.includes("most wicket") || label === "wickets") leaders.wickets = row;
     else if (label.includes("most catch") || label === "catches") leaders.catches = row;
+    else if (label.includes("run out") || label.includes("runout")) leaders.runOuts = row;
     else if (label.includes("highest") || label.includes("top score")) leaders.highest = row;
   }
   return leaders;
@@ -182,20 +192,141 @@ function mergeLeaders(fromApi: CricketLeaders, fromStats: CricketLeaders): Crick
   const runs = preferLonger(fromApi.runs, fromStats.runs);
   const wickets = preferLonger(fromApi.wickets, fromStats.wickets);
   const catches = preferLonger(fromApi.catches, fromStats.catches);
+  const runOuts = preferLonger(fromApi.runOuts, fromStats.runOuts);
   let highest = preferLonger(fromApi.highest, fromStats.highest);
   // Jimmy often only publishes “Most runs” — reuse that list for highest score when empty.
   if (highest.length === 0 && runs.length > 0) highest = runs;
-  return { runs, wickets, catches, highest };
+  return { runs, wickets, catches, highest, runOuts };
 }
 
-export function ladderPercentage(row: Pick<CricketRow, "played" | "won" | "runsFor" | "runsAgainst">) {
-  if (row.runsFor > 0 || row.runsAgainst > 0) {
-    const total = row.runsFor + row.runsAgainst;
-    if (total <= 0) return null;
-    return Math.round((row.runsFor / total) * 1000) / 10;
+/** Match a cricket leader name to a school year level via the student roll. */
+export function cricketLeaderUnitId(
+  name: string,
+  roll: { name: string; unitId: "f1" | "234" | "56" }[],
+): "f1" | "234" | "56" | null {
+  const needle = name.replace(/\s+/g, " ").trim().toLowerCase();
+  if (!needle) return null;
+  const exact = roll.find((student) => student.name.replace(/\s+/g, " ").trim().toLowerCase() === needle);
+  if (exact) return exact.unitId;
+  const first = needle.split(" ")[0]!;
+  const partial = roll.filter((student) => {
+    const studentName = student.name.replace(/\s+/g, " ").trim().toLowerCase();
+    return studentName === first || studentName.startsWith(`${first} `);
+  });
+  if (partial.length === 1) return partial[0]!.unitId;
+  return null;
+}
+
+export function filterCricketLeaders(
+  leaders: CricketLeaders,
+  scope: "all" | "f1" | "234" | "56",
+  roll: { name: string; unitId: "f1" | "234" | "56" }[],
+): CricketLeaders {
+  if (scope === "all") return leaders;
+  const keep = (rows: CricketLeader[]) =>
+    rows.filter((row) => cricketLeaderUnitId(row.name, roll) === scope);
+  return {
+    runs: keep(leaders.runs),
+    wickets: keep(leaders.wickets),
+    catches: keep(leaders.catches),
+    highest: keep(leaders.highest),
+    runOuts: keep(leaders.runOuts),
+  };
+}
+
+/** Percentage = (runs for ÷ runs against) × 100 — same shape as Aussie footy %. */
+export function ladderPercentage(row: Pick<CricketRow, "runsFor" | "runsAgainst">) {
+  if (row.runsAgainst > 0) {
+    return Math.round((row.runsFor / row.runsAgainst) * 1000) / 10;
   }
-  if (row.played <= 0) return null;
-  return Math.round((row.won / row.played) * 1000) / 10;
+  // Batted without conceding yet — leave blank rather than inventing ∞.
+  return null;
+}
+
+/** Fold innings totals from the draw into ladder RF / RA when Jimmy omits them. */
+export function enrichLadderRunsFromDraw(ladder: CricketRow[], draw: CricketFixture[]): CricketRow[] {
+  const deltas = new Map<string, { runsFor: number; runsAgainst: number }>();
+  const bump = (team: string, runsFor: number, runsAgainst: number) => {
+    const key = team.replace(/\s+/g, " ").trim().toLowerCase();
+    if (!key || (!runsFor && !runsAgainst)) return;
+    const current = deltas.get(key) ?? { runsFor: 0, runsAgainst: 0 };
+    current.runsFor += runsFor;
+    current.runsAgainst += runsAgainst;
+    deltas.set(key, current);
+  };
+
+  for (const game of draw) {
+    const home = game.home.replace(/\s+/g, " ").trim();
+    const away = game.away.replace(/\s+/g, " ").trim();
+    let homeScore = game.homeScore ?? 0;
+    let awayScore = game.awayScore ?? 0;
+    if ((!homeScore && !awayScore) && game.result) {
+      const parsed = parseResultScores(game.result, home, away);
+      if (parsed) {
+        homeScore = parsed.homeScore;
+        awayScore = parsed.awayScore;
+      }
+    }
+    if (!homeScore && !awayScore) continue;
+    if (home && away) {
+      bump(home, homeScore, awayScore);
+      bump(away, awayScore, homeScore);
+    }
+  }
+
+  if (deltas.size === 0) {
+    return ladder.map((row) => ({
+      ...row,
+      percentage: ladderPercentage(row),
+    }));
+  }
+
+  return ladder.map((row) => {
+    const key = row.team.replace(/\s+/g, " ").trim().toLowerCase();
+    const delta = deltas.get(key);
+    const runsFor = row.runsFor > 0 ? row.runsFor : (delta?.runsFor ?? 0);
+    const runsAgainst = row.runsAgainst > 0 ? row.runsAgainst : (delta?.runsAgainst ?? 0);
+    const next = { ...row, runsFor, runsAgainst };
+    return { ...next, percentage: ladderPercentage(next) };
+  });
+}
+
+/** Parse “Home 85 def Away 76” / “85–76” style result lines when present. */
+export function parseResultScores(
+  result: string,
+  home: string,
+  away: string,
+): { homeScore: number; awayScore: number } | null {
+  const cleaned = result.replace(/\s+/g, " ").trim();
+  if (!cleaned) return null;
+
+  const named = cleaned.match(
+    /^(.+?)\s+(\d{1,3})\s+(?:def(?:eated)?|beat|defeated)\s+(.+?)\s+(\d{1,3})$/i,
+  );
+  if (named) {
+    const left = named[1]!.trim().toLowerCase();
+    const right = named[3]!.trim().toLowerCase();
+    const leftScore = Number(named[2]);
+    const rightScore = Number(named[4]);
+    if (!Number.isFinite(leftScore) || !Number.isFinite(rightScore)) return null;
+    if (left === home.toLowerCase() && right === away.toLowerCase()) {
+      return { homeScore: leftScore, awayScore: rightScore };
+    }
+    if (left === away.toLowerCase() && right === home.toLowerCase()) {
+      return { homeScore: rightScore, awayScore: leftScore };
+    }
+  }
+
+  const pair = cleaned.match(/\b(\d{1,3})\s*[–—-]\s*(\d{1,3})\b/);
+  if (pair && home && away) {
+    const first = Number(pair[1]);
+    const second = Number(pair[2]);
+    if (!Number.isFinite(first) || !Number.isFinite(second)) return null;
+    // Convention: home–away when both names appear earlier in the line.
+    return { homeScore: first, awayScore: second };
+  }
+
+  return null;
 }
 
 export function formatLadderPercentage(value: number | null) {
@@ -282,16 +413,7 @@ export function parseCricketSnapshot(raw: unknown, preview = false): CricketSnap
     const points = count(row.points ?? row.pts);
     const runsFor = count(row.runsFor ?? row.for ?? row.rf ?? row.scored);
     const runsAgainst = count(row.runsAgainst ?? row.against ?? row.ra ?? row.conceded);
-    const rawPct =
-      typeof row.percentage === "number"
-        ? row.percentage
-        : typeof row.pct === "number"
-          ? row.pct
-          : null;
-    const percentage =
-      typeof rawPct === "number" && Number.isFinite(rawPct)
-        ? Math.round(rawPct * 10) / 10
-        : ladderPercentage({ played, won, runsFor, runsAgainst });
+    const percentage = ladderPercentage({ runsFor, runsAgainst });
     return [
       {
         team,
@@ -311,6 +433,8 @@ export function parseCricketSnapshot(raw: unknown, preview = false): CricketSnap
     const home = text(row.home, 80);
     const away = text(row.away, 80);
     if (!home && !away) return [];
+    const homeScore = count(row.homeScore ?? row.homeRuns ?? row.hs);
+    const awayScore = count(row.awayScore ?? row.awayRuns ?? row.as);
     return [
       {
         when: text(row.when ?? row.date, 80),
@@ -318,6 +442,7 @@ export function parseCricketSnapshot(raw: unknown, preview = false): CricketSnap
         away,
         ground: text(row.ground ?? row.venue, 80),
         result: text(row.result, 80),
+        ...(homeScore || awayScore ? { homeScore, awayScore } : {}),
       },
     ];
   });
@@ -358,8 +483,10 @@ export function parseCricketSnapshot(raw: unknown, preview = false): CricketSnap
     wickets: parseLeadersList(leadersRaw?.wickets ?? leadersRaw?.mostWickets),
     catches: parseLeadersList(leadersRaw?.catches ?? leadersRaw?.mostCatches),
     highest: parseLeadersList(leadersRaw?.highest ?? leadersRaw?.highestScore),
+    runOuts: parseLeadersList(leadersRaw?.runOuts ?? leadersRaw?.mostRunOuts),
   };
   const leaders = mergeLeaders(fromApi, leadersFromStats(stats));
+  const ladderWithRuns = enrichLadderRunsFromDraw(ladder, draw);
   const { lastGame, nextGame } = pickLastAndNext(draw);
   const updatedAtRaw = record.updatedAt;
   const updated =
@@ -370,7 +497,7 @@ export function parseCricketSnapshot(raw: unknown, preview = false): CricketSnap
     title: text(record.title, 60) || "School cricket",
     updatedAt: updated || null,
     stats,
-    ladder,
+    ladder: ladderWithRuns,
     draw,
     leaders,
     teams,

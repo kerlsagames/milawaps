@@ -1,7 +1,13 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { activeUpcoming, formatUpcomingLabel, type DailyNews } from "@/lib/news";
+import {
+  NEWS_GALLERY,
+  NEWS_PHOTO_ROTATE_SEC,
+  newsPhotoAtIndex,
+  newsPhotoForDay,
+} from "@/lib/news-photos";
 import type { NewsLayoutId } from "@/lib/site-display";
 import { cn } from "@/lib/utils";
 
@@ -361,6 +367,23 @@ function ChallengePanel({ text, size }: { text: string; size: TextSize }) {
 }
 
 function PhotoPanel({ news, className }: { news: DailyNews; className?: string }) {
+  const custom = news.picture?.trim() || null;
+  const dayStart = NEWS_GALLERY.indexOf(
+    newsPhotoForDay() as (typeof NEWS_GALLERY)[number],
+  );
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    if (custom) return;
+    const timer = window.setInterval(() => {
+      setTick((value) => value + 1);
+    }, NEWS_PHOTO_ROTATE_SEC * 1000);
+    return () => window.clearInterval(timer);
+  }, [custom]);
+
+  const gallerySrc = newsPhotoAtIndex((dayStart < 0 ? 0 : dayStart) + tick);
+  const src = custom || gallerySrc;
+
   return (
     <section
       className={cn(
@@ -368,22 +391,18 @@ function PhotoPanel({ news, className }: { news: DailyNews; className?: string }
         className,
       )}
     >
-      {news.picture ? (
-        <img
-          src={news.picture}
-          alt=""
-          className="max-h-full max-w-full rounded-[16px] object-contain"
-        />
-      ) : (
-        <div className="grid size-full place-items-center rounded-[16px] bg-[linear-gradient(135deg,#ffe08a,#8fdfff)] p-4 text-center">
-          <div>
-            <p className="font-display text-3xl text-[#16384a]">Scoop!</p>
-            <p className="mt-1 text-sm font-bold text-[#3d5f70]">
-              Add a photo in Settings to make the news pop.
-            </p>
-          </div>
-        </div>
-      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        key={src}
+        src={src}
+        alt=""
+        className="max-h-full max-w-full rounded-[16px] object-cover"
+      />
+      {!custom ? (
+        <p className="pointer-events-none absolute right-3 bottom-3 rounded-full bg-[#16384a]/75 px-2 py-0.5 text-[10px] font-extrabold tracking-wide text-[#ffe08a] uppercase">
+          Today’s photo
+        </p>
+      ) : null}
     </section>
   );
 }

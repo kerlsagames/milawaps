@@ -283,7 +283,7 @@ function TeamSheet({
 }) {
   return (
     <section
-      className="flex min-h-0 flex-col overflow-hidden rounded-[24px] border-4 bg-card p-3"
+      className="flex min-h-0 flex-col overflow-hidden rounded-[24px] border-4 bg-card p-3 text-center"
       style={{ borderColor: tone }}
     >
       <p
@@ -292,17 +292,17 @@ function TeamSheet({
       >
         {side}
       </p>
-      <h3 className="font-display text-[clamp(1.4rem,3.4vh,2.6rem)] leading-none" style={{ color: tone }}>
+      <h3 className="font-display text-[clamp(1.5rem,3.6vh,2.75rem)] leading-none" style={{ color: tone }}>
         {team}
       </h3>
       {players.length === 0 ? (
         <p className="mt-3 text-sm font-bold text-muted-foreground">Team list coming soon.</p>
       ) : (
-        <ul className="mt-2 flex min-h-0 flex-1 flex-col gap-1 overflow-hidden">
+        <ul className="mt-3 flex min-h-0 flex-1 flex-col items-center justify-evenly gap-0 overflow-hidden">
           {players.map((player) => (
             <li
               key={`${team}-${player}`}
-              className="truncate font-display text-[clamp(1.05rem,2.5vh,1.85rem)] leading-tight"
+              className="w-full truncate px-1 text-center font-display text-[clamp(1.55rem,4vh,3rem)] leading-[1.05]"
             >
               {player}
             </li>

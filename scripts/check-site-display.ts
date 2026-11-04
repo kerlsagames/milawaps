@@ -19,6 +19,8 @@ assert.equal(empty.newsLayout, "split");
 assert.equal(empty.cricketPanels.ladder, true);
 assert.deepEqual(empty.cricketRosters, {});
 assert.equal(empty.cricketTeamsMode, "all");
+assert.equal(empty.cricketStatsScope, "all");
+assert.equal(empty.cricketStatsRotateSec, 10);
 assert.equal(empty.finishAt, null);
 assert.equal(empty.dwells, null);
 assert.equal(empty.reveals, null);
@@ -43,6 +45,14 @@ assert.deepEqual(withTeams.cricketRosters["5/6"], ["Poppy"]);
 assert.equal(withTeams.cricketTeamsMode, "next");
 assert.equal(siteDisplayFromInput({ cricketTeamsMode: "nope" }, withTeams).cricketTeamsMode, "all");
 assert.equal(sanitizeSiteDisplay({ cricketCode: "x" }).cricketTeamsMode, "all");
+const withStats = siteDisplayFromInput(
+  { cricketStatsScope: "rotate", cricketStatsRotateSec: 12 },
+  withTeams,
+);
+assert.equal(withStats.cricketStatsScope, "rotate");
+assert.equal(withStats.cricketStatsRotateSec, 12);
+assert.equal(siteDisplayFromInput({ cricketStatsScope: "56" }, withStats).cricketStatsScope, "56");
+assert.equal(sanitizeSiteDisplay({ cricketStatsRotateSec: 99 }).cricketStatsRotateSec, 60);
 
 const hideNews = siteDisplayFromInput({ shown: { news: true, highlight: true } }, withTeams);
 assert.equal(hideNews.shown.news, true);

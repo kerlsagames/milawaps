@@ -104,6 +104,10 @@ export type PublicBoard = {
   cricketRosters: import("@/lib/site-display").CricketRosters;
   /** Cricket 1 page mode: all teams or next-game matchup. */
   cricketTeamsMode: import("@/lib/site-display").CricketTeamsMode;
+  /** Cricket 2 leader stats scope (all / year level / rotate). */
+  cricketStatsScope: import("@/lib/site-display").CricketStatsScope;
+  /** Seconds between year-level rotations on Cricket 2. */
+  cricketStatsRotateSec: number;
   /** Shared prize-path finish countdown for every TV (ms), or null. */
   finishAt: number | null;
   /** Shared seconds-per-slide for every TV, or null if never saved. */
