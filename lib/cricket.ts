@@ -229,14 +229,20 @@ export function cricketLeaderUnitId(
   return null;
 }
 
+/** How many names to show in each Cricket 2 leader card after year-level filtering. */
+export const CRICKET_LEADER_DISPLAY_LIMIT = 6;
+
 export function filterCricketLeaders(
   leaders: CricketLeaders,
   scope: "all" | "f1" | "234" | "56",
   roll: { name: string; unitId: "f1" | "234" | "56" }[],
 ): CricketLeaders {
-  if (scope === "all") return leaders;
-  const keep = (rows: CricketLeader[]) =>
-    rows.filter((row) => cricketLeaderUnitId(row.name, roll) === scope);
+  // Rankings stay sorted; for a year band take that band's own top N (not overall top N filtered down).
+  const keep = (rows: CricketLeader[]) => {
+    const scoped =
+      scope === "all" ? rows : rows.filter((row) => cricketLeaderUnitId(row.name, roll) === scope);
+    return scoped.slice(0, CRICKET_LEADER_DISPLAY_LIMIT);
+  };
   return {
     runs: keep(leaders.runs),
     wickets: keep(leaders.wickets),

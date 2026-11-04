@@ -1293,8 +1293,9 @@ function CricketPagePanel({
             </label>
           ) : null}
           <p className="text-xs font-semibold text-muted-foreground">
-            Filters most runs / wickets / catches / highest / run outs by the student roll. Jimmy
-            only sends a short list for now — empty slots stay blank until more names arrive.
+            Filters most runs / wickets / catches / highest / run outs by the student roll. Each
+            year level gets its own top 6 from the full school list (empty only if that band has
+            no scores yet).
           </p>
         </div>
       ) : null}

@@ -474,8 +474,8 @@ function LeaderCard({
   rows: CricketLeader[];
   compact?: boolean;
 }) {
-  // Top 5 — matches Jimmy's leaders setting and leaves room for the full ladder.
-  const slotCount = 5;
+  // Top 6 per year band (full school list is filtered, then sliced).
+  const slotCount = 6;
   const slots = Array.from({ length: slotCount }, (_, index) => rows[index] ?? null);
   return (
     <section

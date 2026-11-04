@@ -8,7 +8,8 @@ function ladderPercentage(row: Pick<CricketRow, "runsFor" | "runsAgainst">) {
 }
 
 const BOWL_WICKETS = new Set(["bowled", "caught", "caughtKeeper", "lbw", "stumped", "hitWicket"]);
-const LEADER_LIMIT = 6;
+/** Keep everyone with a score — year-level filters need the full school list, not overall top 6. */
+const LEADER_LIMIT = 120;
 
 type JimmyBall = {
   k?: string;

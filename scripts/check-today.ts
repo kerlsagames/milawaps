@@ -253,6 +253,37 @@ assert.equal(
   0,
 );
 
+// Year-band boards need the full ranked list — overall top 6 then filter misses F/1 kids.
+const deepLeaders = {
+  runs: [
+    { name: "Van", value: "30" },
+    { name: "Ryley", value: "24" },
+    { name: "Tommy", value: "22" },
+    { name: "Archie", value: "21" },
+    { name: "Poppy", value: "18" },
+    { name: "Charlie", value: "17" },
+    { name: "Millie", value: "14" },
+    { name: "Murphy", value: "12" },
+    { name: "Jake", value: "11" },
+    { name: "Kieran", value: "9" },
+  ],
+  wickets: [] as { name: string; value: string }[],
+  catches: [] as { name: string; value: string }[],
+  highest: [] as { name: string; value: string }[],
+  runOuts: [] as { name: string; value: string }[],
+};
+const f1Roll = [
+  { name: "Millie", unitId: "f1" as const },
+  { name: "Murphy", unitId: "f1" as const },
+  { name: "Jake", unitId: "f1" as const },
+  { name: "Kieran", unitId: "f1" as const },
+  { name: "Van", unitId: "56" as const },
+];
+const f1Leaders = filterCricketLeaders(deepLeaders, "f1", f1Roll);
+assert.equal(f1Leaders.runs.length, 4);
+assert.equal(f1Leaders.runs[0]?.name, "Millie");
+assert.equal(f1Leaders.runs[3]?.name, "Kieran");
+
 const now = Date.parse("2026-10-19T12:00:00+11:00");
 const todayAt = (minute: number) => Date.parse("2026-10-19T08:00:00+11:00") + minute * 60_000;
 
