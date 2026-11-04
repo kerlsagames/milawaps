@@ -190,7 +190,17 @@ export function CricketView({
           ) : null}
           {show.leaders
             ? LEADER_BOXES.map(({ key, title, tone }) => (
-                <LeaderCard key={key} title={title} tone={tone} rows={leaders[key]} compact />
+                <LeaderCard
+                  key={key}
+                  title={
+                    activeScope === "all"
+                      ? title
+                      : `${title} ${cricketStatsScopeLabel(activeScope)}`
+                  }
+                  tone={tone}
+                  rows={leaders[key]}
+                  compact
+                />
               ))
             : null}
         </div>
@@ -476,8 +486,9 @@ function LeaderCard({
       style={{ borderColor: tone }}
     >
       <p
-        className="shrink-0 text-[clamp(0.62rem,1.15vh,0.8rem)] font-extrabold tracking-[0.08em] uppercase leading-none"
+        className="shrink-0 truncate text-[clamp(0.58rem,1.2vh,0.85rem)] font-extrabold tracking-[0.06em] uppercase leading-tight"
         style={{ color: tone }}
+        title={title}
       >
         {title}
       </p>
