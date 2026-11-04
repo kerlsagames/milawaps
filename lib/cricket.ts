@@ -1,3 +1,10 @@
+import {
+  enrichDrawScoresFromJimmySchool,
+  enrichLadderFromJimmySchool,
+  leadersFromJimmySchool,
+  parseJimmySchool,
+} from "@/lib/jimmy-school";
+
 export type CricketStat = { label: string; value: string };
 export type CricketRow = {
   team: string;
@@ -420,6 +427,7 @@ export function parseCricketSnapshot(raw: unknown, preview = false): CricketSnap
     record.leaders && typeof record.leaders === "object"
       ? (record.leaders as Record<string, unknown>)
       : null;
+  const school = parseJimmySchool(record.school);
   const ladder = ladderRaw.slice(0, 16).flatMap((item) => {
     if (!item || typeof item !== "object") return [];
     const row = item as Record<string, unknown>;
@@ -445,7 +453,7 @@ export function parseCricketSnapshot(raw: unknown, preview = false): CricketSnap
       },
     ];
   });
-  const draw = drawRaw.slice(0, 24).flatMap((item) => {
+  let draw = drawRaw.slice(0, 24).flatMap((item) => {
     if (!item || typeof item !== "object") return [];
     const row = item as Record<string, unknown>;
     const home = text(row.home, 80);
@@ -464,6 +472,7 @@ export function parseCricketSnapshot(raw: unknown, preview = false): CricketSnap
       },
     ];
   });
+  draw = enrichDrawScoresFromJimmySchool(draw, school);
   const stats = statsRaw.slice(0, 12).flatMap((item) => {
     if (!item || typeof item !== "object") return [];
     const row = item as Record<string, unknown>;
@@ -503,8 +512,12 @@ export function parseCricketSnapshot(raw: unknown, preview = false): CricketSnap
     highest: parseLeadersList(leadersRaw?.highest ?? leadersRaw?.highestScore),
     runOuts: parseLeadersList(leadersRaw?.runOuts ?? leadersRaw?.mostRunOuts),
   };
-  const leaders = mergeLeaders(fromApi, leadersFromStats(stats));
-  const ladderWithRuns = enrichLadderRunsFromDraw(ladder, draw);
+  const fromSchool = leadersFromJimmySchool(school);
+  const leaders = mergeLeaders(
+    mergeLeaders(fromApi, fromSchool ?? emptyLeaders()),
+    leadersFromStats(stats),
+  );
+  const ladderWithRuns = enrichLadderFromJimmySchool(enrichLadderRunsFromDraw(ladder, draw), school);
   const { lastGame, nextGame } = pickLastAndNext(draw);
   const updatedAtRaw = record.updatedAt;
   const updated =

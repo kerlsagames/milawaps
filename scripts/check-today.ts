@@ -323,4 +323,122 @@ const surgeFeed = todayFeed({ ...surgeOnly.state, highlights: [spotlight] }, now
 assert.ok(surgeFeed.some((item) => item.kind === "tick" && /Mr C · 2\/3\/4 \+2 points/.test(item.text)));
 assert.ok(surgeFeed.some((item) => item.kind === "highlight"));
 
+// Enrich RF/RA + full leaders from Jimmy's school payload (board export omits them).
+const schoolEnriched = parseCricketSnapshot({
+  title: "Milawa School Challenge",
+  stats: [
+    { label: "Most runs", value: "Van 30" },
+    { label: "Most wickets", value: "Zach 1" },
+  ],
+  ladder: [
+    { team: "Renegades", played: 1, won: 1, lost: 0, points: 2 },
+    { team: "Stars", played: 1, won: 1, lost: 0, points: 2 },
+    { team: "Scorchers", played: 0, won: 0, lost: 0, points: 0 },
+    { team: "Hurricanes", played: 1, won: 0, lost: 1, points: 0 },
+    { team: "Strikers", played: 1, won: 0, lost: 1, points: 0 },
+  ],
+  draw: [
+    {
+      when: "Wed, 4 Nov · Recess",
+      home: "Renegades",
+      away: "Strikers",
+      ground: "Recess",
+      result: "Renegades won by 9 runs",
+    },
+  ],
+  school: {
+    teams: [
+      { id: "ren", name: "Renegades", playerIds: ["zach"] },
+      { id: "str", name: "Strikers", playerIds: ["van"] },
+      { id: "sta", name: "Stars", playerIds: [] },
+      { id: "hur", name: "Hurricanes", playerIds: [] },
+      { id: "sco", name: "Scorchers", playerIds: [] },
+    ],
+    players: [
+      { id: "van", name: "Van" },
+      { id: "zach", name: "Zach" },
+      { id: "ryley", name: "Ryley" },
+    ],
+    fixtures: [
+      {
+        stage: "league",
+        home: "ren",
+        away: "str",
+        result: {
+          winner: "home",
+          homeRuns: 53,
+          awayRuns: 44,
+          text: "Renegades won by 9 runs",
+        },
+        game: {
+          phase: "done",
+          oddsDuel: false,
+          rules: { pairs: true, ballsPerOver: 6, oversEach: 2, wicketRuns: 3 },
+          home: {
+            teamId: "ren",
+            roster: [
+              { id: "zach", name: "Zach" },
+              { id: "ryley", name: "Ryley" },
+            ],
+            away: [],
+            batOrder: ["zach", "ryley"],
+          },
+          away: {
+            teamId: "str",
+            roster: [{ id: "van", name: "Van" }],
+            away: [],
+            batOrder: ["van"],
+          },
+          innings: [
+            {
+              batting: "away",
+              units: [["van"]],
+              overs: 2,
+              balls: [
+                { k: "run", r: 4, b: "zach", s: "van" },
+                { k: "run", r: 6, b: "zach", s: "van" },
+                { k: "run", r: 4, b: "ryley", s: "van" },
+                { k: "run", r: 6, b: "ryley", s: "van" },
+                { k: "run", r: 4, b: "zach", s: "van" },
+                { k: "run", r: 6, b: "zach", s: "van" },
+              ],
+            },
+            {
+              batting: "home",
+              units: [["zach", "ryley"]],
+              overs: 2,
+              balls: [
+                { k: "run", r: 1, b: "van", s: "zach" },
+                { k: "out", r: 0, b: "van", s: "zach", how: "bowled", o: "zach" },
+                { k: "run", r: 4, b: "van", s: "ryley" },
+                { k: "run", r: 2, b: "van", s: "ryley" },
+              ],
+            },
+          ],
+        },
+      },
+      {
+        stage: "league",
+        home: "sta",
+        away: "hur",
+        result: {
+          winner: "home",
+          homeRuns: 64,
+          awayRuns: 60,
+          text: "Stars won by 4 runs",
+        },
+      },
+    ],
+  },
+});
+assert.equal(schoolEnriched?.ladder.find((row) => row.team === "Renegades")?.runsFor, 53);
+assert.equal(schoolEnriched?.ladder.find((row) => row.team === "Renegades")?.runsAgainst, 44);
+assert.equal(schoolEnriched?.ladder.find((row) => row.team === "Stars")?.runsFor, 64);
+assert.equal(schoolEnriched?.ladder.find((row) => row.team === "Hurricanes")?.runsAgainst, 64);
+assert.equal(schoolEnriched?.draw[0]?.homeScore, 53);
+assert.equal(schoolEnriched?.draw[0]?.awayScore, 44);
+assert.equal(schoolEnriched?.leaders.runs[0]?.name, "Van");
+assert.ok((schoolEnriched?.leaders.runs.length ?? 0) >= 2);
+assert.ok((schoolEnriched?.leaders.wickets.length ?? 0) >= 1);
+
 console.log("today and cricket checks passed");
