@@ -250,7 +250,10 @@ export function leadersFromJimmySchool(school: JimmySchool | null | undefined): 
   let sawGame = false;
   for (const fixture of school.fixtures) {
     const game = fixture.game;
-    if (!game || !fixture.result || !Array.isArray(game.innings) || !game.rules) continue;
+    // Finished results and in-progress games (live balls) both feed the leaderboards.
+    if (!game || !Array.isArray(game.innings) || !game.rules) continue;
+    const hasBalls = game.innings.some((innings) => Array.isArray(innings.balls) && innings.balls.length > 0);
+    if (!fixture.result && !hasBalls) continue;
     sawGame = true;
     const oddsDuel = !!game.oddsDuel;
     for (const innings of game.innings) {
@@ -333,7 +336,24 @@ export function enrichLadderFromJimmySchool(
   });
 }
 
-/** Attach innings totals onto finished draw rows when Jimmy only exported the margin text. */
+function inningsTotals(game: JimmyGame): { homeScore: number; awayScore: number } | null {
+  if (!Array.isArray(game.innings) || !game.rules) return null;
+  let homeScore = 0;
+  let awayScore = 0;
+  let saw = false;
+  for (const innings of game.innings) {
+    const batting = text(innings.batting, 12);
+    if (batting !== "home" && batting !== "away") continue;
+    const tallied = tallyInnings(innings, game.rules, !!game.oddsDuel);
+    if (batting === "home") homeScore += tallied.total;
+    else awayScore += tallied.total;
+    saw = true;
+  }
+  if (!saw) return null;
+  return { homeScore, awayScore };
+}
+
+/** Attach innings totals onto draw rows — finished results and live in-progress games. */
 export function enrichDrawScoresFromJimmySchool(
   draw: CricketFixture[],
   school: JimmySchool | null | undefined,
@@ -346,27 +366,43 @@ export function enrichDrawScoresFromJimmySchool(
     if (id && name) names.set(id, name);
   }
 
-  const byKey = new Map<string, { homeScore: number; awayScore: number }>();
+  const finishedByKey = new Map<string, { homeScore: number; awayScore: number }>();
+  const liveByMatch = new Map<string, { homeScore: number; awayScore: number }>();
   for (const fixture of school.fixtures) {
-    const result = fixture.result;
-    if (!result || !fixture.home || !fixture.away) continue;
+    if (!fixture.home || !fixture.away) continue;
     const home = names.get(fixture.home);
     const away = names.get(fixture.away);
     if (!home || !away) continue;
-    const homeScore = num(result.homeRuns);
-    const awayScore = num(result.awayRuns);
-    if (!homeScore && !awayScore) continue;
-    const key = `${home.toLowerCase()}|${away.toLowerCase()}|${text(result.text, 80).toLowerCase()}`;
-    byKey.set(key, { homeScore, awayScore });
+    const matchKey = `${home.toLowerCase()}|${away.toLowerCase()}`;
+    const result = fixture.result;
+    if (result) {
+      const homeScore = num(result.homeRuns);
+      const awayScore = num(result.awayRuns);
+      if (!homeScore && !awayScore) continue;
+      const key = `${matchKey}|${text(result.text, 80).toLowerCase()}`;
+      finishedByKey.set(key, { homeScore, awayScore });
+      continue;
+    }
+    const game = fixture.game;
+    if (!game) continue;
+    const totals = inningsTotals(game);
+    if (!totals) continue;
+    if (!totals.homeScore && !totals.awayScore) continue;
+    liveByMatch.set(matchKey, totals);
   }
-  if (byKey.size === 0) return draw;
+  if (finishedByKey.size === 0 && liveByMatch.size === 0) return draw;
 
   return draw.map((game) => {
-    if (game.homeScore != null || game.awayScore != null) return game;
-    const key = `${game.home.toLowerCase()}|${game.away.toLowerCase()}|${game.result.toLowerCase()}`;
-    const scores = byKey.get(key);
-    if (!scores) return game;
-    return { ...game, homeScore: scores.homeScore, awayScore: scores.awayScore };
+    if (game.homeScore != null || game.awayScore != null) {
+      // Still overlay fresher live totals from school when Jimmy omitted scores on the draw.
+      return game;
+    }
+    const matchKey = `${game.home.toLowerCase()}|${game.away.toLowerCase()}`;
+    const finished = finishedByKey.get(`${matchKey}|${game.result.toLowerCase()}`);
+    if (finished) return { ...game, homeScore: finished.homeScore, awayScore: finished.awayScore };
+    const live = liveByMatch.get(matchKey);
+    if (live) return { ...game, homeScore: live.homeScore, awayScore: live.awayScore };
+    return game;
   });
 }
 

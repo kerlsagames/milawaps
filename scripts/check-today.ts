@@ -176,6 +176,38 @@ assert.equal(scored?.ladder[1]?.percentage, 89.4);
 const picked = pickLastAndNext(milawaLike!.draw);
 assert.equal(picked.lastGame?.home, "Renegades");
 assert.equal(picked.nextGame?.home, "Scorchers");
+assert.equal(picked.liveGame, null);
+
+// Live scoring (Under way + totals) is preferred over a blank upcoming fixture.
+const liveNow = pickLastAndNext([
+  {
+    when: "Wed",
+    home: "Renegades",
+    away: "Strikers",
+    ground: "Recess",
+    result: "Renegades won by 9 runs",
+  },
+  {
+    when: "Fri",
+    home: "Scorchers",
+    away: "Stars",
+    ground: "Recess",
+    result: "Under way",
+    homeScore: 12,
+    awayScore: 8,
+  },
+  {
+    when: "Fri",
+    home: "Hurricanes",
+    away: "Strikers",
+    ground: "Lunch",
+    result: "",
+  },
+]);
+assert.equal(liveNow.liveGame?.home, "Scorchers");
+assert.equal(liveNow.liveGame?.homeScore, 12);
+assert.equal(liveNow.nextGame?.home, "Scorchers");
+assert.equal(liveNow.lastGame?.home, "Renegades");
 
 // Manually chosen next (Stars vs Hurricanes) wins over a stuck early Under way.
 const starsNext = pickLastAndNext([
@@ -440,5 +472,84 @@ assert.equal(schoolEnriched?.draw[0]?.awayScore, 44);
 assert.equal(schoolEnriched?.leaders.runs[0]?.name, "Van");
 assert.ok((schoolEnriched?.leaders.runs.length ?? 0) >= 2);
 assert.ok((schoolEnriched?.leaders.wickets.length ?? 0) >= 1);
+
+// Live in-progress fixtures contribute scores + leaders before the game is finished.
+const liveBoard = parseCricketSnapshot({
+  title: "Live now",
+  ladder: [
+    { team: "Stars", played: 0, won: 0, lost: 0, points: 0 },
+    { team: "Scorchers", played: 0, won: 0, lost: 0, points: 0 },
+  ],
+  draw: [
+    {
+      when: "Fri",
+      home: "Scorchers",
+      away: "Stars",
+      ground: "Recess",
+      result: "Under way",
+    },
+  ],
+  school: {
+    teams: [
+      { id: "sco", name: "Scorchers", playerIds: ["hugh"] },
+      { id: "sta", name: "Stars", playerIds: ["van"] },
+    ],
+    players: [
+      { id: "hugh", name: "Hugh" },
+      { id: "van", name: "Van" },
+    ],
+    fixtures: [
+      {
+        stage: "league",
+        home: "sco",
+        away: "sta",
+        result: null,
+        game: {
+          phase: "play",
+          oddsDuel: false,
+          rules: { pairs: true, ballsPerOver: 6, oversEach: 2, wicketRuns: 3 },
+          home: {
+            teamId: "sco",
+            roster: [{ id: "hugh", name: "Hugh" }],
+            away: [],
+            batOrder: ["hugh"],
+          },
+          away: {
+            teamId: "sta",
+            roster: [{ id: "van", name: "Van" }],
+            away: [],
+            batOrder: ["van"],
+          },
+          innings: [
+            {
+              batting: "away",
+              units: [["van"]],
+              overs: 2,
+              balls: [
+                { k: "run", r: 4, b: "hugh", s: "van" },
+                { k: "run", r: 6, b: "hugh", s: "van" },
+                { k: "run", r: 2, b: "hugh", s: "van" },
+              ],
+            },
+            {
+              batting: "home",
+              units: [["hugh"]],
+              overs: 2,
+              balls: [
+                { k: "run", r: 1, b: "van", s: "hugh" },
+                { k: "run", r: 1, b: "van", s: "hugh" },
+              ],
+            },
+          ],
+        },
+      },
+    ],
+  },
+});
+assert.equal(liveBoard?.draw[0]?.homeScore, 2);
+assert.equal(liveBoard?.draw[0]?.awayScore, 12);
+assert.equal(liveBoard?.liveGame?.awayScore, 12);
+assert.equal(liveBoard?.leaders.runs[0]?.name, "Van");
+assert.equal(liveBoard?.leaders.runs[0]?.value, "12");
 
 console.log("today and cricket checks passed");

@@ -58,12 +58,18 @@ export function CricketView({
   statsRotateSec?: number;
 }) {
   const show = { ...DEFAULT_CRICKET_PANELS, ...panels };
+  const [rotateIndex, setRotateIndex] = useState(0);
+  // Poll faster while a live game is on so scores/stats track Jimmy ball-by-ball.
+  const [refreshMs, setRefreshMs] = useState(15_000);
   const { data, error, isLoading } = useSWR<CricketSnapshot>(
     code ? `/api/cricket?code=${encodeURIComponent(code)}` : null,
     fetcher,
-    { refreshInterval: 15_000, revalidateOnFocus: true },
+    { refreshInterval: refreshMs, revalidateOnFocus: true },
   );
-  const [rotateIndex, setRotateIndex] = useState(0);
+
+  useEffect(() => {
+    setRefreshMs(data?.liveGame ? 5_000 : 15_000);
+  }, [data?.liveGame]);
 
   useEffect(() => {
     if (statsScope !== "rotate") return;
@@ -125,10 +131,22 @@ export function CricketView({
     return result !== "under way" && result !== "underway";
   });
   // Two coming-up rows leave room for all five ladder teams at a readable size.
-  const upcoming = (upcomingClean.length > 0 ? upcomingClean : afterLast).slice(0, 2);
+  // Keep a live (Under way + scores) match out of Coming up — it gets the Live card.
+  const liveGame = data.liveGame;
+  const upcomingFiltered = (upcomingClean.length > 0 ? upcomingClean : afterLast).filter((game) => {
+    if (!liveGame) return true;
+    return !(
+      game.home.toLowerCase() === liveGame.home.toLowerCase() &&
+      game.away.toLowerCase() === liveGame.away.toLowerCase()
+    );
+  });
+  const upcoming = upcomingFiltered.slice(0, 2);
   const showBottom = show.ladder || show.draw;
   const showTopStrip = show.lastNext || show.leaders;
   const scopeLabel = cricketStatsScopeLabel(activeScope);
+  const spotlightGame = liveGame ?? data.lastGame;
+  const spotlightEyebrow = liveGame ? "Live now" : "Last game";
+  const spotlightTone = liveGame ? "#c23b3b" : "#0d7a64";
 
   return (
     <div
@@ -157,16 +175,17 @@ export function CricketView({
       </header>
 
       {showTopStrip ? (
-        <div className="grid min-h-0 flex-1 grid-cols-2 gap-1.5 overflow-hidden sm:grid-cols-3 xl:grid-cols-6">
+        <div className="grid min-h-0 flex-[1.05] grid-cols-2 gap-1.5 overflow-hidden sm:grid-cols-3 xl:grid-cols-6">
           {show.lastNext ? (
             <GameCard
-              eyebrow="Last game"
-              tone="#0d7a64"
-              game={data.lastGame}
+              eyebrow={spotlightEyebrow}
+              tone={spotlightTone}
+              game={spotlightGame}
               empty="No finished game yet."
               resultFirst
               compact
               ladder={data.ladder}
+              live={Boolean(liveGame)}
             />
           ) : null}
           {show.leaders
@@ -180,19 +199,20 @@ export function CricketView({
       {showBottom ? (
         <div
           className={cn(
-            "grid shrink-0 gap-2 overflow-hidden",
+            // Share height with the stats strip so kiosk chrome can’t clip the last ladder row.
+            "grid min-h-0 flex-1 gap-2 overflow-hidden",
             show.ladder && show.draw && "lg:grid-cols-[1.35fr_0.85fr]",
           )}
         >
           {show.ladder ? (
-            <section className="flex flex-col overflow-hidden rounded-[22px] border-4 border-[#2ec9a0] bg-card p-2.5">
-              <h3 className="shrink-0 font-display text-[clamp(1.25rem,2.7vh,2.1rem)] leading-none">
+            <section className="flex min-h-0 flex-col overflow-hidden rounded-[22px] border-4 border-[#2ec9a0] bg-card p-2.5">
+              <h3 className="shrink-0 font-display text-[clamp(1.2rem,2.5vh,2rem)] leading-none">
                 Ladder
               </h3>
               {data.ladder.length === 0 ? (
                 <p className="mt-2 text-sm font-bold text-muted-foreground">No ladder yet.</p>
               ) : (
-                <div className="mt-1 flex flex-col overflow-hidden">
+                <div className="mt-1 flex min-h-0 flex-1 flex-col overflow-hidden">
                   <div className="grid shrink-0 grid-cols-[2rem_minmax(0,1.6fr)_repeat(3,2.2rem)_repeat(2,2.8rem)_3rem_3rem] gap-x-1 text-[clamp(0.7rem,1.3vh,0.88rem)] font-extrabold tracking-wide text-muted-foreground uppercase">
                     <span className="py-1">#</span>
                     <span className="py-1">Team</span>
@@ -204,37 +224,37 @@ export function CricketView({
                     <span className="py-1 text-right">%</span>
                     <span className="py-1 text-right">Pts</span>
                   </div>
-                  <ul className="flex flex-col overflow-hidden pb-0.5">
+                  <ul className="flex min-h-0 flex-1 flex-col overflow-hidden pb-0.5">
                     {data.ladder.map((row, index) => (
                       <li
                         key={`${row.team}-${index}`}
-                        className="grid shrink-0 grid-cols-[2rem_minmax(0,1.6fr)_repeat(3,2.2rem)_repeat(2,2.8rem)_3rem_3rem] items-center gap-x-1 border-t border-black/10 py-[clamp(0.4rem,1.15vh,0.75rem)]"
+                        className="grid min-h-0 flex-1 grid-cols-[2rem_minmax(0,1.6fr)_repeat(3,2.2rem)_repeat(2,2.8rem)_3rem_3rem] items-center gap-x-1 border-t border-black/10"
                       >
-                        <span className="font-display text-[clamp(1.05rem,2.3vh,1.65rem)] tabular-nums leading-none">
+                        <span className="font-display text-[clamp(1rem,2.2vh,1.55rem)] tabular-nums leading-none">
                           {index + 1}
                         </span>
-                        <span className="truncate font-display text-[clamp(1.05rem,2.4vh,1.75rem)] leading-tight">
+                        <span className="truncate font-display text-[clamp(1rem,2.3vh,1.65rem)] leading-tight">
                           {row.team}
                         </span>
-                        <span className="text-right text-[clamp(0.95rem,2vh,1.4rem)] font-extrabold tabular-nums leading-none">
+                        <span className="text-right text-[clamp(0.9rem,1.9vh,1.3rem)] font-extrabold tabular-nums leading-none">
                           {row.played}
                         </span>
-                        <span className="text-right text-[clamp(0.95rem,2vh,1.4rem)] font-extrabold tabular-nums leading-none">
+                        <span className="text-right text-[clamp(0.9rem,1.9vh,1.3rem)] font-extrabold tabular-nums leading-none">
                           {row.won}
                         </span>
-                        <span className="text-right text-[clamp(0.95rem,2vh,1.4rem)] font-extrabold tabular-nums leading-none">
+                        <span className="text-right text-[clamp(0.9rem,1.9vh,1.3rem)] font-extrabold tabular-nums leading-none">
                           {row.lost}
                         </span>
-                        <span className="text-right text-[clamp(0.95rem,2vh,1.4rem)] font-extrabold tabular-nums leading-none">
+                        <span className="text-right text-[clamp(0.9rem,1.9vh,1.3rem)] font-extrabold tabular-nums leading-none">
                           {row.runsFor > 0 || row.runsAgainst > 0 ? row.runsFor : "—"}
                         </span>
-                        <span className="text-right text-[clamp(0.95rem,2vh,1.4rem)] font-extrabold tabular-nums leading-none">
+                        <span className="text-right text-[clamp(0.9rem,1.9vh,1.3rem)] font-extrabold tabular-nums leading-none">
                           {row.runsFor > 0 || row.runsAgainst > 0 ? row.runsAgainst : "—"}
                         </span>
-                        <span className="text-right text-[clamp(0.95rem,2vh,1.4rem)] font-extrabold tabular-nums leading-none">
+                        <span className="text-right text-[clamp(0.9rem,1.9vh,1.3rem)] font-extrabold tabular-nums leading-none">
                           {formatLadderPercentage(row.percentage)}
                         </span>
-                        <span className="text-right font-display text-[clamp(1.15rem,2.55vh,1.9rem)] tabular-nums leading-none">
+                        <span className="text-right font-display text-[clamp(1.1rem,2.4vh,1.75rem)] tabular-nums leading-none">
                           {row.points}
                         </span>
                       </li>
@@ -245,19 +265,19 @@ export function CricketView({
             </section>
           ) : null}
           {show.draw ? (
-            <section className="flex flex-col overflow-hidden rounded-[22px] border-4 border-[#8b7cf7] bg-card p-2.5">
-              <h3 className="shrink-0 font-display text-[clamp(1.25rem,2.7vh,2.1rem)] leading-none">
+            <section className="flex min-h-0 flex-col overflow-hidden rounded-[22px] border-4 border-[#8b7cf7] bg-card p-2.5">
+              <h3 className="shrink-0 font-display text-[clamp(1.2rem,2.5vh,2rem)] leading-none">
                 Coming up
               </h3>
               {upcoming.length === 0 ? (
                 <p className="mt-2 text-sm font-bold text-muted-foreground">No games left on the draw.</p>
               ) : (
-                <ul className="mt-1.5 flex flex-col gap-2.5 overflow-hidden">
+                <ul className="mt-1.5 flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
                   {upcoming.map((game, index) => (
                     <li
                       key={`${game.home}-${game.away}-${index}`}
                       className={cn(
-                        "shrink-0 rounded-xl px-3 py-3",
+                        "flex min-h-0 flex-1 flex-col justify-center rounded-xl px-3 py-2",
                         index === 0 ? "bg-[#efe9ff] ring-2 ring-[#5146b8]/35" : "bg-[#f6f3ff]",
                       )}
                     >
@@ -265,13 +285,13 @@ export function CricketView({
                         {index === 0 ? "Next · " : ""}
                         {fixtureMeta(game.when, game.ground)}
                       </p>
-                      <p className="font-display text-[clamp(1.15rem,2.6vh,1.95rem)] leading-tight">
+                      <p className="font-display text-[clamp(1.1rem,2.4vh,1.75rem)] leading-tight">
                         {cricketMatchTitle(game)}
                       </p>
                       {game.result ? (
-                        <p className="mt-1 text-[clamp(0.85rem,1.7vh,1.15rem)] font-bold">{game.result}</p>
+                        <p className="mt-0.5 text-[clamp(0.8rem,1.55vh,1.05rem)] font-bold">{game.result}</p>
                       ) : index === 0 ? (
-                        <p className="mt-1 text-[clamp(0.85rem,1.7vh,1.15rem)] font-extrabold text-[#5146b8]">
+                        <p className="mt-0.5 text-[clamp(0.8rem,1.55vh,1.05rem)] font-extrabold text-[#5146b8]">
                           Still to play
                         </p>
                       ) : null}
@@ -295,6 +315,7 @@ function GameCard({
   resultFirst,
   compact = false,
   ladder = [],
+  live = false,
 }: {
   eyebrow: string;
   tone: string;
@@ -303,6 +324,7 @@ function GameCard({
   resultFirst: boolean;
   compact?: boolean;
   ladder?: CricketSnapshot["ladder"];
+  live?: boolean;
 }) {
   const homeRow = game ? ladder.find((row) => row.team.toLowerCase() === game.home.toLowerCase()) : null;
   const awayRow = game ? ladder.find((row) => row.team.toLowerCase() === game.away.toLowerCase()) : null;
@@ -375,8 +397,9 @@ function GameCard({
               className={cn(
                 "font-display tabular-nums",
                 compact
-                  ? "text-[clamp(0.95rem,1.9vh,1.35rem)] leading-none"
+                  ? "text-[clamp(1.05rem,2.2vh,1.55rem)] leading-none"
                   : "mt-0.5 text-[clamp(1rem,2.2vh,1.65rem)]",
+                live && "animate-pulse",
               )}
               style={{ color: tone }}
             >
@@ -406,7 +429,7 @@ function GameCard({
               )}
               style={resultFirst ? { color: tone } : undefined}
             >
-              {game.result}
+              {live ? "Scores updating live" : game.result}
             </p>
           ) : resultFirst ? (
             <p
@@ -448,12 +471,12 @@ function LeaderCard({
     <section
       className={cn(
         "flex min-h-0 flex-col overflow-hidden rounded-[14px] border-[3px] bg-card",
-        compact ? "px-1.5 py-1" : "px-2 py-1.5",
+        compact ? "px-2 py-1.5" : "px-2 py-1.5",
       )}
       style={{ borderColor: tone }}
     >
       <p
-        className="shrink-0 text-[clamp(0.52rem,0.95vh,0.7rem)] font-extrabold tracking-[0.08em] uppercase leading-none"
+        className="shrink-0 text-[clamp(0.62rem,1.15vh,0.8rem)] font-extrabold tracking-[0.08em] uppercase leading-none"
         style={{ color: tone }}
       >
         {title}
@@ -467,21 +490,22 @@ function LeaderCard({
             <span
               className={cn(
                 "min-w-0 truncate font-display leading-none",
+                // Kiosk / TV: keep names readable — desk looked fine, kiosk was too tiny.
                 compact
-                  ? "text-[clamp(0.72rem,1.45vh,1.05rem)]"
-                  : "text-[clamp(0.85rem,1.9vh,1.35rem)]",
+                  ? "text-[clamp(0.95rem,2.15vh,1.4rem)]"
+                  : "text-[clamp(0.95rem,2.1vh,1.4rem)]",
                 !row && "text-muted-foreground/50",
               )}
             >
-              <span className="mr-0.5 text-[0.7em] text-muted-foreground tabular-nums">{index + 1}.</span>
+              <span className="mr-1 text-[0.72em] text-muted-foreground tabular-nums">{index + 1}.</span>
               {row?.name ?? "—"}
             </span>
             <span
               className={cn(
                 "shrink-0 font-display tabular-nums leading-none",
                 compact
-                  ? "text-[clamp(0.75rem,1.5vh,1.1rem)]"
-                  : "text-[clamp(0.9rem,2vh,1.45rem)]",
+                  ? "text-[clamp(0.95rem,2.2vh,1.45rem)]"
+                  : "text-[clamp(0.95rem,2.1vh,1.45rem)]",
               )}
             >
               {row?.value ?? ""}

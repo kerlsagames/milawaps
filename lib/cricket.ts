@@ -49,6 +49,8 @@ export type CricketSnapshot = {
   teams: CricketTeam[];
   lastGame: CricketFixture | null;
   nextGame: CricketFixture | null;
+  /** In-progress fixture with live totals when Jimmy is scoring. */
+  liveGame: CricketFixture | null;
   preview: boolean;
 };
 
@@ -127,6 +129,7 @@ export const PREVIEW_CRICKET: CricketSnapshot = {
     ground: "Oval",
     result: "Still to play",
   },
+  liveGame: null,
 };
 
 function text(value: unknown, max: number) {
@@ -359,17 +362,25 @@ function fixtureLooksLive(result: string) {
   return value === "under way" || value === "underway";
 }
 
+/** True when Jimmy is actively scoring (live totals present), not a stuck empty "Under way". */
+export function fixtureIsLiveScoring(game: CricketFixture) {
+  if (!fixtureLooksLive(game.result)) return false;
+  return game.homeScore != null || game.awayScore != null;
+}
+
 function pickNextCandidate(
   draw: CricketFixture[],
   fromIndex: number,
   preferFresh: boolean,
 ): CricketFixture | null {
-  // After a finished result, prefer a blank upcoming fixture over a stuck "Under way"
+  // After a finished result, prefer a blank upcoming fixture over a stuck empty "Under way"
   // so a manually chosen next game on Jimmy wins over an abandoned early start.
+  // Real live scoring (Under way + scores) still wins so the kiosk tracks the match.
   let liveFallback: CricketFixture | null = null;
   for (let index = Math.max(0, fromIndex); index < draw.length; index += 1) {
     const game = draw[index]!;
     if (fixtureFinished(game.result)) continue;
+    if (fixtureIsLiveScoring(game)) return game;
     if (preferFresh && fixtureLooksLive(game.result)) {
       liveFallback ??= game;
       continue;
@@ -379,9 +390,20 @@ function pickNextCandidate(
   return liveFallback;
 }
 
+/** Active live match Jimmy is scoring right now, if any. */
+export function pickLiveGame(draw: CricketFixture[]): CricketFixture | null {
+  let found: CricketFixture | null = null;
+  for (const game of draw) {
+    if (!fixtureIsLiveScoring(game)) continue;
+    found = game;
+  }
+  return found;
+}
+
 export function pickLastAndNext(draw: CricketFixture[]): {
   lastGame: CricketFixture | null;
   nextGame: CricketFixture | null;
+  liveGame: CricketFixture | null;
 } {
   let lastGame: CricketFixture | null = null;
   let lastFinishedIndex = -1;
@@ -401,7 +423,7 @@ export function pickLastAndNext(draw: CricketFixture[]): {
     nextGame = pickNextCandidate(draw, 0, false);
   }
 
-  return { lastGame, nextGame };
+  return { lastGame, nextGame, liveGame: pickLiveGame(draw) };
 }
 
 function fixtureLine(game: CricketFixture) {
@@ -518,7 +540,7 @@ export function parseCricketSnapshot(raw: unknown, preview = false): CricketSnap
     leadersFromStats(stats),
   );
   const ladderWithRuns = enrichLadderFromJimmySchool(enrichLadderRunsFromDraw(ladder, draw), school);
-  const { lastGame, nextGame } = pickLastAndNext(draw);
+  const { lastGame, nextGame, liveGame } = pickLastAndNext(draw);
   const updatedAtRaw = record.updatedAt;
   const updated =
     typeof updatedAtRaw === "number" && Number.isFinite(updatedAtRaw)
@@ -534,6 +556,7 @@ export function parseCricketSnapshot(raw: unknown, preview = false): CricketSnap
     teams,
     lastGame,
     nextGame,
+    liveGame,
     preview,
   };
 }

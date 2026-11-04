@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import useSWR from "swr";
 import {
   cricketMatchTitle,
@@ -66,11 +67,15 @@ export function CricketTeamsView({
   mode?: CricketTeamsMode;
   fill?: boolean;
 }) {
+  const [refreshMs, setRefreshMs] = useState(15_000);
   const { data, error, isLoading } = useSWR<CricketSnapshot>(
     code ? `/api/cricket?code=${encodeURIComponent(code)}` : null,
     fetcher,
-    { refreshInterval: 15_000, revalidateOnFocus: true },
+    { refreshInterval: refreshMs, revalidateOnFocus: true },
   );
+  useEffect(() => {
+    setRefreshMs(data?.liveGame ? 5_000 : 15_000);
+  }, [data?.liveGame]);
 
   const boardTeams = data?.teams ?? [];
   const effectiveRosters = mergeRosters(rosters, boardTeams);
@@ -257,9 +262,26 @@ function NextGameMode({
                 {meta}
               </p>
             ) : null}
+            {nextGame.homeScore != null || nextGame.awayScore != null ? (
+              <p
+                className={cn(
+                  "mt-3 font-display text-[clamp(2rem,6vh,4.25rem)] tabular-nums leading-none text-[#0d7a64]",
+                  (nextGame.result || "").toLowerCase().includes("under way") && "animate-pulse",
+                )}
+              >
+                {nextGame.homeScore ?? "—"} – {nextGame.awayScore ?? "—"}
+              </p>
+            ) : null}
             {nextGame.result && nextGame.result.toLowerCase() !== "still to play" ? (
-              <p className="mt-2 text-[clamp(0.95rem,2vh,1.35rem)] font-extrabold text-[#0d7a64]">
-                {nextGame.result}
+              <p
+                className={cn(
+                  "mt-2 text-[clamp(0.95rem,2vh,1.35rem)] font-extrabold",
+                  (nextGame.result || "").toLowerCase().includes("under way")
+                    ? "text-[#c23b3b]"
+                    : "text-[#0d7a64]",
+                )}
+              >
+                {(nextGame.result || "").toLowerCase().includes("under way") ? "Live" : nextGame.result}
               </p>
             ) : null}
           </section>
