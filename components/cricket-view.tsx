@@ -81,7 +81,14 @@ export function CricketView({
   }
 
   // Keep the draw tight so the whole board fits without scroll.
-  const upcoming = data.draw.filter((game) => !fixtureIsFinished(game.result)).slice(0, 2);
+  // Skip unfinished fixtures that sit before the last finished result (stuck "Under way").
+  let lastFinishedIndex = -1;
+  data.draw.forEach((game, index) => {
+    if (fixtureIsFinished(game.result)) lastFinishedIndex = index;
+  });
+  const upcoming = data.draw
+    .filter((game, index) => index > lastFinishedIndex && !fixtureIsFinished(game.result))
+    .slice(0, 2);
   const showBottom = show.ladder || show.draw;
 
   return (

@@ -72,6 +72,12 @@ export function YardBoard() {
   // Shared TV pages come from the server once an admin has saved them.
   const shown = data?.displayUpdatedAt ? data.shown : prefs.shown;
   const cricketCode = data?.displayUpdatedAt ? data.cricketCode : prefs.cricketCode;
+  const cricketTeamsMode = data?.displayUpdatedAt
+    ? (data.cricketTeamsMode ?? prefs.cricketTeamsMode)
+    : prefs.cricketTeamsMode;
+  const cricketRosters = data?.displayUpdatedAt
+    ? (data.cricketRosters ?? prefs.cricketRosters)
+    : prefs.cricketRosters;
   const dwellsRef = useRef(dwells);
   dwellsRef.current = dwells;
   const liveHighlights = useMemo(
@@ -776,8 +782,8 @@ export function YardBoard() {
               ) : view === "cricket-teams" ? (
                 <CricketTeamsView
                   code={cricketCode}
-                  rosters={data.cricketRosters ?? prefs.cricketRosters}
-                  mode={data.cricketTeamsMode ?? prefs.cricketTeamsMode}
+                  rosters={cricketRosters}
+                  mode={cricketTeamsMode}
                   fill
                 />
               ) : view === "cricket" ? (
