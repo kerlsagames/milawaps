@@ -95,7 +95,7 @@ export function YardBoard() {
   const [reasonPrompt, setReasonPrompt] = useState<{ id: string; line: string } | null>(null);
 
   const displaySyncKey = data?.displayUpdatedAt
-    ? `${data.displayUpdatedAt}:${data.cricketCode}:${JSON.stringify(data.shown)}:${data.newsLayout}:${JSON.stringify(data.cricketPanels)}:${JSON.stringify(data.cricketRosters)}:${data.finishAt ?? ""}:${JSON.stringify(data.dwells)}:${JSON.stringify(data.reveals)}`
+    ? `${data.displayUpdatedAt}:${data.cricketCode}:${JSON.stringify(data.shown)}:${data.newsLayout}:${JSON.stringify(data.cricketPanels)}:${JSON.stringify(data.cricketRosters)}:${data.cricketTeamsMode}:${data.finishAt ?? ""}:${JSON.stringify(data.dwells)}:${JSON.stringify(data.reveals)}`
     : "";
   useEffect(() => {
     if (!data?.displayUpdatedAt) return;
@@ -103,6 +103,7 @@ export function YardBoard() {
       newsLayout: data.newsLayout,
       cricketPanels: data.cricketPanels,
       cricketRosters: data.cricketRosters,
+      cricketTeamsMode: data.cricketTeamsMode,
       finishAt: data.finishAt,
       dwells: data.dwells,
       reveals: data.reveals,
@@ -776,6 +777,7 @@ export function YardBoard() {
                 <CricketTeamsView
                   code={cricketCode}
                   rosters={data.cricketRosters ?? prefs.cricketRosters}
+                  mode={data.cricketTeamsMode ?? prefs.cricketTeamsMode}
                   fill
                 />
               ) : view === "cricket" ? (

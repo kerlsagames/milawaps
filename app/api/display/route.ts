@@ -21,6 +21,7 @@ export async function GET() {
       newsLayout: board.newsLayout,
       cricketPanels: board.cricketPanels,
       cricketRosters: board.cricketRosters,
+      cricketTeamsMode: board.cricketTeamsMode,
       finishAt: board.finishAt,
       dwells: board.dwells,
       reveals: board.reveals,

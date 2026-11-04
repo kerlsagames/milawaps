@@ -102,6 +102,8 @@ export type PublicBoard = {
   cricketPanels: import("@/lib/site-display").CricketPanels;
   /** Cricket 1 team lists (who is on which team) for every visitor. */
   cricketRosters: import("@/lib/site-display").CricketRosters;
+  /** Cricket 1 page mode: all teams or next-game matchup. */
+  cricketTeamsMode: import("@/lib/site-display").CricketTeamsMode;
   /** Shared prize-path finish countdown for every TV (ms), or null. */
   finishAt: number | null;
   /** Shared seconds-per-slide for every TV, or null if never saved. */

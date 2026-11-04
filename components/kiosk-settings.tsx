@@ -31,6 +31,7 @@ import {
   setAllViewDwells,
   setCricketPanelsLocal,
   setCricketRostersLocal,
+  setCricketTeamsModeLocal,
   setFinishAt,
   setNewsLayoutLocal,
   setRevealAt,
@@ -54,6 +55,7 @@ import {
   sanitizeCricketRosters,
   type CricketPanels,
   type CricketRosters,
+  type CricketTeamsMode,
   type NewsLayoutId,
 } from "@/lib/site-display";
 import { cn } from "@/lib/utils";
@@ -168,6 +170,7 @@ export function KioskSettings({
       newsLayout?: NewsLayoutId;
       cricketPanels?: Partial<CricketPanels>;
       cricketRosters?: CricketRosters;
+      cricketTeamsMode?: CricketTeamsMode;
       finishAt?: number | null;
       dwells?: Partial<Record<FixedScreenId, number>>;
       reveals?: import("@/lib/desk-prefs").RevealMap;
@@ -546,6 +549,7 @@ export function KioskSettings({
               draftCode={admin ? draftCricket : prefs.cricketCode}
               panels={prefs.cricketPanels}
               rosters={prefs.cricketRosters}
+              teamsMode={prefs.cricketTeamsMode}
               onShownTeams={(next) => void saveShown("cricket-teams", next)}
               onShownLadder={(next) => void saveShown("cricket", next)}
               onDraftCode={setDraftCricket}
@@ -572,6 +576,18 @@ export function KioskSettings({
                   "Cricket teams saved for everyone.",
                 ).then((ok) => {
                   if (ok === false) setCricketRostersLocal(previous);
+                });
+              }}
+              onTeamsMode={(mode) => {
+                const previous = prefs.cricketTeamsMode;
+                setCricketTeamsModeLocal(mode);
+                void patchDisplay(
+                  { cricketTeamsMode: mode },
+                  mode === "next"
+                    ? "Cricket 1 is on next-game mode for every TV."
+                    : "Cricket 1 shows all teams on every TV.",
+                ).then((ok) => {
+                  if (ok === false) setCricketTeamsModeLocal(previous);
                 });
               }}
               onPreviewTeams={() => {
@@ -1031,12 +1047,14 @@ function CricketPagePanel({
   draftCode,
   panels,
   rosters,
+  teamsMode,
   onShownTeams,
   onShownLadder,
   onDraftCode,
   onSaveCode,
   onPanel,
   onRosters,
+  onTeamsMode,
   onPreviewTeams,
   onPreviewLadder,
 }: {
@@ -1048,12 +1066,14 @@ function CricketPagePanel({
   draftCode: string;
   panels: CricketPanels;
   rosters: CricketRosters;
+  teamsMode: CricketTeamsMode;
   onShownTeams: (next: boolean) => void;
   onShownLadder: (next: boolean) => void;
   onDraftCode: (value: string) => void;
   onSaveCode: () => void;
   onPanel: (key: keyof CricketPanels, value: boolean) => void;
   onRosters: (next: CricketRosters) => void;
+  onTeamsMode: (mode: CricketTeamsMode) => void;
   onPreviewTeams: () => void;
   onPreviewLadder: () => void;
 }) {
@@ -1082,8 +1102,8 @@ function CricketPagePanel({
   return (
     <div className="grid gap-3">
       <p className="text-xs font-semibold text-muted-foreground">
-        Cricket 1 shows who is on each team. Cricket 2 shows the ladder, stats, draw, and recent
-        match.
+        Cricket 1 is either all team lists, or next-game mode (big matchup + both sides). Cricket 2
+        shows the ladder, stats, draw, and recent match.
       </p>
       {admin ? (
         <>
@@ -1094,6 +1114,33 @@ function CricketPagePanel({
             hint={!draftCode.trim() ? "Paste a Jimmy cricket code below before turning this on." : undefined}
           />
           <DwellSlider id="cricket-teams" label="Cricket 1" seconds={secondsTeams} />
+          <div className="grid gap-2 rounded-2xl border border-[#0d7a64]/25 bg-[#eefaf6] p-3">
+            <p className="text-sm font-bold">Cricket 1 page</p>
+            <label className="flex items-center gap-2 text-sm font-bold">
+              <input
+                type="radio"
+                name="cricket-teams-mode"
+                checked={teamsMode === "all"}
+                onChange={() => onTeamsMode("all")}
+                className="size-5 accent-[#0d7a64]"
+              />
+              All teams
+            </label>
+            <label className="flex items-center gap-2 text-sm font-bold">
+              <input
+                type="radio"
+                name="cricket-teams-mode"
+                checked={teamsMode === "next"}
+                onChange={() => onTeamsMode("next")}
+                className="size-5 accent-[#0d7a64]"
+              />
+              Next game mode
+            </label>
+            <p className="text-xs font-semibold text-muted-foreground">
+              Next game mode puts the match and time in the middle, with each team’s players on the
+              sides.
+            </p>
+          </div>
           <ShowToggle
             label="Show Cricket 2 (ladder) on every TV"
             checked={shownLadder}
@@ -1105,7 +1152,7 @@ function CricketPagePanel({
       ) : (
         <p className="text-xs font-semibold text-muted-foreground">
           {draftCode
-            ? `Cricket 1 ${shownTeams ? "on" : "off"} · Cricket 2 ${shownLadder ? "on" : "off"}.`
+            ? `Cricket 1 ${shownTeams ? "on" : "off"} (${teamsMode === "next" ? "next game" : "all teams"}) · Cricket 2 ${shownLadder ? "on" : "off"}.`
             : "Ask an admin to paste the Jimmy cricket code."}
         </p>
       )}

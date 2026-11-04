@@ -18,9 +18,11 @@ import {
   clampDwell,
   dwellsForEveryScreen,
   sanitizeCricketRosters,
+  sanitizeCricketTeamsMode,
   sanitizeDwells,
   type CricketPanels,
   type CricketRosters,
+  type CricketTeamsMode,
   type DwellMap,
   type NewsLayoutId,
   type SharedRevealMap,
@@ -66,6 +68,7 @@ export type DeskPrefs = {
   newsLayout: NewsLayoutId;
   cricketPanels: CricketPanels;
   cricketRosters: CricketRosters;
+  cricketTeamsMode: CricketTeamsMode;
 };
 
 function defaultReveals(): RevealMap {
@@ -103,6 +106,7 @@ const serverPrefs: DeskPrefs = {
   newsLayout: "split",
   cricketPanels: { ...DEFAULT_CRICKET_PANELS },
   cricketRosters: {},
+  cricketTeamsMode: "all",
 };
 
 let current: DeskPrefs = serverPrefs;
@@ -205,6 +209,10 @@ function readCricketRosters(): CricketRosters {
   }
 }
 
+function readCricketTeamsMode(): CricketTeamsMode {
+  return sanitizeCricketTeamsMode(window.localStorage.getItem("ott-cricket-teams-mode"));
+}
+
 function readCricket(): string {
   return (window.localStorage.getItem("ott-cricket-code") || "").trim().slice(0, 300);
 }
@@ -259,6 +267,7 @@ function readPrefs(): DeskPrefs {
     newsLayout: readNewsLayout(),
     cricketPanels: readCricketPanels(),
     cricketRosters: readCricketRosters(),
+    cricketTeamsMode: readCricketTeamsMode(),
   };
 }
 
@@ -339,6 +348,12 @@ export function setCricketRostersLocal(rosters: CricketRosters) {
   publish({ ...readPrefs(), cricketRosters: next });
 }
 
+export function setCricketTeamsModeLocal(mode: CricketTeamsMode) {
+  const next = sanitizeCricketTeamsMode(mode);
+  window.localStorage.setItem("ott-cricket-teams-mode", next);
+  publish({ ...readPrefs(), cricketTeamsMode: next });
+}
+
 /** Apply shared TV display settings from the server board (every visitor). */
 export function hydrateDisplay(
   shown: ShownMap,
@@ -347,6 +362,7 @@ export function hydrateDisplay(
     newsLayout?: NewsLayoutId;
     cricketPanels?: CricketPanels;
     cricketRosters?: CricketRosters;
+    cricketTeamsMode?: CricketTeamsMode;
     finishAt?: number | null;
     dwells?: DwellMap | null;
     reveals?: SharedRevealMap | null;
@@ -364,6 +380,9 @@ export function hydrateDisplay(
   }
   if (extras?.cricketRosters) {
     window.localStorage.setItem("ott-cricket-rosters", JSON.stringify(extras.cricketRosters));
+  }
+  if (extras?.cricketTeamsMode) {
+    window.localStorage.setItem("ott-cricket-teams-mode", extras.cricketTeamsMode);
   }
   if (extras && "finishAt" in extras) {
     if (extras.finishAt == null || !Number.isFinite(extras.finishAt)) {
@@ -385,6 +404,7 @@ export function hydrateDisplay(
     newsLayout: extras?.newsLayout ?? readNewsLayout(),
     cricketPanels: extras?.cricketPanels ?? readCricketPanels(),
     cricketRosters: extras?.cricketRosters ?? readCricketRosters(),
+    cricketTeamsMode: extras?.cricketTeamsMode ?? readCricketTeamsMode(),
     finishAt: extras && "finishAt" in extras ? (extras.finishAt ?? null) : readFinish(),
     dwells: extras?.dwells ?? readDwells(),
     reveals: extras?.reveals ?? readReveals(),
@@ -399,6 +419,7 @@ export async function saveSiteDisplay(
     newsLayout?: NewsLayoutId;
     cricketPanels?: Partial<CricketPanels>;
     cricketRosters?: CricketRosters;
+    cricketTeamsMode?: CricketTeamsMode;
     finishAt?: number | null;
     dwells?: Partial<DwellMap>;
     reveals?: SharedRevealMap;
@@ -424,6 +445,7 @@ export async function saveSiteDisplay(
       newsLayout: body.newsLayout,
       cricketPanels: body.cricketPanels,
       cricketRosters: body.cricketRosters,
+      cricketTeamsMode: body.cricketTeamsMode,
       finishAt: body.finishAt,
       dwells: body.dwells,
       reveals: body.reveals,

@@ -18,6 +18,7 @@ assert.equal(empty.shown["cricket-teams"], false);
 assert.equal(empty.newsLayout, "split");
 assert.equal(empty.cricketPanels.ladder, true);
 assert.deepEqual(empty.cricketRosters, {});
+assert.equal(empty.cricketTeamsMode, "all");
 assert.equal(empty.finishAt, null);
 assert.equal(empty.dwells, null);
 assert.equal(empty.reveals, null);
@@ -32,12 +33,16 @@ const withTeams = siteDisplayFromInput(
   {
     shown: { "cricket-teams": true },
     cricketRosters: { "F/1": ["Alex", "Sam"], "5/6": ["Poppy"] },
+    cricketTeamsMode: "next",
   },
   withCode,
 );
 assert.equal(withTeams.shown["cricket-teams"], true);
 assert.deepEqual(withTeams.cricketRosters["F/1"], ["Alex", "Sam"]);
 assert.deepEqual(withTeams.cricketRosters["5/6"], ["Poppy"]);
+assert.equal(withTeams.cricketTeamsMode, "next");
+assert.equal(siteDisplayFromInput({ cricketTeamsMode: "nope" }, withTeams).cricketTeamsMode, "all");
+assert.equal(sanitizeSiteDisplay({ cricketCode: "x" }).cricketTeamsMode, "all");
 
 const hideNews = siteDisplayFromInput({ shown: { news: true, highlight: true } }, withTeams);
 assert.equal(hideNews.shown.news, true);

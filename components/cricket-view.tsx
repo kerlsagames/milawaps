@@ -4,6 +4,7 @@ import useSWR from "swr";
 import {
   cricketMatchTitle,
   fixtureIsFinished,
+  formatLadderPercentage,
   type CricketFixture,
   type CricketLeader,
   type CricketLeaders,
@@ -148,34 +149,46 @@ export function CricketView({
               ) : (
                 <table className="mt-1 w-full min-h-0 flex-1 text-left">
                   <thead>
-                    <tr className="text-[clamp(0.65rem,1.2vh,0.8rem)] font-extrabold tracking-wide text-muted-foreground uppercase">
+                    <tr className="text-[clamp(0.6rem,1.1vh,0.75rem)] font-extrabold tracking-wide text-muted-foreground uppercase">
                       <th className="py-0.5 pr-1">#</th>
                       <th className="py-0.5">Team</th>
                       <th className="py-0.5 text-right">P</th>
                       <th className="py-0.5 text-right">W</th>
                       <th className="py-0.5 text-right">L</th>
+                      <th className="py-0.5 text-right">RF</th>
+                      <th className="py-0.5 text-right">RA</th>
+                      <th className="py-0.5 text-right">%</th>
                       <th className="py-0.5 text-right">Pts</th>
                     </tr>
                   </thead>
                   <tbody>
                     {data.ladder.map((row, index) => (
                       <tr key={`${row.team}-${index}`} className="border-t border-black/10">
-                        <td className="py-1 pr-1 font-display text-[clamp(1.1rem,2.6vh,2rem)] tabular-nums">
+                        <td className="py-1 pr-1 font-display text-[clamp(1rem,2.4vh,1.85rem)] tabular-nums">
                           {index + 1}
                         </td>
-                        <td className="py-1 font-display text-[clamp(1.1rem,2.8vh,2.35rem)] leading-tight">
+                        <td className="py-1 font-display text-[clamp(1rem,2.5vh,2.1rem)] leading-tight">
                           {row.team}
                         </td>
-                        <td className="py-1 text-right text-[clamp(0.95rem,2.2vh,1.6rem)] font-extrabold tabular-nums">
+                        <td className="py-1 text-right text-[clamp(0.85rem,2vh,1.45rem)] font-extrabold tabular-nums">
                           {row.played}
                         </td>
-                        <td className="py-1 text-right text-[clamp(0.95rem,2.2vh,1.6rem)] font-extrabold tabular-nums">
+                        <td className="py-1 text-right text-[clamp(0.85rem,2vh,1.45rem)] font-extrabold tabular-nums">
                           {row.won}
                         </td>
-                        <td className="py-1 text-right text-[clamp(0.95rem,2.2vh,1.6rem)] font-extrabold tabular-nums">
+                        <td className="py-1 text-right text-[clamp(0.85rem,2vh,1.45rem)] font-extrabold tabular-nums">
                           {row.lost}
                         </td>
-                        <td className="py-1 text-right font-display text-[clamp(1.25rem,3vh,2.5rem)] tabular-nums">
+                        <td className="py-1 text-right text-[clamp(0.85rem,2vh,1.45rem)] font-extrabold tabular-nums">
+                          {row.runsFor > 0 || row.runsAgainst > 0 ? row.runsFor : "—"}
+                        </td>
+                        <td className="py-1 text-right text-[clamp(0.85rem,2vh,1.45rem)] font-extrabold tabular-nums">
+                          {row.runsFor > 0 || row.runsAgainst > 0 ? row.runsAgainst : "—"}
+                        </td>
+                        <td className="py-1 text-right text-[clamp(0.85rem,2vh,1.45rem)] font-extrabold tabular-nums">
+                          {formatLadderPercentage(row.percentage)}
+                        </td>
+                        <td className="py-1 text-right font-display text-[clamp(1.15rem,2.8vh,2.25rem)] tabular-nums">
                           {row.points}
                         </td>
                       </tr>
@@ -258,10 +271,14 @@ function GameCard({
           </p>
           {game.result ? (
             <p
-              className={`mt-0.5 text-[clamp(0.85rem,1.7vh,1.2rem)] font-extrabold ${resultFirst ? "" : "text-[#5146b8]"}`}
+              className={`mt-0.5 text-[clamp(0.95rem,2vh,1.35rem)] font-extrabold ${resultFirst ? "" : "text-[#5146b8]"}`}
               style={resultFirst ? { color: tone } : undefined}
             >
               {game.result}
+            </p>
+          ) : resultFirst ? (
+            <p className="mt-0.5 text-[clamp(0.95rem,2vh,1.35rem)] font-extrabold text-muted-foreground">
+              Result not on the board yet
             </p>
           ) : (
             <p className="mt-0.5 text-[clamp(0.85rem,1.7vh,1.2rem)] font-extrabold text-[#5146b8]">

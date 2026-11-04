@@ -157,6 +157,14 @@ export const DEFAULT_CRICKET_PANELS: CricketPanels = {
   draw: true,
 };
 
+/** Cricket 1 page mode — all team lists, or the next matchup big on screen. */
+export const CRICKET_TEAMS_MODES = ["all", "next"] as const;
+export type CricketTeamsMode = (typeof CRICKET_TEAMS_MODES)[number];
+
+export function sanitizeCricketTeamsMode(raw: unknown): CricketTeamsMode {
+  return raw === "next" ? "next" : "all";
+}
+
 /** Cricket 1 — player names under each team (keyed by team name). */
 export type CricketRosters = Record<string, string[]>;
 
@@ -188,6 +196,8 @@ export type SiteDisplay = {
   cricketPanels: CricketPanels;
   /** Cricket 1 team lists — who is on which team. */
   cricketRosters: CricketRosters;
+  /** Cricket 1: all teams, or next-game matchup. */
+  cricketTeamsMode: CricketTeamsMode;
   /** Shared prize-path finish countdown (ms since epoch), or null if unset. */
   finishAt: number | null;
   /**
@@ -210,6 +220,7 @@ export function emptySiteDisplay(): SiteDisplay {
     newsLayout: "split",
     cricketPanels: { ...DEFAULT_CRICKET_PANELS },
     cricketRosters: {},
+    cricketTeamsMode: "all",
     finishAt: null,
     dwells: null,
     reveals: null,
@@ -250,6 +261,7 @@ export function sanitizeSiteDisplay(raw: unknown): SiteDisplay {
     newsLayout?: unknown;
     cricketPanels?: unknown;
     cricketRosters?: unknown;
+    cricketTeamsMode?: unknown;
     finishAt?: unknown;
     dwells?: unknown;
     reveals?: unknown;
@@ -283,6 +295,7 @@ export function sanitizeSiteDisplay(raw: unknown): SiteDisplay {
     newsLayout: sanitizeNewsLayout(record.newsLayout),
     cricketPanels: sanitizeCricketPanels(record.cricketPanels),
     cricketRosters: sanitizeCricketRosters(record.cricketRosters),
+    cricketTeamsMode: sanitizeCricketTeamsMode(record.cricketTeamsMode),
     finishAt: sanitizeFinishAt(record.finishAt),
     dwells,
     reveals,
@@ -298,6 +311,7 @@ export function siteDisplayFromInput(raw: unknown, current: SiteDisplay): SiteDi
     newsLayout?: unknown;
     cricketPanels?: unknown;
     cricketRosters?: unknown;
+    cricketTeamsMode?: unknown;
     finishAt?: unknown;
     dwells?: unknown;
     reveals?: unknown;
@@ -307,6 +321,7 @@ export function siteDisplayFromInput(raw: unknown, current: SiteDisplay): SiteDi
   let newsLayout = current.newsLayout;
   let cricketPanels = { ...current.cricketPanels };
   let cricketRosters = { ...current.cricketRosters };
+  let cricketTeamsMode = current.cricketTeamsMode;
   let finishAt = current.finishAt;
   let dwells = current.dwells;
   let reveals = current.reveals;
@@ -329,6 +344,9 @@ export function siteDisplayFromInput(raw: unknown, current: SiteDisplay): SiteDi
   if (record.cricketRosters !== undefined && record.cricketRosters !== null) {
     // Full replace so deleted teams disappear from Cricket 1.
     cricketRosters = sanitizeCricketRosters(record.cricketRosters);
+  }
+  if (record.cricketTeamsMode !== undefined) {
+    cricketTeamsMode = sanitizeCricketTeamsMode(record.cricketTeamsMode);
   }
   if ("finishAt" in record) {
     finishAt = sanitizeFinishAt(record.finishAt);
@@ -367,6 +385,7 @@ export function siteDisplayFromInput(raw: unknown, current: SiteDisplay): SiteDi
     newsLayout,
     cricketPanels,
     cricketRosters,
+    cricketTeamsMode,
     finishAt,
     dwells,
     reveals,

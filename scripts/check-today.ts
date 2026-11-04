@@ -2,7 +2,13 @@ import assert from "node:assert/strict";
 import { emptyScores } from "../lib/game";
 import { classHighlightId, createHighlight } from "../lib/highlights";
 import { applyAction } from "../lib/scoring";
-import { JIMMY_CRICKET_BOARD, parseCricketSnapshot, shareUrlForCode } from "../lib/cricket";
+import {
+  JIMMY_CRICKET_BOARD,
+  formatLadderPercentage,
+  parseCricketSnapshot,
+  pickLastAndNext,
+  shareUrlForCode,
+} from "../lib/cricket";
 import { feedEventStamp, melbourneYesterdayKey, todayFeed } from "../lib/today";
 import { melbourneDateKey } from "../lib/ticker";
 
@@ -85,6 +91,67 @@ assert.equal(withResult?.lastGame?.result, "A won by 10 runs");
 assert.equal(withResult?.nextGame?.home, "B");
 assert.equal(withResult?.leaders.highest[0]?.name, "Poppy");
 assert.equal(withResult?.leaders.highest[0]?.value, "48");
+
+// Stuck early "Under way" must not hide a finished result later in the draw (HJEHVR shape).
+const milawaLike = parseCricketSnapshot({
+  title: "Milawa School Challenge",
+  stats: [
+    { label: "Most runs", value: "Van 30" },
+    { label: "Most wickets", value: "Zach 1" },
+    { label: "On top", value: "Renegades · 2 pts" },
+  ],
+  ladder: [
+    { team: "Renegades", played: 1, won: 1, lost: 0, points: 2 },
+    { team: "Strikers", played: 1, won: 0, lost: 1, points: 0, rf: 40, ra: 49, pct: 44.9 },
+  ],
+  draw: [
+    {
+      when: "Mon, 2 Nov · Lunch",
+      home: "Stars",
+      away: "Renegades",
+      ground: "Lunch",
+      result: "Under way",
+    },
+    {
+      when: "Wed, 4 Nov · Recess",
+      home: "Renegades",
+      away: "Strikers",
+      ground: "Recess",
+      result: "Renegades won by 9 runs",
+    },
+    {
+      when: "Wed, 4 Nov · Lunch",
+      home: "Scorchers",
+      away: "Strikers",
+      ground: "Lunch",
+      result: "",
+    },
+  ],
+  teams: [{ name: "Renegades", players: ["Zach", "Charlie"] }],
+  leaders: {
+    runs: [
+      { name: "Van", value: "30" },
+      { name: "Charlie", value: "22" },
+      { name: "Zach", value: "18" },
+    ],
+  },
+});
+assert.equal(milawaLike?.lastGame?.result, "Renegades won by 9 runs");
+assert.equal(milawaLike?.nextGame?.home, "Scorchers");
+assert.equal(milawaLike?.leaders.runs.length, 3);
+assert.equal(milawaLike?.leaders.runs[1]?.name, "Charlie");
+assert.equal(milawaLike?.leaders.highest[0]?.name, "Van");
+assert.equal(milawaLike?.leaders.wickets[0]?.name, "Zach");
+assert.equal(milawaLike?.teams[0]?.players[0], "Zach");
+assert.equal(milawaLike?.ladder[0]?.percentage, 100);
+assert.equal(formatLadderPercentage(milawaLike?.ladder[0]?.percentage ?? null), "100");
+assert.equal(milawaLike?.ladder[1]?.runsFor, 40);
+assert.equal(milawaLike?.ladder[1]?.runsAgainst, 49);
+assert.equal(milawaLike?.ladder[1]?.percentage, 44.9);
+
+const picked = pickLastAndNext(milawaLike!.draw);
+assert.equal(picked.lastGame?.home, "Renegades");
+assert.equal(picked.nextGame?.home, "Scorchers");
 
 const now = Date.parse("2026-10-19T12:00:00+11:00");
 const todayAt = (minute: number) => Date.parse("2026-10-19T08:00:00+11:00") + minute * 60_000;
