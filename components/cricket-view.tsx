@@ -151,7 +151,7 @@ export function CricketView({
       </header>
 
       {showTopStrip ? (
-        <div className="grid min-h-0 flex-[1.55] grid-cols-2 gap-1.5 overflow-hidden sm:grid-cols-3 xl:grid-cols-6">
+        <div className="grid max-h-[min(38vh,22rem)] min-h-0 shrink-0 grid-cols-2 items-stretch gap-1 overflow-hidden sm:grid-cols-3 xl:grid-cols-6">
           {show.lastNext ? (
             <GameCard
               eyebrow="Last game"
@@ -174,7 +174,7 @@ export function CricketView({
       {showBottom ? (
         <div
           className={cn(
-            "grid min-h-0 flex-[0.7] gap-1.5 overflow-hidden",
+            "grid min-h-0 flex-1 gap-1.5 overflow-hidden",
             show.ladder && show.draw && "lg:grid-cols-[1.2fr_0.8fr]",
           )}
         >
@@ -314,48 +314,102 @@ function GameCard({
   return (
     <section
       className={cn(
-        "flex min-h-0 flex-col overflow-hidden rounded-[18px] border-4 bg-card shadow-[0_5px_0_rgba(42,28,4,0.1)]",
-        compact ? "px-2 py-1.5" : "px-2.5 py-2",
+        "flex min-h-0 flex-col overflow-hidden bg-card",
+        compact
+          ? "rounded-[14px] border-[3px] px-1.5 py-0.5 shadow-none"
+          : "rounded-[18px] border-4 px-2.5 py-2 shadow-[0_5px_0_rgba(42,28,4,0.1)]",
       )}
       style={{ borderColor: tone }}
     >
       <p
-        className="text-[clamp(0.55rem,1vh,0.75rem)] font-extrabold tracking-[0.14em] uppercase"
+        className={cn(
+          "font-extrabold tracking-[0.12em] uppercase",
+          compact ? "text-[clamp(0.45rem,0.85vh,0.65rem)]" : "text-[clamp(0.55rem,1vh,0.75rem)]",
+        )}
         style={{ color: tone }}
       >
         {eyebrow}
       </p>
       {!game ? (
-        <p className="mt-0.5 text-[clamp(0.8rem,1.6vh,1.1rem)] font-bold text-muted-foreground">
+        <p
+          className={cn(
+            "font-bold text-muted-foreground",
+            compact
+              ? "mt-0 text-[clamp(0.65rem,1.2vh,0.9rem)] leading-tight"
+              : "mt-0.5 text-[clamp(0.8rem,1.6vh,1.1rem)]",
+          )}
+        >
           {empty}
         </p>
       ) : (
         <>
-          <p className="mt-0.5 truncate text-[clamp(0.6rem,1.1vh,0.85rem)] font-extrabold text-muted-foreground">
+          <p
+            className={cn(
+              "truncate font-extrabold text-muted-foreground",
+              compact
+                ? "text-[clamp(0.5rem,0.95vh,0.7rem)] leading-tight"
+                : "mt-0.5 text-[clamp(0.6rem,1.1vh,0.85rem)]",
+            )}
+          >
             {fixtureMeta(game.when, game.ground)}
           </p>
-          <p className="font-display text-[clamp(0.95rem,2.1vh,1.55rem)] leading-none">
+          <p
+            className={cn(
+              "font-display leading-none",
+              compact
+                ? "text-[clamp(0.75rem,1.5vh,1.1rem)]"
+                : "text-[clamp(0.95rem,2.1vh,1.55rem)]",
+            )}
+          >
             {cricketMatchTitle(game)}
           </p>
           {scoreLine ? (
-            <p className="mt-0.5 font-display text-[clamp(1rem,2.2vh,1.65rem)] tabular-nums" style={{ color: tone }}>
+            <p
+              className={cn(
+                "font-display tabular-nums",
+                compact
+                  ? "text-[clamp(0.8rem,1.55vh,1.15rem)] leading-none"
+                  : "mt-0.5 text-[clamp(1rem,2.2vh,1.65rem)]",
+              )}
+              style={{ color: tone }}
+            >
               {scoreLine}
             </p>
           ) : null}
           {rfRaLine ? (
-            <p className="mt-0.5 text-[clamp(0.7rem,1.3vh,0.95rem)] font-extrabold text-muted-foreground">
+            <p
+              className={cn(
+                "font-extrabold text-muted-foreground",
+                compact
+                  ? "text-[clamp(0.55rem,1vh,0.75rem)] leading-tight"
+                  : "mt-0.5 text-[clamp(0.7rem,1.3vh,0.95rem)]",
+              )}
+            >
               RF {rfRaLine}
             </p>
           ) : null}
           {game.result ? (
             <p
-              className={`mt-0.5 text-[clamp(0.85rem,1.8vh,1.2rem)] font-extrabold ${resultFirst ? "" : "text-[#5146b8]"}`}
+              className={cn(
+                "font-extrabold leading-tight",
+                compact
+                  ? "text-[clamp(0.65rem,1.25vh,0.9rem)]"
+                  : "mt-0.5 text-[clamp(0.85rem,1.8vh,1.2rem)]",
+                !resultFirst && "text-[#5146b8]",
+              )}
               style={resultFirst ? { color: tone } : undefined}
             >
               {game.result}
             </p>
           ) : resultFirst ? (
-            <p className="mt-0.5 text-[clamp(0.85rem,1.8vh,1.2rem)] font-extrabold text-muted-foreground">
+            <p
+              className={cn(
+                "font-extrabold text-muted-foreground",
+                compact
+                  ? "text-[clamp(0.65rem,1.25vh,0.9rem)] leading-tight"
+                  : "mt-0.5 text-[clamp(0.85rem,1.8vh,1.2rem)]",
+              )}
+            >
               Result not on the board yet
             </p>
           ) : (
@@ -380,46 +434,46 @@ function LeaderCard({
   rows: CricketLeader[];
   compact?: boolean;
 }) {
-  // Top strip keeps eight slots so the board is ready for a full leaderboard.
-  const slotCount = 8;
+  // Top 6, tight type — leaves room for ladder + coming up on the TV.
+  const slotCount = 6;
   const slots = Array.from({ length: slotCount }, (_, index) => rows[index] ?? null);
   return (
     <section
       className={cn(
-        "flex min-h-0 flex-col overflow-hidden rounded-[18px] border-4 bg-card",
-        compact ? "px-1.5 py-1" : "px-2 py-1.5",
+        "flex min-h-0 flex-col overflow-hidden rounded-[14px] border-[3px] bg-card",
+        compact ? "px-1 py-0.5" : "px-2 py-1.5",
       )}
       style={{ borderColor: tone }}
     >
       <p
-        className="shrink-0 text-[clamp(0.5rem,0.95vh,0.7rem)] font-extrabold tracking-[0.12em] uppercase"
+        className="shrink-0 text-[clamp(0.4rem,0.8vh,0.6rem)] font-extrabold tracking-[0.08em] uppercase leading-none"
         style={{ color: tone }}
       >
         {title}
       </p>
-      <ol className="mt-0.5 flex min-h-0 flex-1 flex-col justify-evenly">
+      <ol className="mt-0 flex min-h-0 flex-1 flex-col justify-between">
         {slots.map((row, index) => (
           <li
             key={`${title}-${index}`}
-            className="flex items-baseline justify-between gap-1 border-b border-black/5 py-0 last:border-b-0"
+            className="flex min-h-0 flex-1 items-center justify-between gap-0.5 border-b border-black/5 leading-none last:border-b-0"
           >
             <span
               className={cn(
                 "min-w-0 truncate font-display leading-none",
                 compact
-                  ? "text-[clamp(0.7rem,1.45vh,1.05rem)]"
+                  ? "text-[clamp(0.58rem,1.15vh,0.88rem)]"
                   : "text-[clamp(0.85rem,1.9vh,1.35rem)]",
                 !row && "text-muted-foreground/50",
               )}
             >
-              <span className="mr-1 text-[0.7em] text-muted-foreground tabular-nums">{index + 1}.</span>
+              <span className="mr-0.5 text-[0.65em] text-muted-foreground tabular-nums">{index + 1}.</span>
               {row?.name ?? "—"}
             </span>
             <span
               className={cn(
-                "shrink-0 font-display tabular-nums",
+                "shrink-0 font-display tabular-nums leading-none",
                 compact
-                  ? "text-[clamp(0.75rem,1.55vh,1.1rem)]"
+                  ? "text-[clamp(0.62rem,1.2vh,0.92rem)]"
                   : "text-[clamp(0.9rem,2vh,1.45rem)]",
               )}
             >
