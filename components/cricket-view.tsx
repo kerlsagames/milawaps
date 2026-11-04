@@ -204,37 +204,37 @@ export function CricketView({
                     <span className="py-1 text-right">%</span>
                     <span className="py-1 text-right">Pts</span>
                   </div>
-                  <ul className="flex min-h-0 flex-1 flex-col pb-1">
+                  <ul className="flex min-h-0 flex-1 flex-col justify-start overflow-hidden pb-1">
                     {data.ladder.map((row, index) => (
                       <li
                         key={`${row.team}-${index}`}
-                        className="grid min-h-0 flex-1 grid-cols-[2rem_minmax(0,1.6fr)_repeat(3,2.2rem)_repeat(2,2.8rem)_3rem_3rem] items-center gap-x-1 border-t border-black/10"
+                        className="grid shrink-0 grid-cols-[2rem_minmax(0,1.6fr)_repeat(3,2.2rem)_repeat(2,2.8rem)_3rem_3rem] items-center gap-x-1 border-t border-black/10 py-[clamp(0.35rem,1.1vh,0.7rem)]"
                       >
-                        <span className="font-display text-[clamp(1rem,2.15vh,1.5rem)] tabular-nums leading-none">
+                        <span className="font-display text-[clamp(1.05rem,2.3vh,1.65rem)] tabular-nums leading-none">
                           {index + 1}
                         </span>
-                        <span className="truncate font-display text-[clamp(1rem,2.25vh,1.6rem)] leading-tight">
+                        <span className="truncate font-display text-[clamp(1.05rem,2.4vh,1.75rem)] leading-tight">
                           {row.team}
                         </span>
-                        <span className="text-right text-[clamp(0.9rem,1.9vh,1.3rem)] font-extrabold tabular-nums leading-none">
+                        <span className="text-right text-[clamp(0.95rem,2vh,1.4rem)] font-extrabold tabular-nums leading-none">
                           {row.played}
                         </span>
-                        <span className="text-right text-[clamp(0.9rem,1.9vh,1.3rem)] font-extrabold tabular-nums leading-none">
+                        <span className="text-right text-[clamp(0.95rem,2vh,1.4rem)] font-extrabold tabular-nums leading-none">
                           {row.won}
                         </span>
-                        <span className="text-right text-[clamp(0.9rem,1.9vh,1.3rem)] font-extrabold tabular-nums leading-none">
+                        <span className="text-right text-[clamp(0.95rem,2vh,1.4rem)] font-extrabold tabular-nums leading-none">
                           {row.lost}
                         </span>
-                        <span className="text-right text-[clamp(0.9rem,1.9vh,1.3rem)] font-extrabold tabular-nums leading-none">
+                        <span className="text-right text-[clamp(0.95rem,2vh,1.4rem)] font-extrabold tabular-nums leading-none">
                           {row.runsFor > 0 || row.runsAgainst > 0 ? row.runsFor : "—"}
                         </span>
-                        <span className="text-right text-[clamp(0.9rem,1.9vh,1.3rem)] font-extrabold tabular-nums leading-none">
+                        <span className="text-right text-[clamp(0.95rem,2vh,1.4rem)] font-extrabold tabular-nums leading-none">
                           {row.runsFor > 0 || row.runsAgainst > 0 ? row.runsAgainst : "—"}
                         </span>
-                        <span className="text-right text-[clamp(0.9rem,1.9vh,1.3rem)] font-extrabold tabular-nums leading-none">
+                        <span className="text-right text-[clamp(0.95rem,2vh,1.4rem)] font-extrabold tabular-nums leading-none">
                           {formatLadderPercentage(row.percentage)}
                         </span>
-                        <span className="text-right font-display text-[clamp(1.1rem,2.4vh,1.75rem)] tabular-nums leading-none">
+                        <span className="text-right font-display text-[clamp(1.15rem,2.55vh,1.9rem)] tabular-nums leading-none">
                           {row.points}
                         </span>
                       </li>
@@ -252,12 +252,12 @@ export function CricketView({
               {upcoming.length === 0 ? (
                 <p className="mt-2 text-sm font-bold text-muted-foreground">No games left on the draw.</p>
               ) : (
-                <ul className="mt-1.5 flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
+                <ul className="mt-1.5 flex min-h-0 flex-1 flex-col justify-start gap-2.5 overflow-hidden">
                   {upcoming.map((game, index) => (
                     <li
                       key={`${game.home}-${game.away}-${index}`}
                       className={cn(
-                        "flex min-h-0 flex-1 flex-col justify-center rounded-xl px-3 py-3",
+                        "shrink-0 rounded-xl px-3 py-3",
                         index === 0 ? "bg-[#efe9ff] ring-2 ring-[#5146b8]/35" : "bg-[#f6f3ff]",
                       )}
                     >
