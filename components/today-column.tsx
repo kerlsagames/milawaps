@@ -92,8 +92,8 @@ export function TodayColumn({
         "flex min-h-0 flex-col gap-2 bg-[#fffdf8] px-3",
         variant === "kiosk" &&
           cn(
-            "w-[min(24rem,46vw)] shrink-0 border-l-4 border-[#e2a01a] pt-4",
-            prefs.timer === "blocks" ? "pb-16" : "pb-28",
+            "w-[min(24rem,46vw)] shrink-0 border-l-4 border-[#e2a01a] pt-12",
+            prefs.timer === "blocks" ? "pb-16" : "pb-36",
           ),
         // Phones: hide sidebar so the leaderboard gets the full screen.
         // Desktop (lg+): keep the sidebar beside the board.

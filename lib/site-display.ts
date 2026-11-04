@@ -169,9 +169,19 @@ export function sanitizeCricketTeamsMode(raw: unknown): CricketTeamsMode {
 export const CRICKET_STATS_SCOPES = ["all", "56", "234", "f1", "rotate"] as const;
 export type CricketStatsScope = (typeof CRICKET_STATS_SCOPES)[number];
 
+/** Year bands (plus whole school) that can sit in a Cricket 2 rotate playlist. */
+export const CRICKET_STATS_BANDS = ["all", "56", "234", "f1"] as const;
+export type CricketStatsBand = (typeof CRICKET_STATS_BANDS)[number];
+
 export const CRICKET_STATS_ROTATE_MIN = 5;
 export const CRICKET_STATS_ROTATE_MAX = 60;
 export const DEFAULT_CRICKET_STATS_ROTATE_SEC = 10;
+export const DEFAULT_CRICKET_STATS_ROTATE_SCOPES: CricketStatsBand[] = [
+  "all",
+  "56",
+  "234",
+  "f1",
+];
 
 export function sanitizeCricketStatsScope(raw: unknown): CricketStatsScope {
   return CRICKET_STATS_SCOPES.includes(raw as CricketStatsScope)
@@ -186,6 +196,19 @@ export function sanitizeCricketStatsRotateSec(raw: unknown): number {
     CRICKET_STATS_ROTATE_MIN,
     Math.min(CRICKET_STATS_ROTATE_MAX, Math.round(number)),
   );
+}
+
+/** Keep a stable band order; always leave at least one band in the playlist. */
+export function sanitizeCricketStatsRotateScopes(raw: unknown): CricketStatsBand[] {
+  if (!Array.isArray(raw)) return [...DEFAULT_CRICKET_STATS_ROTATE_SCOPES];
+  const picked = new Set<CricketStatsBand>();
+  for (const item of raw) {
+    if (CRICKET_STATS_BANDS.includes(item as CricketStatsBand)) {
+      picked.add(item as CricketStatsBand);
+    }
+  }
+  const ordered = CRICKET_STATS_BANDS.filter((band) => picked.has(band));
+  return ordered.length > 0 ? ordered : [...DEFAULT_CRICKET_STATS_ROTATE_SCOPES];
 }
 
 export function cricketStatsScopeLabel(scope: Exclude<CricketStatsScope, "rotate"> | "all") {
@@ -232,6 +255,8 @@ export type SiteDisplay = {
   cricketStatsScope: CricketStatsScope;
   /** Seconds between year-level rotations when scope is rotate. */
   cricketStatsRotateSec: number;
+  /** Which bands cycle when cricketStatsScope is rotate. */
+  cricketStatsRotateScopes: CricketStatsBand[];
   /** Shared prize-path finish countdown (ms since epoch), or null if unset. */
   finishAt: number | null;
   /**
@@ -257,6 +282,7 @@ export function emptySiteDisplay(): SiteDisplay {
     cricketTeamsMode: "all",
     cricketStatsScope: "all",
     cricketStatsRotateSec: DEFAULT_CRICKET_STATS_ROTATE_SEC,
+    cricketStatsRotateScopes: [...DEFAULT_CRICKET_STATS_ROTATE_SCOPES],
     finishAt: null,
     dwells: null,
     reveals: null,
@@ -300,6 +326,7 @@ export function sanitizeSiteDisplay(raw: unknown): SiteDisplay {
     cricketTeamsMode?: unknown;
     cricketStatsScope?: unknown;
     cricketStatsRotateSec?: unknown;
+    cricketStatsRotateScopes?: unknown;
     finishAt?: unknown;
     dwells?: unknown;
     reveals?: unknown;
@@ -336,6 +363,7 @@ export function sanitizeSiteDisplay(raw: unknown): SiteDisplay {
     cricketTeamsMode: sanitizeCricketTeamsMode(record.cricketTeamsMode),
     cricketStatsScope: sanitizeCricketStatsScope(record.cricketStatsScope),
     cricketStatsRotateSec: sanitizeCricketStatsRotateSec(record.cricketStatsRotateSec),
+    cricketStatsRotateScopes: sanitizeCricketStatsRotateScopes(record.cricketStatsRotateScopes),
     finishAt: sanitizeFinishAt(record.finishAt),
     dwells,
     reveals,
@@ -354,6 +382,7 @@ export function siteDisplayFromInput(raw: unknown, current: SiteDisplay): SiteDi
     cricketTeamsMode?: unknown;
     cricketStatsScope?: unknown;
     cricketStatsRotateSec?: unknown;
+    cricketStatsRotateScopes?: unknown;
     finishAt?: unknown;
     dwells?: unknown;
     reveals?: unknown;
@@ -366,6 +395,7 @@ export function siteDisplayFromInput(raw: unknown, current: SiteDisplay): SiteDi
   let cricketTeamsMode = current.cricketTeamsMode;
   let cricketStatsScope = current.cricketStatsScope;
   let cricketStatsRotateSec = current.cricketStatsRotateSec;
+  let cricketStatsRotateScopes = current.cricketStatsRotateScopes;
   let finishAt = current.finishAt;
   let dwells = current.dwells;
   let reveals = current.reveals;
@@ -397,6 +427,9 @@ export function siteDisplayFromInput(raw: unknown, current: SiteDisplay): SiteDi
   }
   if (record.cricketStatsRotateSec !== undefined) {
     cricketStatsRotateSec = sanitizeCricketStatsRotateSec(record.cricketStatsRotateSec);
+  }
+  if (record.cricketStatsRotateScopes !== undefined) {
+    cricketStatsRotateScopes = sanitizeCricketStatsRotateScopes(record.cricketStatsRotateScopes);
   }
   if ("finishAt" in record) {
     finishAt = sanitizeFinishAt(record.finishAt);
@@ -438,6 +471,7 @@ export function siteDisplayFromInput(raw: unknown, current: SiteDisplay): SiteDi
     cricketTeamsMode,
     cricketStatsScope,
     cricketStatsRotateSec,
+    cricketStatsRotateScopes,
     finishAt,
     dwells,
     reveals,

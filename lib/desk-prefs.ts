@@ -18,13 +18,16 @@ import {
   clampDwell,
   dwellsForEveryScreen,
   DEFAULT_CRICKET_STATS_ROTATE_SEC,
+  DEFAULT_CRICKET_STATS_ROTATE_SCOPES,
   sanitizeCricketRosters,
+  sanitizeCricketStatsRotateScopes,
   sanitizeCricketStatsRotateSec,
   sanitizeCricketStatsScope,
   sanitizeCricketTeamsMode,
   sanitizeDwells,
   type CricketPanels,
   type CricketRosters,
+  type CricketStatsBand,
   type CricketStatsScope,
   type CricketTeamsMode,
   type DwellMap,
@@ -75,6 +78,7 @@ export type DeskPrefs = {
   cricketTeamsMode: CricketTeamsMode;
   cricketStatsScope: CricketStatsScope;
   cricketStatsRotateSec: number;
+  cricketStatsRotateScopes: CricketStatsBand[];
 };
 
 function defaultReveals(): RevealMap {
@@ -115,6 +119,7 @@ const serverPrefs: DeskPrefs = {
   cricketTeamsMode: "all",
   cricketStatsScope: "all",
   cricketStatsRotateSec: DEFAULT_CRICKET_STATS_ROTATE_SEC,
+  cricketStatsRotateScopes: [...DEFAULT_CRICKET_STATS_ROTATE_SCOPES],
 };
 
 let current: DeskPrefs = serverPrefs;
@@ -225,6 +230,16 @@ function readCricketStatsScope(): CricketStatsScope {
   return sanitizeCricketStatsScope(window.localStorage.getItem("ott-cricket-stats-scope"));
 }
 
+function readCricketStatsRotateScopes(): CricketStatsBand[] {
+  try {
+    const raw = window.localStorage.getItem("ott-cricket-stats-rotate-scopes");
+    if (!raw) return [...DEFAULT_CRICKET_STATS_ROTATE_SCOPES];
+    return sanitizeCricketStatsRotateScopes(JSON.parse(raw) as unknown);
+  } catch {
+    return [...DEFAULT_CRICKET_STATS_ROTATE_SCOPES];
+  }
+}
+
 function readCricketStatsRotateSec(): number {
   return sanitizeCricketStatsRotateSec(window.localStorage.getItem("ott-cricket-stats-rotate"));
 }
@@ -286,6 +301,7 @@ function readPrefs(): DeskPrefs {
     cricketTeamsMode: readCricketTeamsMode(),
     cricketStatsScope: readCricketStatsScope(),
     cricketStatsRotateSec: readCricketStatsRotateSec(),
+    cricketStatsRotateScopes: readCricketStatsRotateScopes(),
   };
 }
 
@@ -384,6 +400,12 @@ export function setCricketStatsRotateSecLocal(seconds: number) {
   publish({ ...readPrefs(), cricketStatsRotateSec: next });
 }
 
+export function setCricketStatsRotateScopesLocal(scopes: CricketStatsBand[]) {
+  const next = sanitizeCricketStatsRotateScopes(scopes);
+  window.localStorage.setItem("ott-cricket-stats-rotate-scopes", JSON.stringify(next));
+  publish({ ...readPrefs(), cricketStatsRotateScopes: next });
+}
+
 /** Apply shared TV display settings from the server board (every visitor). */
 export function hydrateDisplay(
   shown: ShownMap,
@@ -395,6 +417,7 @@ export function hydrateDisplay(
     cricketTeamsMode?: CricketTeamsMode;
     cricketStatsScope?: CricketStatsScope;
     cricketStatsRotateSec?: number;
+    cricketStatsRotateScopes?: CricketStatsBand[];
     finishAt?: number | null;
     dwells?: DwellMap | null;
     reveals?: SharedRevealMap | null;
@@ -425,6 +448,12 @@ export function hydrateDisplay(
       String(sanitizeCricketStatsRotateSec(extras.cricketStatsRotateSec)),
     );
   }
+  if (extras?.cricketStatsRotateScopes) {
+    window.localStorage.setItem(
+      "ott-cricket-stats-rotate-scopes",
+      JSON.stringify(sanitizeCricketStatsRotateScopes(extras.cricketStatsRotateScopes)),
+    );
+  }
   if (extras && "finishAt" in extras) {
     if (extras.finishAt == null || !Number.isFinite(extras.finishAt)) {
       window.localStorage.removeItem("ott-finish-at");
@@ -448,6 +477,8 @@ export function hydrateDisplay(
     cricketTeamsMode: extras?.cricketTeamsMode ?? readCricketTeamsMode(),
     cricketStatsScope: extras?.cricketStatsScope ?? readCricketStatsScope(),
     cricketStatsRotateSec: extras?.cricketStatsRotateSec ?? readCricketStatsRotateSec(),
+    cricketStatsRotateScopes:
+      extras?.cricketStatsRotateScopes ?? readCricketStatsRotateScopes(),
     finishAt: extras && "finishAt" in extras ? (extras.finishAt ?? null) : readFinish(),
     dwells: extras?.dwells ?? readDwells(),
     reveals: extras?.reveals ?? readReveals(),
@@ -465,6 +496,7 @@ export async function saveSiteDisplay(
     cricketTeamsMode?: CricketTeamsMode;
     cricketStatsScope?: CricketStatsScope;
     cricketStatsRotateSec?: number;
+    cricketStatsRotateScopes?: CricketStatsBand[];
     finishAt?: number | null;
     dwells?: Partial<DwellMap>;
     reveals?: SharedRevealMap;
@@ -493,6 +525,7 @@ export async function saveSiteDisplay(
       cricketTeamsMode: body.cricketTeamsMode,
       cricketStatsScope: body.cricketStatsScope,
       cricketStatsRotateSec: body.cricketStatsRotateSec,
+      cricketStatsRotateScopes: body.cricketStatsRotateScopes,
       finishAt: body.finishAt,
       dwells: body.dwells,
       reveals: body.reveals,

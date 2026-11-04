@@ -21,6 +21,7 @@ assert.deepEqual(empty.cricketRosters, {});
 assert.equal(empty.cricketTeamsMode, "all");
 assert.equal(empty.cricketStatsScope, "all");
 assert.equal(empty.cricketStatsRotateSec, 10);
+assert.deepEqual(empty.cricketStatsRotateScopes, ["all", "56", "234", "f1"]);
 assert.equal(empty.finishAt, null);
 assert.equal(empty.dwells, null);
 assert.equal(empty.reveals, null);
@@ -46,13 +47,26 @@ assert.equal(withTeams.cricketTeamsMode, "next");
 assert.equal(siteDisplayFromInput({ cricketTeamsMode: "nope" }, withTeams).cricketTeamsMode, "all");
 assert.equal(sanitizeSiteDisplay({ cricketCode: "x" }).cricketTeamsMode, "all");
 const withStats = siteDisplayFromInput(
-  { cricketStatsScope: "rotate", cricketStatsRotateSec: 12 },
+  {
+    cricketStatsScope: "rotate",
+    cricketStatsRotateSec: 12,
+    cricketStatsRotateScopes: ["f1", "234"],
+  },
   withTeams,
 );
 assert.equal(withStats.cricketStatsScope, "rotate");
 assert.equal(withStats.cricketStatsRotateSec, 12);
+assert.deepEqual(withStats.cricketStatsRotateScopes, ["234", "f1"]);
 assert.equal(siteDisplayFromInput({ cricketStatsScope: "56" }, withStats).cricketStatsScope, "56");
 assert.equal(sanitizeSiteDisplay({ cricketStatsRotateSec: 99 }).cricketStatsRotateSec, 60);
+assert.deepEqual(
+  sanitizeSiteDisplay({ cricketStatsRotateScopes: ["f1", "nope", "f1", "56"] }).cricketStatsRotateScopes,
+  ["56", "f1"],
+);
+assert.deepEqual(
+  sanitizeSiteDisplay({ cricketStatsRotateScopes: [] }).cricketStatsRotateScopes,
+  ["all", "56", "234", "f1"],
+);
 
 const hideNews = siteDisplayFromInput({ shown: { news: true, highlight: true } }, withTeams);
 assert.equal(hideNews.shown.news, true);

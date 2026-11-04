@@ -84,6 +84,9 @@ export function YardBoard() {
   const cricketStatsRotateSec = data?.displayUpdatedAt
     ? (data.cricketStatsRotateSec ?? prefs.cricketStatsRotateSec)
     : prefs.cricketStatsRotateSec;
+  const cricketStatsRotateScopes = data?.displayUpdatedAt
+    ? (data.cricketStatsRotateScopes ?? prefs.cricketStatsRotateScopes)
+    : prefs.cricketStatsRotateScopes;
   const dwellsRef = useRef(dwells);
   dwellsRef.current = dwells;
   const liveHighlights = useMemo(
@@ -107,7 +110,7 @@ export function YardBoard() {
   const [reasonPrompt, setReasonPrompt] = useState<{ id: string; line: string } | null>(null);
 
   const displaySyncKey = data?.displayUpdatedAt
-    ? `${data.displayUpdatedAt}:${data.cricketCode}:${JSON.stringify(data.shown)}:${data.newsLayout}:${JSON.stringify(data.cricketPanels)}:${JSON.stringify(data.cricketRosters)}:${data.cricketTeamsMode}:${data.cricketStatsScope}:${data.cricketStatsRotateSec}:${data.finishAt ?? ""}:${JSON.stringify(data.dwells)}:${JSON.stringify(data.reveals)}`
+    ? `${data.displayUpdatedAt}:${data.cricketCode}:${JSON.stringify(data.shown)}:${data.newsLayout}:${JSON.stringify(data.cricketPanels)}:${JSON.stringify(data.cricketRosters)}:${data.cricketTeamsMode}:${data.cricketStatsScope}:${data.cricketStatsRotateSec}:${JSON.stringify(data.cricketStatsRotateScopes)}:${data.finishAt ?? ""}:${JSON.stringify(data.dwells)}:${JSON.stringify(data.reveals)}`
     : "";
   useEffect(() => {
     if (!data?.displayUpdatedAt) return;
@@ -118,6 +121,7 @@ export function YardBoard() {
       cricketTeamsMode: data.cricketTeamsMode,
       cricketStatsScope: data.cricketStatsScope,
       cricketStatsRotateSec: data.cricketStatsRotateSec,
+      cricketStatsRotateScopes: data.cricketStatsRotateScopes,
       finishAt: data.finishAt,
       dwells: data.dwells,
       reveals: data.reveals,
@@ -576,6 +580,47 @@ export function YardBoard() {
     [score, token],
   );
 
+  const removeActiveHighlight = useCallback(() => {
+    if (!token || removingHighlight || !activeHighlight) return;
+    setRemovingHighlight(true);
+    setDeskError(null);
+    void fetch("/api/highlight", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ id: activeHighlight.id }),
+    })
+      .then(async (response) => {
+        const body = (await response.json().catch(() => ({}))) as PublicBoard & {
+          error?: string;
+        };
+        if (response.status === 401) {
+          clearToken();
+          setPinOpen(true);
+          setDeskError("The desk locked itself. Enter the PIN again.");
+          return;
+        }
+        if (!response.ok) {
+          setDeskError(body.error ?? "That highlight did not remove.");
+          return;
+        }
+        await mutate(body, { revalidate: false });
+        const remaining = activeHighlights(body.highlights ?? []).filter(
+          (entry) => entry.id !== activeHighlight.id,
+        );
+        if (remaining[0]) goToScreen(highlightScreenId(remaining[0].id));
+        else goToScreen("board");
+      })
+      .catch(() => {
+        setDeskError("That highlight did not remove. Try again.");
+      })
+      .finally(() => {
+        setRemovingHighlight(false);
+      });
+  }, [activeHighlight, goToScreen, mutate, removingHighlight, token]);
+
   return (
     <div
       id="kiosk-root"
@@ -725,9 +770,14 @@ export function YardBoard() {
             view === "news" ||
             Boolean(activeHighlightId)) &&
             "max-w-none",
-          kiosk && (prefs.timer === "blocks" ? "pt-16 pb-16" : "pt-16 pb-28"),
         )}
       >
+        {/*
+          Kiosk timer is fixed over the viewport. Absolute/h-full pages ignore
+          padding, so use flex spacers that shrink the stage instead.
+        */}
+        {kiosk ? <div className="h-12 shrink-0" aria-hidden="true" /> : null}
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
         {error && !data && (
           <section className="rounded-[28px] border border-[#c23b3b]/30 bg-card px-5 py-8 text-center">
             <h2 className="font-display text-3xl">The board is out of reach</h2>
@@ -801,9 +851,10 @@ export function YardBoard() {
                   panels={prefs.cricketPanels}
                   statsScope={cricketStatsScope}
                   statsRotateSec={cricketStatsRotateSec}
+                  statsRotateScopes={cricketStatsRotateScopes}
                 />
               ) : view === "news" ? (
-                // Laptop desk: nudge Daily News / Reminders slightly smaller so they keep shape.
+                // Laptop desk: lay out larger then scale down so Reminders / Coming up keep shape.
                 kiosk ? (
                   <NewsView news={data.news ?? emptyNews()} layout={prefs.newsLayout} />
                 ) : (
@@ -813,63 +864,43 @@ export function YardBoard() {
                 )
               ) : activeHighlight ? (
                 // Absolute fill — percentage height alone still let portraits grow past the TV.
+                // Laptop desk: same shrink as News/Prizes so the “why they shone” copy fits.
                 <div className="absolute inset-0 min-h-0 overflow-hidden">
-                  <HighlightView
-                    entry={activeHighlight}
-                    index={Math.max(
-                      0,
-                      liveHighlights.findIndex((entry) => entry.id === activeHighlight.id),
-                    )}
-                    total={liveHighlights.length}
-                    onPrev={liveHighlights.length > 1 ? () => stepHighlight(-1) : undefined}
-                    onNext={liveHighlights.length > 1 ? () => stepHighlight(1) : undefined}
-                    canRemove={Boolean(token) && !kiosk}
-                    removing={removingHighlight}
-                    onRemove={() => {
-                      if (!token || removingHighlight) return;
-                      setRemovingHighlight(true);
-                      setDeskError(null);
-                      void fetch("/api/highlight", {
-                        method: "DELETE",
-                        headers: {
-                          "Content-Type": "application/json",
-                          Authorization: `Bearer ${token}`,
-                        },
-                        body: JSON.stringify({ id: activeHighlight.id }),
-                      })
-                        .then(async (response) => {
-                          const body = (await response.json().catch(() => ({}))) as PublicBoard & {
-                            error?: string;
-                          };
-                          if (response.status === 401) {
-                            clearToken();
-                            setPinOpen(true);
-                            setDeskError("The desk locked itself. Enter the PIN again.");
-                            return;
-                          }
-                          if (!response.ok) {
-                            setDeskError(body.error ?? "That highlight did not remove.");
-                            return;
-                          }
-                          await mutate(body, { revalidate: false });
-                          const remaining = activeHighlights(body.highlights ?? []).filter(
-                            (entry) => entry.id !== activeHighlight.id,
-                          );
-                          if (remaining[0]) goToScreen(highlightScreenId(remaining[0].id));
-                          else goToScreen("board");
-                        })
-                        .catch(() => {
-                          setDeskError("That highlight did not remove. Try again.");
-                        })
-                        .finally(() => {
-                          setRemovingHighlight(false);
-                        });
-                    }}
-                  />
+                  {kiosk ? (
+                    <HighlightView
+                      entry={activeHighlight}
+                      index={Math.max(
+                        0,
+                        liveHighlights.findIndex((entry) => entry.id === activeHighlight.id),
+                      )}
+                      total={liveHighlights.length}
+                      onPrev={liveHighlights.length > 1 ? () => stepHighlight(-1) : undefined}
+                      onNext={liveHighlights.length > 1 ? () => stepHighlight(1) : undefined}
+                      canRemove={Boolean(token) && !kiosk}
+                      removing={removingHighlight}
+                      onRemove={removeActiveHighlight}
+                    />
+                  ) : (
+                    <LaptopShrink>
+                      <HighlightView
+                        entry={activeHighlight}
+                        index={Math.max(
+                          0,
+                          liveHighlights.findIndex((entry) => entry.id === activeHighlight.id),
+                        )}
+                        total={liveHighlights.length}
+                        onPrev={liveHighlights.length > 1 ? () => stepHighlight(-1) : undefined}
+                        onNext={liveHighlights.length > 1 ? () => stepHighlight(1) : undefined}
+                        canRemove={Boolean(token) && !kiosk}
+                        removing={removingHighlight}
+                        onRemove={removeActiveHighlight}
+                      />
+                    </LaptopShrink>
+                  )}
                 </div>
               ) : (
                 // TV kiosk scales to fit. Teacher homepage board stays natural beside Latest
-                // Feed; prize path / yard / reveals shrink a touch on laptop so they are not
+                // Feed; prize path / yard / reveals shrink on laptop so they are not
                 // squashed under the desk chrome.
                 <DeskFit
                   kiosk={kiosk}
@@ -969,6 +1000,13 @@ export function YardBoard() {
         <p className="sr-only" aria-live="polite">
           {data?.lastAction ? actionLabel(data.lastAction) : "Waiting for the first tick."}
         </p>
+        </div>
+        {kiosk ? (
+          <div
+            className={cn("shrink-0", prefs.timer === "blocks" ? "h-16" : "h-36")}
+            aria-hidden="true"
+          />
+        ) : null}
       </main>
       {view === "board" ? (
         <TodayColumn board={data} live={live} variant={kiosk ? "kiosk" : "board"} />
@@ -1087,14 +1125,55 @@ function DeskFit({
 }
 
 /**
- * Short laptop screens squash full-bleed pages under the site header. Give the
- * page ~12% more layout room, then scale back so circles/type stay proportional.
- * Phones keep a natural stacked layout (no scale).
+ * Short laptop screens squash full-bleed pages under the site header. Grow the
+ * layout stage toward ~920px of room, then scale back so circles/type stay
+ * proportional. Tall desktops stay 1:1. Phones keep a natural stacked layout.
  */
 function LaptopShrink({ children }: { children: ReactNode }) {
+  const frame = useRef<HTMLDivElement>(null);
+  const [boost, setBoost] = useState(1);
+
+  useEffect(() => {
+    const frameEl = frame.current;
+    if (!frameEl) return;
+    const update = () => {
+      const wide = window.matchMedia("(min-width: 1024px)").matches;
+      if (!wide) {
+        setBoost(1);
+        return;
+      }
+      const height = frameEl.clientHeight;
+      // Comfortable stage height for News / Prizes / Highlights composition.
+      const target = 920;
+      const next =
+        height > 0 && height < target ? Math.min(1.38, Math.max(1, target / height)) : 1;
+      setBoost((prev) => (Math.abs(prev - next) < 0.01 ? prev : next));
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(frameEl);
+    window.addEventListener("resize", update);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
+  const scale = 1 / boost;
   return (
-    <div className="box-border h-full min-h-0 overflow-hidden p-1.5 sm:p-2 lg:p-2.5">
-      <div className="h-full w-full lg:h-[112.5%] lg:w-[112.5%] lg:origin-top-left lg:scale-[0.89]">
+    <div ref={frame} className="box-border h-full min-h-0 overflow-hidden p-1.5 sm:p-2 lg:p-2.5">
+      <div
+        className="h-full w-full origin-top-left"
+        style={
+          boost > 1
+            ? {
+                height: `${boost * 100}%`,
+                width: `${boost * 100}%`,
+                transform: `scale(${scale})`,
+              }
+            : undefined
+        }
+      >
         {children}
       </div>
     </div>

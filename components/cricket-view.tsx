@@ -15,7 +15,10 @@ import {
 import {
   cricketStatsScopeLabel,
   DEFAULT_CRICKET_PANELS,
+  DEFAULT_CRICKET_STATS_ROTATE_SCOPES,
+  sanitizeCricketStatsRotateScopes,
   type CricketPanels,
+  type CricketStatsBand,
   type CricketStatsScope,
 } from "@/lib/site-display";
 import { STUDENTS } from "@/lib/students";
@@ -42,22 +45,26 @@ const LEADER_BOXES: { key: keyof CricketLeaders; title: string; tone: string }[]
   { key: "runOuts", title: "Most run outs", tone: "#c48a16" },
 ];
 
-const ROTATE_SCOPES = ["all", "56", "234", "f1"] as const;
-
 export function CricketView({
   code,
   fill = false,
   panels = DEFAULT_CRICKET_PANELS,
   statsScope = "all",
   statsRotateSec = 10,
+  statsRotateScopes = DEFAULT_CRICKET_STATS_ROTATE_SCOPES,
 }: {
   code: string;
   fill?: boolean;
   panels?: CricketPanels;
   statsScope?: CricketStatsScope;
   statsRotateSec?: number;
+  statsRotateScopes?: CricketStatsBand[];
 }) {
   const show = { ...DEFAULT_CRICKET_PANELS, ...panels };
+  const rotatePlaylist = useMemo(
+    () => sanitizeCricketStatsRotateScopes(statsRotateScopes),
+    [statsRotateScopes],
+  );
   const [rotateIndex, setRotateIndex] = useState(0);
   // Poll faster while a live game is on so scores/stats track Jimmy ball-by-ball.
   const [refreshMs, setRefreshMs] = useState(15_000);
@@ -72,15 +79,22 @@ export function CricketView({
   }, [data?.liveGame]);
 
   useEffect(() => {
+    setRotateIndex((index) => index % Math.max(1, rotatePlaylist.length));
+  }, [rotatePlaylist]);
+
+  useEffect(() => {
     if (statsScope !== "rotate") return;
     const ms = Math.max(5, statsRotateSec) * 1000;
     const timer = window.setInterval(() => {
-      setRotateIndex((index) => (index + 1) % ROTATE_SCOPES.length);
+      setRotateIndex((index) => (index + 1) % Math.max(1, rotatePlaylist.length));
     }, ms);
     return () => window.clearInterval(timer);
-  }, [statsScope, statsRotateSec]);
+  }, [statsScope, statsRotateSec, rotatePlaylist]);
 
-  const activeScope = statsScope === "rotate" ? ROTATE_SCOPES[rotateIndex]! : statsScope;
+  const activeScope =
+    statsScope === "rotate"
+      ? (rotatePlaylist[rotateIndex % rotatePlaylist.length] ?? "all")
+      : statsScope;
   const leaders = useMemo(() => {
     if (!data) return null;
     return filterCricketLeaders(data.leaders, activeScope, STUDENTS);
@@ -486,7 +500,7 @@ function LeaderCard({
       style={{ borderColor: tone }}
     >
       <p
-        className="shrink-0 truncate text-[clamp(0.58rem,1.2vh,0.85rem)] font-extrabold tracking-[0.06em] uppercase leading-tight"
+        className="shrink-0 truncate text-[clamp(0.85rem,1.85vh,1.25rem)] font-extrabold tracking-[0.04em] uppercase leading-tight"
         style={{ color: tone }}
         title={title}
       >

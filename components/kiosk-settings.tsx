@@ -30,6 +30,7 @@ import {
   saveSiteDisplay,
   setCricketPanelsLocal,
   setCricketRostersLocal,
+  setCricketStatsRotateScopesLocal,
   setCricketStatsRotateSecLocal,
   setCricketStatsScopeLocal,
   setCricketTeamsModeLocal,
@@ -51,6 +52,7 @@ import { emptyNews, type DailyNews } from "@/lib/news";
 import { compressPrizeImage } from "@/lib/prize-image";
 import { prizeIsPublic, REVEALS, type FixedScreenId, type ScreenId } from "@/lib/reveals";
 import {
+  CRICKET_STATS_BANDS,
   CRICKET_STATS_ROTATE_MAX,
   CRICKET_STATS_ROTATE_MIN,
   NEWS_LAYOUTS,
@@ -58,6 +60,7 @@ import {
   sanitizeCricketRosters,
   type CricketPanels,
   type CricketRosters,
+  type CricketStatsBand,
   type CricketStatsScope,
   type CricketTeamsMode,
   type NewsLayoutId,
@@ -177,6 +180,7 @@ export function KioskSettings({
       cricketTeamsMode?: CricketTeamsMode;
       cricketStatsScope?: CricketStatsScope;
       cricketStatsRotateSec?: number;
+      cricketStatsRotateScopes?: CricketStatsBand[];
       finishAt?: number | null;
       dwells?: Partial<Record<FixedScreenId, number>>;
       reveals?: import("@/lib/desk-prefs").RevealMap;
@@ -558,6 +562,7 @@ export function KioskSettings({
               teamsMode={prefs.cricketTeamsMode}
               statsScope={prefs.cricketStatsScope}
               statsRotateSec={prefs.cricketStatsRotateSec}
+              statsRotateScopes={prefs.cricketStatsRotateScopes}
               onShownTeams={(next) => void saveShown("cricket-teams", next)}
               onShownLadder={(next) => void saveShown("cricket", next)}
               onDraftCode={setDraftCricket}
@@ -617,6 +622,17 @@ export function KioskSettings({
                   `Cricket 2 stats rotate every ${seconds}s on every TV.`,
                 ).then((ok) => {
                   if (ok === false) setCricketStatsRotateSecLocal(previous);
+                });
+              }}
+              onStatsRotateScopes={(scopes) => {
+                const previous = prefs.cricketStatsRotateScopes;
+                setCricketStatsRotateScopesLocal(scopes);
+                const labels = scopes.map((scope) => cricketStatsScopeLabel(scope)).join(", ");
+                void patchDisplay(
+                  { cricketStatsRotateScopes: scopes },
+                  `Cricket 2 rotate playlist: ${labels}.`,
+                ).then((ok) => {
+                  if (ok === false) setCricketStatsRotateScopesLocal(previous);
                 });
               }}
               onPreviewTeams={() => {
@@ -1079,6 +1095,7 @@ function CricketPagePanel({
   teamsMode,
   statsScope,
   statsRotateSec,
+  statsRotateScopes,
   onShownTeams,
   onShownLadder,
   onDraftCode,
@@ -1088,6 +1105,7 @@ function CricketPagePanel({
   onTeamsMode,
   onStatsScope,
   onStatsRotateSec,
+  onStatsRotateScopes,
   onPreviewTeams,
   onPreviewLadder,
 }: {
@@ -1102,6 +1120,7 @@ function CricketPagePanel({
   teamsMode: CricketTeamsMode;
   statsScope: CricketStatsScope;
   statsRotateSec: number;
+  statsRotateScopes: CricketStatsBand[];
   onShownTeams: (next: boolean) => void;
   onShownLadder: (next: boolean) => void;
   onDraftCode: (value: string) => void;
@@ -1111,6 +1130,7 @@ function CricketPagePanel({
   onTeamsMode: (mode: CricketTeamsMode) => void;
   onStatsScope: (scope: CricketStatsScope) => void;
   onStatsRotateSec: (seconds: number) => void;
+  onStatsRotateScopes: (scopes: CricketStatsBand[]) => void;
   onPreviewTeams: () => void;
   onPreviewLadder: () => void;
 }) {
@@ -1189,7 +1209,7 @@ function CricketPagePanel({
       ) : (
         <p className="text-xs font-semibold text-muted-foreground">
           {draftCode
-            ? `Cricket 1 ${shownTeams ? "on" : "off"} (${teamsMode === "next" ? "next game" : "all teams"}) · Cricket 2 ${shownLadder ? "on" : "off"} (stats ${statsScope === "rotate" ? `rotate ${statsRotateSec}s` : cricketStatsScopeLabel(statsScope)}).`
+            ? `Cricket 1 ${shownTeams ? "on" : "off"} (${teamsMode === "next" ? "next game" : "all teams"}) · Cricket 2 ${shownLadder ? "on" : "off"} (stats ${statsScope === "rotate" ? `rotate ${statsRotateScopes.map((scope) => cricketStatsScopeLabel(scope)).join("/") } every ${statsRotateSec}s` : cricketStatsScopeLabel(statsScope)}).`
             : "Ask an admin to paste the Jimmy cricket code."}
         </p>
       )}
@@ -1277,25 +1297,49 @@ function CricketPagePanel({
             </label>
           ))}
           {statsScope === "rotate" ? (
-            <label className="grid gap-1 pt-1">
-              <span className="text-sm font-bold">
-                Rotate every {statsRotateSec}s ({CRICKET_STATS_ROTATE_MIN}–{CRICKET_STATS_ROTATE_MAX})
-              </span>
-              <input
-                type="range"
-                min={CRICKET_STATS_ROTATE_MIN}
-                max={CRICKET_STATS_ROTATE_MAX}
-                step={1}
-                value={statsRotateSec}
-                onChange={(event) => onStatsRotateSec(Number(event.target.value))}
-                className="w-full accent-[#0d7a64]"
-              />
-            </label>
+            <div className="grid gap-2 rounded-xl border border-[#0d7a64]/20 bg-white/70 p-2.5">
+              <p className="text-sm font-bold">Rotate through</p>
+              {CRICKET_STATS_BANDS.map((band) => {
+                const checked = statsRotateScopes.includes(band);
+                const alone = checked && statsRotateScopes.length === 1;
+                return (
+                  <label key={band} className="flex items-center gap-2 text-sm font-bold">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      disabled={alone}
+                      onChange={(event) => {
+                        const next = event.target.checked
+                          ? [...statsRotateScopes, band]
+                          : statsRotateScopes.filter((item) => item !== band);
+                        onStatsRotateScopes(next);
+                      }}
+                      className="size-5 accent-[#0d7a64]"
+                    />
+                    {cricketStatsScopeLabel(band)}
+                  </label>
+                );
+              })}
+              <label className="grid gap-1 pt-1">
+                <span className="text-sm font-bold">
+                  Rotate every {statsRotateSec}s ({CRICKET_STATS_ROTATE_MIN}–{CRICKET_STATS_ROTATE_MAX})
+                </span>
+                <input
+                  type="range"
+                  min={CRICKET_STATS_ROTATE_MIN}
+                  max={CRICKET_STATS_ROTATE_MAX}
+                  step={1}
+                  value={statsRotateSec}
+                  onChange={(event) => onStatsRotateSec(Number(event.target.value))}
+                  className="w-full accent-[#0d7a64]"
+                />
+              </label>
+            </div>
           ) : null}
           <p className="text-xs font-semibold text-muted-foreground">
             Filters most runs / wickets / catches / highest / run outs by the student roll. Each
             year level gets its own top 6 from the full school list (empty only if that band has
-            no scores yet).
+            no scores yet). Pick any mix for rotate — e.g. only F/1 and 2/3/4.
           </p>
         </div>
       ) : null}

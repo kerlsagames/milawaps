@@ -108,6 +108,8 @@ export type PublicBoard = {
   cricketStatsScope: import("@/lib/site-display").CricketStatsScope;
   /** Seconds between year-level rotations on Cricket 2. */
   cricketStatsRotateSec: number;
+  /** Which bands cycle when Cricket 2 stats rotate. */
+  cricketStatsRotateScopes: import("@/lib/site-display").CricketStatsBand[];
   /** Shared prize-path finish countdown for every TV (ms), or null. */
   finishAt: number | null;
   /** Shared seconds-per-slide for every TV, or null if never saved. */
