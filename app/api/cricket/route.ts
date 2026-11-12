@@ -28,8 +28,10 @@ export async function GET(request: Request) {
   }
 
   try {
-    const response = await fetch(url, {
-      headers: { Accept: "application/json" },
+    // Bust any intermediary cache on Jimmy’s board URL.
+    const bust = url.includes("?") ? `&t=${Date.now()}` : `?t=${Date.now()}`;
+    const response = await fetch(`${url}${bust}`, {
+      headers: { Accept: "application/json", "Cache-Control": "no-cache" },
       signal: AbortSignal.timeout(5000),
       cache: "no-store",
     });

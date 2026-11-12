@@ -71,7 +71,14 @@ export function CricketView({
   const { data, error, isLoading } = useSWR<CricketSnapshot>(
     code ? `/api/cricket?code=${encodeURIComponent(code)}` : null,
     fetcher,
-    { refreshInterval: refreshMs, revalidateOnFocus: true },
+    {
+      refreshInterval: refreshMs,
+      revalidateOnFocus: true,
+      // Kiosk TVs often stay "hidden" / unfocused — keep polling Jimmy anyway.
+      refreshWhenHidden: true,
+      revalidateOnReconnect: true,
+      dedupingInterval: 2_000,
+    },
   );
 
   useEffect(() => {
