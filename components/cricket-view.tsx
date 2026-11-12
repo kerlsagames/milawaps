@@ -9,14 +9,17 @@ import {
   formatLadderPercentage,
   type CricketFixture,
   type CricketLeader,
-  type CricketLeaders,
   type CricketSnapshot,
 } from "@/lib/cricket";
 import {
   cricketStatsScopeLabel,
+  CRICKET_LEADER_STAT_META,
+  DEFAULT_CRICKET_LEADER_STATS,
   DEFAULT_CRICKET_PANELS,
   DEFAULT_CRICKET_STATS_ROTATE_SCOPES,
+  sanitizeCricketLeaderStats,
   sanitizeCricketStatsRotateScopes,
+  type CricketLeaderStatId,
   type CricketPanels,
   type CricketStatsBand,
   type CricketStatsScope,
@@ -37,14 +40,6 @@ const fetcher = async (url: string) => {
   return body;
 };
 
-const LEADER_BOXES: { key: keyof CricketLeaders; title: string; tone: string }[] = [
-  { key: "runs", title: "Most runs", tone: "#2ec9a0" },
-  { key: "wickets", title: "Most wickets", tone: "#ff7a59" },
-  { key: "catches", title: "Most catches", tone: "#5ec8ff" },
-  { key: "highest", title: "Highest score", tone: "#e2a01a" },
-  { key: "runOuts", title: "Most run outs", tone: "#c48a16" },
-];
-
 export function CricketView({
   code,
   fill = false,
@@ -52,6 +47,7 @@ export function CricketView({
   statsScope = "all",
   statsRotateSec = 10,
   statsRotateScopes = DEFAULT_CRICKET_STATS_ROTATE_SCOPES,
+  leaderStats = DEFAULT_CRICKET_LEADER_STATS,
 }: {
   code: string;
   fill?: boolean;
@@ -59,8 +55,13 @@ export function CricketView({
   statsScope?: CricketStatsScope;
   statsRotateSec?: number;
   statsRotateScopes?: CricketStatsBand[];
+  leaderStats?: CricketLeaderStatId[];
 }) {
   const show = { ...DEFAULT_CRICKET_PANELS, ...panels };
+  const activeLeaderStats = useMemo(
+    () => sanitizeCricketLeaderStats(leaderStats),
+    [leaderStats],
+  );
   const rotatePlaylist = useMemo(
     () => sanitizeCricketStatsRotateScopes(statsRotateScopes),
     [statsRotateScopes],
@@ -196,7 +197,17 @@ export function CricketView({
       </header>
 
       {showTopStrip ? (
-        <div className="grid min-h-0 flex-[1.05] grid-cols-2 gap-1.5 overflow-hidden sm:grid-cols-3 xl:grid-cols-6">
+        <div
+          className={cn(
+            "grid min-h-0 flex-[1.05] gap-1.5 overflow-hidden",
+            // Last game + up to 5 leader cards — stretch evenly across the top row.
+            show.lastNext && activeLeaderStats.length >= 4
+              ? "grid-cols-2 sm:grid-cols-3 xl:grid-cols-6"
+              : show.lastNext
+                ? "grid-cols-2 sm:grid-cols-3"
+                : "grid-cols-2 sm:grid-cols-3 xl:grid-cols-5",
+          )}
+        >
           {show.lastNext ? (
             <GameCard
               eyebrow={spotlightEyebrow}
@@ -210,19 +221,22 @@ export function CricketView({
             />
           ) : null}
           {show.leaders
-            ? LEADER_BOXES.map(({ key, title, tone }) => (
-                <LeaderCard
-                  key={key}
-                  title={
-                    activeScope === "all"
-                      ? title
-                      : `${title} ${cricketStatsScopeLabel(activeScope)}`
-                  }
-                  tone={tone}
-                  rows={leaders[key]}
-                  compact
-                />
-              ))
+            ? activeLeaderStats.map((key) => {
+                const meta = CRICKET_LEADER_STAT_META[key];
+                return (
+                  <LeaderCard
+                    key={key}
+                    title={
+                      activeScope === "all"
+                        ? meta.title
+                        : `${meta.title} ${cricketStatsScopeLabel(activeScope)}`
+                    }
+                    tone={meta.tone}
+                    rows={leaders[key]}
+                    compact
+                  />
+                );
+              })
             : null}
         </div>
       ) : null}

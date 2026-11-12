@@ -1,13 +1,8 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { activeUpcoming, formatUpcomingLabel, type DailyNews } from "@/lib/news";
-import {
-  NEWS_GALLERY,
-  NEWS_PHOTO_ROTATE_SEC,
-  newsPhotoAtIndex,
-  newsPhotoForDay,
-} from "@/lib/news-photos";
+import { newsPhotoForDay } from "@/lib/news-photos";
 import type { NewsLayoutId } from "@/lib/site-display";
 import { cn } from "@/lib/utils";
 
@@ -368,21 +363,8 @@ function ChallengePanel({ text, size }: { text: string; size: TextSize }) {
 
 function PhotoPanel({ news, className }: { news: DailyNews; className?: string }) {
   const custom = news.picture?.trim() || null;
-  const dayStart = NEWS_GALLERY.indexOf(
-    newsPhotoForDay() as (typeof NEWS_GALLERY)[number],
-  );
-  const [tick, setTick] = useState(0);
-
-  useEffect(() => {
-    if (custom) return;
-    const timer = window.setInterval(() => {
-      setTick((value) => value + 1);
-    }, NEWS_PHOTO_ROTATE_SEC * 1000);
-    return () => window.clearInterval(timer);
-  }, [custom]);
-
-  const gallerySrc = newsPhotoAtIndex((dayStart < 0 ? 0 : dayStart) + tick);
-  const src = custom || gallerySrc;
+  // One gallery photo for the whole Sydney school day — not a slideshow.
+  const src = custom || newsPhotoForDay();
 
   return (
     <section

@@ -30,6 +30,7 @@ import {
   saveSiteDisplay,
   setCricketPanelsLocal,
   setCricketRostersLocal,
+  setCricketLeaderStatsLocal,
   setCricketStatsRotateScopesLocal,
   setCricketStatsRotateSecLocal,
   setCricketStatsScopeLocal,
@@ -52,12 +53,16 @@ import { emptyNews, type DailyNews } from "@/lib/news";
 import { compressPrizeImage } from "@/lib/prize-image";
 import { prizeIsPublic, REVEALS, type FixedScreenId, type ScreenId } from "@/lib/reveals";
 import {
+  CRICKET_LEADER_STAT_IDS,
+  CRICKET_LEADER_STATS_MAX,
   CRICKET_STATS_BANDS,
   CRICKET_STATS_ROTATE_MAX,
   CRICKET_STATS_ROTATE_MIN,
   NEWS_LAYOUTS,
+  cricketLeaderStatLabel,
   cricketStatsScopeLabel,
   sanitizeCricketRosters,
+  type CricketLeaderStatId,
   type CricketPanels,
   type CricketRosters,
   type CricketStatsBand,
@@ -181,6 +186,7 @@ export function KioskSettings({
       cricketStatsScope?: CricketStatsScope;
       cricketStatsRotateSec?: number;
       cricketStatsRotateScopes?: CricketStatsBand[];
+      cricketLeaderStats?: CricketLeaderStatId[];
       finishAt?: number | null;
       dwells?: Partial<Record<FixedScreenId, number>>;
       reveals?: import("@/lib/desk-prefs").RevealMap;
@@ -563,6 +569,7 @@ export function KioskSettings({
               statsScope={prefs.cricketStatsScope}
               statsRotateSec={prefs.cricketStatsRotateSec}
               statsRotateScopes={prefs.cricketStatsRotateScopes}
+              leaderStats={prefs.cricketLeaderStats}
               onShownTeams={(next) => void saveShown("cricket-teams", next)}
               onShownLadder={(next) => void saveShown("cricket", next)}
               onDraftCode={setDraftCricket}
@@ -633,6 +640,17 @@ export function KioskSettings({
                   `Cricket 2 rotate playlist: ${labels}.`,
                 ).then((ok) => {
                   if (ok === false) setCricketStatsRotateScopesLocal(previous);
+                });
+              }}
+              onLeaderStats={(stats) => {
+                const previous = prefs.cricketLeaderStats;
+                setCricketLeaderStatsLocal(stats);
+                const labels = stats.map((id) => cricketLeaderStatLabel(id)).join(", ");
+                void patchDisplay(
+                  { cricketLeaderStats: stats },
+                  `Cricket 2 leader stats: ${labels}.`,
+                ).then((ok) => {
+                  if (ok === false) setCricketLeaderStatsLocal(previous);
                 });
               }}
               onPreviewTeams={() => {
@@ -1096,6 +1114,7 @@ function CricketPagePanel({
   statsScope,
   statsRotateSec,
   statsRotateScopes,
+  leaderStats,
   onShownTeams,
   onShownLadder,
   onDraftCode,
@@ -1106,6 +1125,7 @@ function CricketPagePanel({
   onStatsScope,
   onStatsRotateSec,
   onStatsRotateScopes,
+  onLeaderStats,
   onPreviewTeams,
   onPreviewLadder,
 }: {
@@ -1121,6 +1141,7 @@ function CricketPagePanel({
   statsScope: CricketStatsScope;
   statsRotateSec: number;
   statsRotateScopes: CricketStatsBand[];
+  leaderStats: CricketLeaderStatId[];
   onShownTeams: (next: boolean) => void;
   onShownLadder: (next: boolean) => void;
   onDraftCode: (value: string) => void;
@@ -1131,6 +1152,7 @@ function CricketPagePanel({
   onStatsScope: (scope: CricketStatsScope) => void;
   onStatsRotateSec: (seconds: number) => void;
   onStatsRotateScopes: (scopes: CricketStatsBand[]) => void;
+  onLeaderStats: (stats: CricketLeaderStatId[]) => void;
   onPreviewTeams: () => void;
   onPreviewLadder: () => void;
 }) {
@@ -1337,10 +1359,43 @@ function CricketPagePanel({
             </div>
           ) : null}
           <p className="text-xs font-semibold text-muted-foreground">
-            Filters most runs / wickets / catches / highest / run outs by the student roll. Each
-            year level gets its own top 6 from the full school list (empty only if that band has
-            no scores yet). Pick any mix for rotate — e.g. only F/1 and 2/3/4.
+            Filters the leader cards below by the student roll. Each year level gets its own top 6
+            (empty only if that band has no scores yet). Pick any mix for rotate — e.g. only F/1
+            and 2/3/4.
           </p>
+        </div>
+      ) : null}
+      {admin ? (
+        <div className="grid gap-2 rounded-2xl border border-[#0d7a64]/25 bg-[#eefaf6] p-3">
+          <p className="text-sm font-bold">
+            Cricket 2 leader stats ({leaderStats.length}/{CRICKET_LEADER_STATS_MAX})
+          </p>
+          <p className="text-xs font-semibold text-muted-foreground">
+            Pick up to {CRICKET_LEADER_STATS_MAX} cards for the top row. Tick order is left-to-right
+            on the TV (after Last game).
+          </p>
+          {CRICKET_LEADER_STAT_IDS.map((id) => {
+            const checked = leaderStats.includes(id);
+            const alone = checked && leaderStats.length === 1;
+            const full = !checked && leaderStats.length >= CRICKET_LEADER_STATS_MAX;
+            return (
+              <label key={id} className="flex items-center gap-2 text-sm font-bold">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  disabled={alone || full}
+                  onChange={(event) => {
+                    const next = event.target.checked
+                      ? [...leaderStats, id]
+                      : leaderStats.filter((item) => item !== id);
+                    onLeaderStats(next);
+                  }}
+                  className="size-5 accent-[#0d7a64]"
+                />
+                {cricketLeaderStatLabel(id)}
+              </label>
+            );
+          })}
         </div>
       ) : null}
       <div className="grid gap-2 sm:grid-cols-2">

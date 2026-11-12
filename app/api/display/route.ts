@@ -25,6 +25,7 @@ export async function GET() {
       cricketStatsScope: board.cricketStatsScope,
       cricketStatsRotateSec: board.cricketStatsRotateSec,
       cricketStatsRotateScopes: board.cricketStatsRotateScopes,
+      cricketLeaderStats: board.cricketLeaderStats,
       finishAt: board.finishAt,
       dwells: board.dwells,
       reveals: board.reveals,

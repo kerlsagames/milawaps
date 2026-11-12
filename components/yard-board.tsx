@@ -87,6 +87,9 @@ export function YardBoard() {
   const cricketStatsRotateScopes = data?.displayUpdatedAt
     ? (data.cricketStatsRotateScopes ?? prefs.cricketStatsRotateScopes)
     : prefs.cricketStatsRotateScopes;
+  const cricketLeaderStats = data?.displayUpdatedAt
+    ? (data.cricketLeaderStats ?? prefs.cricketLeaderStats)
+    : prefs.cricketLeaderStats;
   const dwellsRef = useRef(dwells);
   dwellsRef.current = dwells;
   const liveHighlights = useMemo(
@@ -110,7 +113,7 @@ export function YardBoard() {
   const [reasonPrompt, setReasonPrompt] = useState<{ id: string; line: string } | null>(null);
 
   const displaySyncKey = data?.displayUpdatedAt
-    ? `${data.displayUpdatedAt}:${data.cricketCode}:${JSON.stringify(data.shown)}:${data.newsLayout}:${JSON.stringify(data.cricketPanels)}:${JSON.stringify(data.cricketRosters)}:${data.cricketTeamsMode}:${data.cricketStatsScope}:${data.cricketStatsRotateSec}:${JSON.stringify(data.cricketStatsRotateScopes)}:${data.finishAt ?? ""}:${JSON.stringify(data.dwells)}:${JSON.stringify(data.reveals)}`
+    ? `${data.displayUpdatedAt}:${data.cricketCode}:${JSON.stringify(data.shown)}:${data.newsLayout}:${JSON.stringify(data.cricketPanels)}:${JSON.stringify(data.cricketRosters)}:${data.cricketTeamsMode}:${data.cricketStatsScope}:${data.cricketStatsRotateSec}:${JSON.stringify(data.cricketStatsRotateScopes)}:${JSON.stringify(data.cricketLeaderStats)}:${data.finishAt ?? ""}:${JSON.stringify(data.dwells)}:${JSON.stringify(data.reveals)}`
     : "";
   useEffect(() => {
     if (!data?.displayUpdatedAt) return;
@@ -122,6 +125,7 @@ export function YardBoard() {
       cricketStatsScope: data.cricketStatsScope,
       cricketStatsRotateSec: data.cricketStatsRotateSec,
       cricketStatsRotateScopes: data.cricketStatsRotateScopes,
+      cricketLeaderStats: data.cricketLeaderStats,
       finishAt: data.finishAt,
       dwells: data.dwells,
       reveals: data.reveals,
@@ -852,6 +856,7 @@ export function YardBoard() {
                   statsScope={cricketStatsScope}
                   statsRotateSec={cricketStatsRotateSec}
                   statsRotateScopes={cricketStatsRotateScopes}
+                  leaderStats={cricketLeaderStats}
                 />
               ) : view === "news" ? (
                 // Laptop desk: lay out larger then scale down so Reminders / Coming up keep shape.

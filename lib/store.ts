@@ -287,6 +287,7 @@ export function toPublic(blob: FileBlob): PublicBoard {
     cricketStatsScope: display.cricketStatsScope,
     cricketStatsRotateSec: display.cricketStatsRotateSec,
     cricketStatsRotateScopes: display.cricketStatsRotateScopes,
+    cricketLeaderStats: display.cricketLeaderStats,
     finishAt: display.finishAt,
     dwells: display.dwells,
     reveals: display.reveals,

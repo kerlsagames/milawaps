@@ -22,6 +22,13 @@ assert.equal(empty.cricketTeamsMode, "all");
 assert.equal(empty.cricketStatsScope, "all");
 assert.equal(empty.cricketStatsRotateSec, 10);
 assert.deepEqual(empty.cricketStatsRotateScopes, ["all", "56", "234", "f1"]);
+assert.deepEqual(empty.cricketLeaderStats, [
+  "runs",
+  "wickets",
+  "catches",
+  "highest",
+  "runOuts",
+]);
 assert.equal(empty.finishAt, null);
 assert.equal(empty.dwells, null);
 assert.equal(empty.reveals, null);
@@ -66,6 +73,21 @@ assert.deepEqual(
 assert.deepEqual(
   sanitizeSiteDisplay({ cricketStatsRotateScopes: [] }).cricketStatsRotateScopes,
   ["all", "56", "234", "f1"],
+);
+const withLeaderStats = siteDisplayFromInput(
+  { cricketLeaderStats: ["sixes", "runs", "nope", "sixes", "fours", "wickets", "catches", "highest"] },
+  withStats,
+);
+assert.deepEqual(withLeaderStats.cricketLeaderStats, [
+  "sixes",
+  "runs",
+  "fours",
+  "wickets",
+  "catches",
+]);
+assert.deepEqual(
+  sanitizeSiteDisplay({ cricketLeaderStats: [] }).cricketLeaderStats,
+  ["runs", "wickets", "catches", "highest", "runOuts"],
 );
 
 const hideNews = siteDisplayFromInput({ shown: { news: true, highlight: true } }, withTeams);

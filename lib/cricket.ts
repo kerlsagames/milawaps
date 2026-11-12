@@ -36,6 +36,8 @@ export type CricketLeaders = {
   catches: CricketLeader[];
   highest: CricketLeader[];
   runOuts: CricketLeader[];
+  sixes: CricketLeader[];
+  fours: CricketLeader[];
 };
 export type CricketTeam = { name: string; players: string[] };
 
@@ -109,6 +111,16 @@ export const PREVIEW_CRICKET: CricketSnapshot = {
       { name: "Riley", value: "1" },
       { name: "Max", value: "1" },
     ],
+    sixes: [
+      { name: "Poppy", value: "4" },
+      { name: "Leo", value: "2" },
+      { name: "Isla", value: "1" },
+    ],
+    fours: [
+      { name: "Leo", value: "6" },
+      { name: "Poppy", value: "5" },
+      { name: "Hugh", value: "3" },
+    ],
   },
   teams: [
     { name: "5/6", players: ["Poppy", "Leo", "Hugh", "Harry", "Scout"] },
@@ -178,7 +190,7 @@ function leadersFromStatValue(value: string): CricketLeader[] {
 }
 
 function emptyLeaders(): CricketLeaders {
-  return { runs: [], wickets: [], catches: [], highest: [], runOuts: [] };
+  return { runs: [], wickets: [], catches: [], highest: [], runOuts: [], sixes: [], fours: [] };
 }
 
 function leadersFromStats(stats: CricketStat[]): CricketLeaders {
@@ -192,6 +204,8 @@ function leadersFromStats(stats: CricketStat[]): CricketLeaders {
     else if (label.includes("most catch") || label === "catches") leaders.catches = row;
     else if (label.includes("run out") || label.includes("runout")) leaders.runOuts = row;
     else if (label.includes("highest") || label.includes("top score")) leaders.highest = row;
+    else if (label.includes("six")) leaders.sixes = row;
+    else if (label.includes("four")) leaders.fours = row;
   }
   return leaders;
 }
@@ -205,10 +219,12 @@ function mergeLeaders(fromApi: CricketLeaders, fromStats: CricketLeaders): Crick
   const wickets = preferLonger(fromApi.wickets, fromStats.wickets);
   const catches = preferLonger(fromApi.catches, fromStats.catches);
   const runOuts = preferLonger(fromApi.runOuts, fromStats.runOuts);
+  const sixes = preferLonger(fromApi.sixes, fromStats.sixes);
+  const fours = preferLonger(fromApi.fours, fromStats.fours);
   let highest = preferLonger(fromApi.highest, fromStats.highest);
   // Jimmy often only publishes “Most runs” — reuse that list for highest score when empty.
   if (highest.length === 0 && runs.length > 0) highest = runs;
-  return { runs, wickets, catches, highest, runOuts };
+  return { runs, wickets, catches, highest, runOuts, sixes, fours };
 }
 
 /** Match a cricket leader name to a school year level via the student roll. */
@@ -249,6 +265,8 @@ export function filterCricketLeaders(
     catches: keep(leaders.catches),
     highest: keep(leaders.highest),
     runOuts: keep(leaders.runOuts),
+    sixes: keep(leaders.sixes),
+    fours: keep(leaders.fours),
   };
 }
 
@@ -539,6 +557,8 @@ export function parseCricketSnapshot(raw: unknown, preview = false): CricketSnap
     catches: parseLeadersList(leadersRaw?.catches ?? leadersRaw?.mostCatches),
     highest: parseLeadersList(leadersRaw?.highest ?? leadersRaw?.highestScore),
     runOuts: parseLeadersList(leadersRaw?.runOuts ?? leadersRaw?.mostRunOuts),
+    sixes: parseLeadersList(leadersRaw?.sixes ?? leadersRaw?.mostSixes),
+    fours: parseLeadersList(leadersRaw?.fours ?? leadersRaw?.mostFours),
   };
   const fromSchool = leadersFromJimmySchool(school);
   const leaders = mergeLeaders(

@@ -110,6 +110,8 @@ export type PublicBoard = {
   cricketStatsRotateSec: number;
   /** Which bands cycle when Cricket 2 stats rotate. */
   cricketStatsRotateScopes: import("@/lib/site-display").CricketStatsBand[];
+  /** Which Cricket 2 leader-stat cards show (up to 5). */
+  cricketLeaderStats: import("@/lib/site-display").CricketLeaderStatId[];
   /** Shared prize-path finish countdown for every TV (ms), or null. */
   finishAt: number | null;
   /** Shared seconds-per-slide for every TV, or null if never saved. */

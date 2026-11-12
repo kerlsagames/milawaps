@@ -80,6 +80,8 @@ type PlayerAgg = {
   catches: number;
   runOuts: number;
   high: number;
+  sixes: number;
+  fours: number;
 };
 
 function text(value: unknown, max: number) {
@@ -236,13 +238,23 @@ export function leadersFromJimmySchool(school: JimmySchool | null | undefined): 
     const id = text(player.id, 40);
     const name = text(player.name, 40);
     if (!id || !name) continue;
-    byId.set(id, { id, name, runs: 0, wickets: 0, catches: 0, runOuts: 0, high: 0 });
+    byId.set(id, { id, name, runs: 0, wickets: 0, catches: 0, runOuts: 0, high: 0, sixes: 0, fours: 0 });
   }
 
   const ensure = (game: JimmyGame, id: string) => {
     let row = byId.get(id);
     if (!row) {
-      row = { id, name: rosterName(game, id, schoolPlayers), runs: 0, wickets: 0, catches: 0, runOuts: 0, high: 0 };
+      row = {
+        id,
+        name: rosterName(game, id, schoolPlayers),
+        runs: 0,
+        wickets: 0,
+        catches: 0,
+        runOuts: 0,
+        high: 0,
+        sixes: 0,
+        fours: 0,
+      };
       byId.set(id, row);
     }
     return row;
@@ -264,6 +276,8 @@ export function leadersFromJimmySchool(school: JimmySchool | null | undefined): 
         const player = ensure(game, row.id);
         player.runs += row.runs;
         player.high = Math.max(player.high, row.runs);
+        player.sixes += row.sixes;
+        player.fours += row.fours;
       }
       for (const row of tallied.bowl) {
         if (isFillId(game, row.id)) continue;
@@ -286,6 +300,8 @@ export function leadersFromJimmySchool(school: JimmySchool | null | undefined): 
     catches: topLeaders(players, "catches"),
     highest: topLeaders(players, "high"),
     runOuts: topLeaders(players, "runOuts"),
+    sixes: topLeaders(players, "sixes"),
+    fours: topLeaders(players, "fours"),
   };
 }
 

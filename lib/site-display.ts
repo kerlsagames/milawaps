@@ -218,6 +218,61 @@ export function cricketStatsScopeLabel(scope: Exclude<CricketStatsScope, "rotate
   return "All";
 }
 
+/** Cricket 2 leader-stat cards teachers can put on the top row (pick up to 5). */
+export const CRICKET_LEADER_STAT_IDS = [
+  "runs",
+  "wickets",
+  "catches",
+  "highest",
+  "runOuts",
+  "sixes",
+  "fours",
+] as const;
+export type CricketLeaderStatId = (typeof CRICKET_LEADER_STAT_IDS)[number];
+
+export const CRICKET_LEADER_STATS_MAX = 5;
+
+export const DEFAULT_CRICKET_LEADER_STATS: CricketLeaderStatId[] = [
+  "runs",
+  "wickets",
+  "catches",
+  "highest",
+  "runOuts",
+];
+
+export const CRICKET_LEADER_STAT_META: Record<
+  CricketLeaderStatId,
+  { title: string; tone: string }
+> = {
+  runs: { title: "Most runs", tone: "#2ec9a0" },
+  wickets: { title: "Most wickets", tone: "#ff7a59" },
+  catches: { title: "Most catches", tone: "#5ec8ff" },
+  highest: { title: "Highest score", tone: "#e2a01a" },
+  runOuts: { title: "Most run outs", tone: "#c48a16" },
+  sixes: { title: "Most sixes", tone: "#7b4bff" },
+  fours: { title: "Most fours", tone: "#1f6f8b" },
+};
+
+export function cricketLeaderStatLabel(id: CricketLeaderStatId) {
+  return CRICKET_LEADER_STAT_META[id].title;
+}
+
+/** Keep selection order; clamp to 1–5 valid ids. */
+export function sanitizeCricketLeaderStats(raw: unknown): CricketLeaderStatId[] {
+  if (!Array.isArray(raw)) return [...DEFAULT_CRICKET_LEADER_STATS];
+  const seen = new Set<CricketLeaderStatId>();
+  const out: CricketLeaderStatId[] = [];
+  for (const item of raw) {
+    if (!CRICKET_LEADER_STAT_IDS.includes(item as CricketLeaderStatId)) continue;
+    const id = item as CricketLeaderStatId;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+    if (out.length >= CRICKET_LEADER_STATS_MAX) break;
+  }
+  return out.length > 0 ? out : [...DEFAULT_CRICKET_LEADER_STATS];
+}
+
 /** Cricket 1 — player names under each team (keyed by team name). */
 export type CricketRosters = Record<string, string[]>;
 
@@ -257,6 +312,8 @@ export type SiteDisplay = {
   cricketStatsRotateSec: number;
   /** Which bands cycle when cricketStatsScope is rotate. */
   cricketStatsRotateScopes: CricketStatsBand[];
+  /** Which Cricket 2 leader-stat cards show on the top row (up to 5). */
+  cricketLeaderStats: CricketLeaderStatId[];
   /** Shared prize-path finish countdown (ms since epoch), or null if unset. */
   finishAt: number | null;
   /**
@@ -283,6 +340,7 @@ export function emptySiteDisplay(): SiteDisplay {
     cricketStatsScope: "all",
     cricketStatsRotateSec: DEFAULT_CRICKET_STATS_ROTATE_SEC,
     cricketStatsRotateScopes: [...DEFAULT_CRICKET_STATS_ROTATE_SCOPES],
+    cricketLeaderStats: [...DEFAULT_CRICKET_LEADER_STATS],
     finishAt: null,
     dwells: null,
     reveals: null,
@@ -327,6 +385,7 @@ export function sanitizeSiteDisplay(raw: unknown): SiteDisplay {
     cricketStatsScope?: unknown;
     cricketStatsRotateSec?: unknown;
     cricketStatsRotateScopes?: unknown;
+    cricketLeaderStats?: unknown;
     finishAt?: unknown;
     dwells?: unknown;
     reveals?: unknown;
@@ -364,6 +423,7 @@ export function sanitizeSiteDisplay(raw: unknown): SiteDisplay {
     cricketStatsScope: sanitizeCricketStatsScope(record.cricketStatsScope),
     cricketStatsRotateSec: sanitizeCricketStatsRotateSec(record.cricketStatsRotateSec),
     cricketStatsRotateScopes: sanitizeCricketStatsRotateScopes(record.cricketStatsRotateScopes),
+    cricketLeaderStats: sanitizeCricketLeaderStats(record.cricketLeaderStats),
     finishAt: sanitizeFinishAt(record.finishAt),
     dwells,
     reveals,
@@ -383,6 +443,7 @@ export function siteDisplayFromInput(raw: unknown, current: SiteDisplay): SiteDi
     cricketStatsScope?: unknown;
     cricketStatsRotateSec?: unknown;
     cricketStatsRotateScopes?: unknown;
+    cricketLeaderStats?: unknown;
     finishAt?: unknown;
     dwells?: unknown;
     reveals?: unknown;
@@ -396,6 +457,7 @@ export function siteDisplayFromInput(raw: unknown, current: SiteDisplay): SiteDi
   let cricketStatsScope = current.cricketStatsScope;
   let cricketStatsRotateSec = current.cricketStatsRotateSec;
   let cricketStatsRotateScopes = current.cricketStatsRotateScopes;
+  let cricketLeaderStats = current.cricketLeaderStats;
   let finishAt = current.finishAt;
   let dwells = current.dwells;
   let reveals = current.reveals;
@@ -430,6 +492,9 @@ export function siteDisplayFromInput(raw: unknown, current: SiteDisplay): SiteDi
   }
   if (record.cricketStatsRotateScopes !== undefined) {
     cricketStatsRotateScopes = sanitizeCricketStatsRotateScopes(record.cricketStatsRotateScopes);
+  }
+  if (record.cricketLeaderStats !== undefined) {
+    cricketLeaderStats = sanitizeCricketLeaderStats(record.cricketLeaderStats);
   }
   if ("finishAt" in record) {
     finishAt = sanitizeFinishAt(record.finishAt);
@@ -472,6 +537,7 @@ export function siteDisplayFromInput(raw: unknown, current: SiteDisplay): SiteDi
     cricketStatsScope,
     cricketStatsRotateSec,
     cricketStatsRotateScopes,
+    cricketLeaderStats,
     finishAt,
     dwells,
     reveals,

@@ -58,11 +58,3 @@ export function newsPhotoForDay(now = Date.now()): string {
   }
   return NEWS_GALLERY[hash % NEWS_GALLERY.length]!;
 }
-
-/** Soft on-screen rotate through the gallery (seconds). */
-export const NEWS_PHOTO_ROTATE_SEC = 45;
-
-export function newsPhotoAtIndex(index: number): string {
-  const safe = ((index % NEWS_GALLERY.length) + NEWS_GALLERY.length) % NEWS_GALLERY.length;
-  return NEWS_GALLERY[safe]!;
-}

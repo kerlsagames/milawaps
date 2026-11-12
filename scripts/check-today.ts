@@ -271,6 +271,8 @@ const deepLeaders = {
   catches: [] as { name: string; value: string }[],
   highest: [] as { name: string; value: string }[],
   runOuts: [] as { name: string; value: string }[],
+  sixes: [] as { name: string; value: string }[],
+  fours: [] as { name: string; value: string }[],
 };
 const f1Roll = [
   { name: "Millie", unitId: "f1" as const },
